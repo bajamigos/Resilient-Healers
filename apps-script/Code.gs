@@ -230,8 +230,12 @@ function doPost(e) {
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
   if (body.website) return json_({ ok: true }); // honeypot: bots fill it, people never see it
   ensureSetup_();
+  // Reading messages changes nothing, so it doesn't wait for the write lock.
+  if (body.action === 'inbox') {
+    try { return json_(inbox_(body)); } catch (err) { return json_({ ok: false, error: 'server_error', detail: String(err && err.message || err) }); }
+  }
   const lock = LockService.getScriptLock();
-  lock.waitLock(25000);
+  if (!lock.tryLock(20000)) return json_({ ok: false, error: 'busy' });
   try {
     switch (body.action) {
       case 'signup': return json_(signup_(body));
@@ -250,6 +254,9 @@ function doPost(e) {
       case 'walkerLink': return json_(walkerLink_(body));
       default: return json_({ ok: false, error: 'unknown_action' });
     }
+  } catch (err) {
+    // Send the error back as JSON (a raw Google error page would just look like "failed to fetch" in the browser).
+    return json_({ ok: false, error: 'server_error', detail: String(err && err.message || err) });
   } finally {
     lock.releaseLock();
   }
