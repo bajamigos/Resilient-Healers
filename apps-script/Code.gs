@@ -311,7 +311,7 @@ function readWalk_(w) {
 // Saves a walk leader's uploaded walk photo and returns the Walks cells for it (or {} if none).
 function walkPhotoCells_(photoData, walkId) {
   if (!photoData) return {};
-  const url = savePhoto_(photoData, 'walk-' + walkId);
+  const url = savePhoto_(photoData, 'walk-' + walkId, 1400);
   return url ? { 'Photo': url, 'Photo credit': 'the walk leader', 'Photo source': '' } : {};
 }
 function walkRow_(id, leaderId, status, w) {
@@ -344,7 +344,7 @@ function getPhotoFolder_() {
   const it = DriveApp.getFoldersByName(name);
   return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
-function savePhoto_(dataUrl, leaderId) {
+function savePhoto_(dataUrl, leaderId, width) {
   const m = /^data:(image\/(jpeg|png));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
   if (!m) return null;
   const bytes = Utilities.base64Decode(m[3]);
@@ -352,7 +352,7 @@ function savePhoto_(dataUrl, leaderId) {
   const blob = Utilities.newBlob(bytes, m[1], leaderId + (m[2] === 'png' ? '.png' : '.jpg'));
   const file = getPhotoFolder_().createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600';
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w' + (width || 600);
 }
 
 /* ---------- reviews ---------- */
