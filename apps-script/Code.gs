@@ -1,162 +1,666 @@
 /**
- * Resilient Healers: sign-up backend (Google Sheets + Apps Script).
+ * Resilient Healers: backend (Google Sheets + Apps Script).
  *
- * Setup (once):
- *  1. In the project Gmail account, create a Google Sheet named "Resilient Healers sign-ups".
- *  2. Create a standalone Apps Script project (script.google.com). Paste this file in as Code.gs and save.
- *  3. Project Settings > Script properties: add
- *       SHEET_ID         (the long id in the Sheet's address, between /d/ and /edit)
- *       SITE_URL         https://resilienthealers.github.io/
- *       ORGANIZER_EMAIL  (where contact-form messages go)
- *  4. Run setup() once from the editor and approve the permissions.
- *  5. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
- *     Copy the web app URL into the site's API_URL.
+ * Tabs in the "Resilient Healers sign-ups" Sheet (created automatically):
+ *   Sign-ups  - one row per person per walk
+ *   Messages  - contact-form messages
+ *   Leaders   - walk leader profiles
+ *   Walks     - walks (Pending review / Live / Changes requested)
+ *   Reviews   - each thing staff need to approve, with its private review link
  *
- * The site sends POST bodies as text/plain JSON so browsers don't need a CORS preflight.
+ * Script properties:
+ *   SHEET_ID         id of the Sheet (between /d/ and /edit in its address)
+ *   SITE_URL         https://resilienthealers.github.io/
+ *   ORGANIZER_EMAIL  where contact-form messages go
+ *   STAFF_EMAIL      where approval requests go (falls back to ORGANIZER_EMAIL)
+ *
+ * Deploy as a web app: Execute as Me, access Anyone. The site sends POST bodies as
+ * text/plain JSON so browsers don't need a CORS preflight.
+ *
+ * Private links (leader page, review page, cancel) are "anyone with the link".
+ * That's fine for testing; revisit before real use.
  */
 
-const WALKS = {
-  'lake-murray-2026-12-13': {
-    title: 'December walk at Lake Murray',
-    when: 'Sunday, December 13, 2026, 9:00 to 10:30 AM',
-    where: 'Lake Murray, in front of the ranger station by the main parking lot (enter from Kiowa Drive)',
-    capacity: 20
-  }
+/* ===================== sheet layout ===================== */
+
+const TABS = {
+  'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],
+  'Messages': ['Received', 'Name', 'Email', 'Message'],
+  'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated'],
+  'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated'],
+  'Reviews': ['Review code', 'Type', 'Leader ID', 'Walk ID', 'Status', 'Created', 'Decided', 'Staff note']
 };
 
-const SIGNUP_HEADERS = ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'];
-const MESSAGE_HEADERS = ['Received', 'Name', 'Email', 'Message'];
+const SEED_LEADER = {
+  id: 'L-priya', status: 'Approved', name: 'Priya Reddy, PMHNP-BC, FNP-C', email: '', phone: '', city: 'San Diego, CA',
+  background: 'Psychiatric mental health and family nurse practitioner',
+  bio: 'Priya is a dual board-certified psychiatric mental health and family nurse practitioner. After years in a busy community clinic, she experienced burnout firsthand and found her way back through coaching, meditation and yoga. She started Resilient Healers so healthcare workers have a place to walk, connect with colleagues and recharge together.',
+  photo: ''
+};
+const SEED_WALK = {
+  id: 'lake-murray-2026-12-13', leaderId: 'L-priya', status: 'Live', title: 'December walk at Lake Murray',
+  date: '2026-12-13', start: '09:00', end: '10:30', repeats: 'Monthly, second Sunday',
+  place: 'Lake Murray, by the ranger station', address: 'Lake Murray Recreation Area, 5650 Kiowa Dr, La Mesa, CA 91942',
+  lat: 32.78509, lng: -117.04161,
+  find: 'Meet at the side of the main parking lot at the park entrance, in front of the ranger station. Enter from Kiowa Drive.',
+  parking: '', spots: 20,
+  shorter: 'Available. Tell us when you sign up.',
+  description: 'Healthcare work can be deeply meaningful, but it can also take a toll on our physical and emotional well-being. Join us for a free monthly walking group created especially for healthcare workers to connect with colleagues, share experiences, and nurture their own resilience.'
+};
 
+function props_() { return PropertiesService.getScriptProperties(); }
+function ss_() { return SpreadsheetApp.openById(props_().getProperty('SHEET_ID')); }
+function sheet_(name) { return ss_().getSheetByName(name); }
+function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
+function siteUrl_() { return props_().getProperty('SITE_URL') || ''; }
+function staffEmail_() { return props_().getProperty('STAFF_EMAIL') || props_().getProperty('ORGANIZER_EMAIL'); }
+
+/** Run once from the editor (also runs automatically on first request). */
 function setup() {
   const ss = ss_();
-  ensureSheet_(ss, 'Sign-ups', SIGNUP_HEADERS);
-  ensureSheet_(ss, 'Messages', MESSAGE_HEADERS);
-}
-
-function ensureSheet_(ss, name, headers) {
-  let sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name);
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(headers);
-    sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  Object.keys(TABS).forEach(name => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    if (sh.getLastRow() === 0) {
+      sh.appendRow(TABS[name]);
+      sh.setFrozenRows(1);
+      sh.getRange(1, 1, 1, TABS[name].length).setFontWeight('bold');
+    }
+  });
+  if (sheet_('Leaders').getLastRow() < 2) {
+    const l = SEED_LEADER, now = new Date();
+    sheet_('Leaders').appendRow([l.id, l.status, l.name, l.email, l.phone, l.city, l.background, l.bio, l.photo, newCode_(), '', '', now, now]);
   }
-  return sh;
+  if (sheet_('Walks').getLastRow() < 2) {
+    // Leading apostrophes keep dates and times as plain text, so Sheets doesn't convert them.
+    appendObj_('Walks', walkRow_(SEED_WALK.id, SEED_WALK.leaderId, SEED_WALK.status, SEED_WALK));
+  }
+  getPhotoFolder_();
+  CacheService.getScriptCache().put('setup-v2', '1', 21600);
+}
+function ensureSetup_() {
+  if (CacheService.getScriptCache().get('setup-v2')) return;
+  setup();
 }
 
-function ss_() { return SpreadsheetApp.openById(props_().getProperty('SHEET_ID')); }
-function props_() { return PropertiesService.getScriptProperties(); }
-function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
-function signupsSheet_() { return ss_().getSheetByName('Sign-ups'); }
+/* ===================== row helpers ===================== */
 
-function rows_() {
-  const sh = signupsSheet_();
-  const last = sh.getLastRow();
+function readTab_(name) {
+  const sh = sheet_(name), headers = TABS[name], last = sh.getLastRow();
   if (last < 2) return [];
-  return sh.getRange(2, 1, last - 1, SIGNUP_HEADERS.length).getValues().map((r, i) => ({
-    row: i + 2, ts: r[0], walk: r[1], status: r[2], name: r[3], email: r[4], code: r[8]
-  }));
+  return sh.getRange(2, 1, last - 1, headers.length).getValues().map((r, i) => {
+    const o = { _row: i + 2 };
+    headers.forEach((h, j) => { o[h] = r[j]; });
+    return o;
+  });
+}
+function writeCells_(name, row, values) {
+  const sh = sheet_(name), headers = TABS[name];
+  Object.keys(values).forEach(h => {
+    const col = headers.indexOf(h);
+    if (col >= 0) sh.getRange(row, col + 1).setValue(values[h]);
+  });
+}
+function appendObj_(name, obj) {
+  sheet_(name).appendRow(TABS[name].map(h => (obj[h] === undefined ? '' : obj[h])));
+}
+function newCode_() { return Utilities.getUuid().replace(/-/g, ''); }
+function newId_(prefix) { return prefix + '-' + Utilities.getUuid().slice(0, 8); }
+
+function clean_(s, max) { return String(s == null ? '' : s).replace(/[\r\t]+/g, ' ').trim().slice(0, max || 300); }
+function cleanLine_(s, max) { return clean_(s, max).replace(/\n+/g, ' '); }
+function safeCell_(s) { s = String(s == null ? '' : s); return /^[=+\-@]/.test(s) ? "'" + s : s; }
+
+function dateText_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, 'America/Los_Angeles', 'yyyy-MM-dd');
+  return String(v || '');
+}
+function timeText_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, 'America/Los_Angeles', 'HH:mm');
+  return String(v || '');
+}
+function niceTime_(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+  if (!m) return hhmm || '';
+  let h = +m[1]; const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+  return h + ':' + m[2] + ' ' + ap;
+}
+function niceDate_(ymd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd || '');
+  if (!m) return ymd || '';
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return Utilities.formatDate(d, 'America/Los_Angeles', 'EEEE, MMMM d, yyyy');
 }
 
-function counts_(walkId) {
-  const rs = rows_().filter(r => r.walk === walkId);
-  return {
-    going: rs.filter(r => r.status === 'Going').length,
-    waitlist: rs.filter(r => r.status === 'Waitlist').length,
-    capacity: (WALKS[walkId] || {}).capacity || 0
+/* ===================== shapes sent to the site ===================== */
+
+function walkOut_(w, extra) {
+  const out = {
+    id: String(w['Walk ID']), leaderId: String(w['Leader ID']), status: w['Status'], title: w['Title'],
+    date: dateText_(w['Date']), start: timeText_(w['Start']), end: timeText_(w['End']), repeats: w['Repeats'],
+    place: w['Place'], address: w['Address'], lat: Number(w['Lat']), lng: Number(w['Lng']),
+    find: w['How to find the spot'], parking: w['Parking'], spots: Number(w['Spots']) || 0,
+    shorter: w['Shorter route'], description: w['Description']
   };
+  out.dateText = niceDate_(out.date);
+  out.timeText = niceTime_(out.start) + (out.end ? ' to ' + niceTime_(out.end) : '');
+  return Object.assign(out, extra || {});
+}
+function leaderPublic_(l) {
+  return { id: String(l['Leader ID']), name: l['Name'], city: l['City'], background: l['Background'], bio: l['Bio'], photo: l['Photo'] };
 }
 
-/** GET ?action=count&walk=<id>  ->  {going, waitlist, capacity} */
+/* ===================== GET ===================== */
+
 function doGet(e) {
+  ensureSetup_();
   const p = (e && e.parameter) || {};
-  if (p.action === 'count' && WALKS[p.walk]) return json_({ ok: true, ...counts_(p.walk) });
+  if (p.action === 'walks') return json_(listWalks_());
+  if (p.action === 'count') return json_(countOut_(p.walk));
+  if (p.action === 'leader') return json_(leaderPage_(p.code));
+  if (p.action === 'review') return reviewPage_(p.code);
   return json_({ ok: false, error: 'unknown_request' });
 }
 
-/** POST text/plain JSON: {action: 'signup'|'cancel'|'message', ...} */
+function counts_(walkId) {
+  const rs = readTab_('Sign-ups').filter(r => String(r['Walk']) === String(walkId));
+  return { going: rs.filter(r => r['Status'] === 'Going').length, waitlist: rs.filter(r => r['Status'] === 'Waitlist').length };
+}
+function countOut_(walkId) {
+  const w = readTab_('Walks').find(x => String(x['Walk ID']) === String(walkId) && x['Status'] === 'Live');
+  if (!w) return { ok: false, error: 'unknown_walk' };
+  return Object.assign({ ok: true, capacity: Number(w['Spots']) || 0 }, counts_(walkId));
+}
+
+function listWalks_() {
+  const leaders = {};
+  readTab_('Leaders').filter(l => l['Status'] === 'Approved' || l['Status'] === 'Changes requested' || l['Status'] === 'Pending review')
+    .forEach(l => { leaders[String(l['Leader ID'])] = leaderPublic_(l); });
+  const signups = readTab_('Sign-ups');
+  const walks = readTab_('Walks').filter(w => w['Status'] === 'Live').map(w => {
+    const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']));
+    return walkOut_(w, {
+      going: rs.filter(r => r['Status'] === 'Going').length,
+      waitlist: rs.filter(r => r['Status'] === 'Waitlist').length,
+      leader: leaders[String(w['Leader ID'])] || null
+    });
+  });
+  return { ok: true, walks: walks };
+}
+
+function leaderByCode_(code) {
+  code = cleanLine_(code, 80);
+  if (!code) return null;
+  return readTab_('Leaders').find(l => String(l['Private link code']) === code) || null;
+}
+function leaderPage_(code) {
+  const l = leaderByCode_(code);
+  if (!l) return { ok: false, error: 'not_found' };
+  const id = String(l['Leader ID']);
+  const signups = readTab_('Sign-ups');
+  const walks = readTab_('Walks').filter(w => String(w['Leader ID']) === id).map(w => {
+    const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
+    return walkOut_(w, {
+      staffNote: w['Staff note'], pendingEdit: !!w['Pending edit'],
+      roster: rs.map(r => ({ status: r['Status'], name: r['Name'], email: r['Email'], phone: r['Phone'], profession: r['Profession'], accommodation: r['Accommodation'] }))
+    });
+  });
+  return {
+    ok: true,
+    leader: Object.assign(leaderPublic_(l), { status: l['Status'], email: l['Email'], phone: l['Phone'], staffNote: l['Staff note'], pendingEdit: !!l['Pending edit'] }),
+    walks: walks
+  };
+}
+
+/* ===================== POST ===================== */
+
 function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
-  if (body.website) return json_({ ok: true }); // honeypot field: bots fill it, people never see it
+  if (body.website) return json_({ ok: true }); // honeypot: bots fill it, people never see it
+  ensureSetup_();
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+  lock.waitLock(25000);
   try {
-    if (body.action === 'signup') return json_(signup_(body));
-    if (body.action === 'cancel') return json_(cancel_(body));
-    if (body.action === 'message') return json_(message_(body));
-    return json_({ ok: false, error: 'unknown_action' });
+    switch (body.action) {
+      case 'signup': return json_(signup_(body));
+      case 'cancel': return json_(cancel_(body));
+      case 'message': return json_(message_(body));
+      case 'apply': return json_(apply_(body));
+      case 'propose': return json_(propose_(body));
+      case 'editWalk': return json_(editWalk_(body));
+      case 'editProfile': return json_(editProfile_(body));
+      case 'sendLink': return json_(sendLink_(body));
+      default: return json_({ ok: false, error: 'unknown_action' });
+    }
   } finally {
     lock.releaseLock();
   }
 }
 
-function clean_(s, max) { return String(s || '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, max || 300); }
-function safeCell_(s) { return /^[=+\-@]/.test(s) ? "'" + s : s; } // stop formulas being injected into the Sheet
+/* ---------- validation ---------- */
+
+function readProfile_(p) {
+  p = p || {};
+  const out = {
+    name: cleanLine_(p.name, 120), email: cleanLine_(p.email, 200).toLowerCase(), phone: cleanLine_(p.phone, 40),
+    city: cleanLine_(p.city, 120), background: cleanLine_(p.background, 200), bio: clean_(p.bio, 1500)
+  };
+  const missing = [];
+  if (!out.name) missing.push('name');
+  if (!/^\S+@\S+\.\S+$/.test(out.email)) missing.push('email');
+  if (out.phone.replace(/\D/g, '').length < 7) missing.push('phone');
+  if (!out.city) missing.push('city');
+  if (!out.background) missing.push('background');
+  if (out.bio.length < 20) missing.push('bio');
+  return { data: out, missing: missing };
+}
+function readWalk_(w) {
+  w = w || {};
+  const out = {
+    title: cleanLine_(w.title, 120), date: cleanLine_(w.date, 10), start: cleanLine_(w.start, 5), end: cleanLine_(w.end, 5),
+    repeats: cleanLine_(w.repeats, 80), place: cleanLine_(w.place, 160), address: cleanLine_(w.address, 200),
+    lat: Number(w.lat), lng: Number(w.lng), find: clean_(w.find, 600), parking: clean_(w.parking, 400),
+    spots: Math.round(Number(w.spots)), shorter: clean_(w.shorter, 400), description: clean_(w.description, 1500)
+  };
+  const missing = [];
+  if (!out.title) missing.push('title');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(out.date)) missing.push('date');
+  if (!/^\d{2}:\d{2}$/.test(out.start)) missing.push('start time');
+  if (out.end && !/^\d{2}:\d{2}$/.test(out.end)) missing.push('end time');
+  if (!out.place) missing.push('place');
+  if (!isFinite(out.lat) || !isFinite(out.lng) || Math.abs(out.lat) > 90 || Math.abs(out.lng) > 180) missing.push('map pin');
+  if (!out.find) missing.push('how to find the spot');
+  if (!(out.spots >= 2 && out.spots <= 50)) missing.push('number of spots (2 to 50)');
+  if (out.description.length < 20) missing.push('description');
+  return { data: out, missing: missing };
+}
+function walkRow_(id, leaderId, status, w) {
+  const now = new Date();
+  return {
+    'Walk ID': id, 'Leader ID': leaderId, 'Status': status, 'Title': safeCell_(w.title), 'Date': "'" + w.date, 'Start': "'" + w.start, 'End': w.end ? "'" + w.end : '',
+    'Repeats': safeCell_(w.repeats), 'Place': safeCell_(w.place), 'Address': safeCell_(w.address), 'Lat': w.lat, 'Lng': w.lng,
+    'How to find the spot': safeCell_(w.find), 'Parking': safeCell_(w.parking), 'Spots': w.spots, 'Shorter route': safeCell_(w.shorter),
+    'Description': safeCell_(w.description), 'Staff note': '', 'Pending edit': '', 'Created': now, 'Updated': now
+  };
+}
+function walkCells_(w) {
+  return {
+    'Title': safeCell_(w.title), 'Date': "'" + w.date, 'Start': "'" + w.start, 'End': w.end ? "'" + w.end : '', 'Repeats': safeCell_(w.repeats),
+    'Place': safeCell_(w.place), 'Address': safeCell_(w.address), 'Lat': w.lat, 'Lng': w.lng, 'How to find the spot': safeCell_(w.find),
+    'Parking': safeCell_(w.parking), 'Spots': w.spots, 'Shorter route': safeCell_(w.shorter), 'Description': safeCell_(w.description), 'Updated': new Date()
+  };
+}
+function profileCells_(p) {
+  const c = { 'Name': safeCell_(p.name), 'Phone': safeCell_(p.phone), 'City': safeCell_(p.city), 'Background': safeCell_(p.background), 'Bio': safeCell_(p.bio), 'Updated': new Date() };
+  if (p.photo !== undefined) c['Photo'] = p.photo;
+  return c;
+}
+
+/* ---------- photos ---------- */
+
+function getPhotoFolder_() {
+  const name = 'Resilient Healers walk leader photos';
+  const it = DriveApp.getFoldersByName(name);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
+}
+function savePhoto_(dataUrl, leaderId) {
+  const m = /^data:(image\/(jpeg|png));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) return null;
+  const bytes = Utilities.base64Decode(m[3]);
+  if (bytes.length > 1500000) return null;
+  const blob = Utilities.newBlob(bytes, m[1], leaderId + (m[2] === 'png' ? '.png' : '.jpg'));
+  const file = getPhotoFolder_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600';
+}
+
+/* ---------- reviews ---------- */
+
+function openReview_(type, leaderId, walkId) {
+  const code = newCode_();
+  appendObj_('Reviews', { 'Review code': code, 'Type': type, 'Leader ID': leaderId, 'Walk ID': walkId || '', 'Status': 'Open', 'Created': new Date() });
+  const reviewUrl = ScriptApp.getService().getUrl() + '?action=review&code=' + code;
+  const labels = { application: 'New walk leader application', walk: 'New walk proposal', 'walk-edit': 'Changes to a live walk', 'profile-edit': 'Walk leader profile changes' };
+  const leader = readTab_('Leaders').find(l => String(l['Leader ID']) === String(leaderId));
+  const walk = walkId ? readTab_('Walks').find(w => String(w['Walk ID']) === String(walkId)) : null;
+  const to = staffEmail_();
+  if (to) {
+    MailApp.sendEmail({
+      to: to, name: 'Resilient Healers',
+      subject: (labels[type] || 'Review needed') + ': ' + (leader ? leader['Name'] : '') + (walk ? ' · ' + walk['Title'] : ''),
+      body: [labels[type] || 'Something needs review.', '', 'Walk leader: ' + (leader ? leader['Name'] + ' (' + leader['Email'] + ')' : ''),
+        walk ? 'Walk: ' + walk['Title'] + ', ' + niceDate_(dateText_(walk['Date'])) : '', '',
+        'Review it and approve or request changes here:', reviewUrl].join('\n')
+    });
+  }
+  return code;
+}
+
+function closeOpenReviews_(leaderId, walkId, types) {
+  readTab_('Reviews').forEach(r => {
+    if (r['Status'] === 'Open' && String(r['Leader ID']) === String(leaderId) && String(r['Walk ID'] || '') === String(walkId || '') && types.indexOf(r['Type']) >= 0) {
+      writeCells_('Reviews', r._row, { 'Status': 'Replaced', 'Decided': new Date() });
+    }
+  });
+}
+
+/* ---------- apply: profile + first walk ---------- */
+
+function apply_(b) {
+  const p = readProfile_(b.profile), w = readWalk_(b.walk);
+  const missing = p.missing.concat(w.missing);
+  if (missing.length) return { ok: false, error: 'missing_fields', missing: missing };
+  const existing = readTab_('Leaders').find(l => String(l['Email']).toLowerCase() === p.data.email);
+  if (existing) {
+    sendLinkEmail_(existing);
+    return { ok: true, existing: true };
+  }
+  const leaderId = newId_('L'), code = newCode_(), now = new Date();
+  const photo = b.profile && b.profile.photo ? savePhoto_(b.profile.photo, leaderId) : '';
+  appendObj_('Leaders', {
+    'Leader ID': leaderId, 'Status': 'Pending review', 'Name': safeCell_(p.data.name), 'Email': safeCell_(p.data.email), 'Phone': safeCell_(p.data.phone),
+    'City': safeCell_(p.data.city), 'Background': safeCell_(p.data.background), 'Bio': safeCell_(p.data.bio), 'Photo': photo || '',
+    'Private link code': code, 'Created': now, 'Updated': now
+  });
+  const walkId = newId_('W');
+  appendObj_('Walks', walkRow_(walkId, leaderId, 'Pending review', w.data));
+  openReview_('application', leaderId, walkId);
+  MailApp.sendEmail({
+    to: p.data.email, name: 'Resilient Healers',
+    subject: 'We got your application to lead a walk',
+    body: ['Hi ' + p.data.name.split(' ')[0] + ',', '', 'Thanks for applying to lead a Resilient Healers walk. Our team will review your profile and your first walk, "' + w.data.title + '", and email you.', '',
+      'You can check its status, or make changes, from your walk leader page:', leaderLink_(code), '', 'Keep this email: that link is your private way back to your walk leader page.', '', 'Resilient Healers'].join('\n')
+  });
+  return { ok: true, leaderLink: leaderLink_(code) };
+}
+
+function leaderLink_(code) { return siteUrl_() + '?leader=' + encodeURIComponent(code) + '#my-walks'; }
+
+/* ---------- approved leaders: propose a walk ---------- */
+
+function propose_(b) {
+  const l = leaderByCode_(b.code);
+  if (!l) return { ok: false, error: 'not_found' };
+  if (l['Status'] !== 'Approved') return { ok: false, error: 'not_approved' };
+  const w = readWalk_(b.walk);
+  if (w.missing.length) return { ok: false, error: 'missing_fields', missing: w.missing };
+  const walkId = newId_('W');
+  appendObj_('Walks', walkRow_(walkId, String(l['Leader ID']), 'Pending review', w.data));
+  openReview_('walk', String(l['Leader ID']), walkId);
+  return { ok: true, walkId: walkId };
+}
+
+/* ---------- edit or resubmit a walk ---------- */
+
+function editWalk_(b) {
+  const l = leaderByCode_(b.code);
+  if (!l) return { ok: false, error: 'not_found' };
+  const walk = readTab_('Walks').find(x => String(x['Walk ID']) === String(b.walkId) && String(x['Leader ID']) === String(l['Leader ID']));
+  if (!walk) return { ok: false, error: 'not_found' };
+  const w = readWalk_(b.walk);
+  if (w.missing.length) return { ok: false, error: 'missing_fields', missing: w.missing };
+  const leaderId = String(l['Leader ID']), walkId = String(walk['Walk ID']);
+  if (walk['Status'] === 'Live') {
+    // Live walk: keep it live with its current details until staff approve the edit.
+    writeCells_('Walks', walk._row, { 'Pending edit': JSON.stringify(w.data), 'Staff note': '', 'Updated': new Date() });
+    closeOpenReviews_(leaderId, walkId, ['walk-edit']);
+    openReview_('walk-edit', leaderId, walkId);
+    return { ok: true, status: 'Live', pendingEdit: true };
+  }
+  // Pending review or Changes requested: update in place and (re)send for review.
+  const cells = walkCells_(w.data);
+  cells['Status'] = 'Pending review'; cells['Staff note'] = '';
+  writeCells_('Walks', walk._row, cells);
+  if (walk['Status'] === 'Changes requested') {
+    if (l['Status'] === 'Approved') openReview_('walk', leaderId, walkId);
+    else resubmitApplication_(l, walkId);
+  }
+  return { ok: true, status: 'Pending review' };
+}
+
+/* ---------- edit or resubmit the profile ---------- */
+
+function editProfile_(b) {
+  const l = leaderByCode_(b.code);
+  if (!l) return { ok: false, error: 'not_found' };
+  const p = readProfile_(Object.assign({}, b.profile, { email: l['Email'] }));
+  if (p.missing.length) return { ok: false, error: 'missing_fields', missing: p.missing };
+  const leaderId = String(l['Leader ID']);
+  if (b.profile && b.profile.photo) {
+    const url = savePhoto_(b.profile.photo, leaderId);
+    if (url) p.data.photo = url;
+  }
+  if (l['Status'] === 'Approved') {
+    writeCells_('Leaders', l._row, { 'Pending edit': JSON.stringify(p.data), 'Staff note': '', 'Updated': new Date() });
+    closeOpenReviews_(leaderId, '', ['profile-edit']);
+    openReview_('profile-edit', leaderId, '');
+    return { ok: true, status: 'Approved', pendingEdit: true };
+  }
+  const cells = profileCells_(p.data);
+  cells['Status'] = 'Pending review'; cells['Staff note'] = '';
+  writeCells_('Leaders', l._row, cells);
+  if (l['Status'] === 'Changes requested') {
+    const first = readTab_('Walks').find(w => String(w['Leader ID']) === leaderId && w['Status'] !== 'Live');
+    resubmitApplication_(l, first ? String(first['Walk ID']) : '');
+  }
+  return { ok: true, status: 'Pending review' };
+}
+
+function resubmitApplication_(l, walkId) {
+  const leaderId = String(l['Leader ID']);
+  writeCells_('Leaders', l._row, { 'Status': 'Pending review', 'Staff note': '' });
+  if (walkId) {
+    const w = readTab_('Walks').find(x => String(x['Walk ID']) === String(walkId));
+    if (w) writeCells_('Walks', w._row, { 'Status': 'Pending review', 'Staff note': '' });
+  }
+  closeOpenReviews_(leaderId, walkId, ['application']);
+  openReview_('application', leaderId, walkId);
+}
+
+/* ---------- lost link ---------- */
+
+function sendLink_(b) {
+  const email = cleanLine_(b.email, 200).toLowerCase();
+  const l = readTab_('Leaders').find(x => String(x['Email']).toLowerCase() === email);
+  if (l) sendLinkEmail_(l);
+  return { ok: true }; // same answer either way, so nobody can test which emails are leaders
+}
+function sendLinkEmail_(l) {
+  if (!l['Email']) return;
+  MailApp.sendEmail({
+    to: String(l['Email']), name: 'Resilient Healers', subject: 'Your Resilient Healers walk leader link',
+    body: ['Hi ' + String(l['Name']).split(' ')[0] + ',', '', 'Here is your private link to your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'].join('\n')
+  });
+}
+
+/* ===================== staff review page ===================== */
+
+function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function reviewPage_(code) {
+  const r = readTab_('Reviews').find(x => String(x['Review code']) === cleanLine_(code, 80));
+  const head = '<meta name="viewport" content="width=device-width, initial-scale=1"><style>' +
+    'body{font-family:"Nunito Sans",Avenir,"Segoe UI",system-ui,sans-serif;background:#f8f4f1;color:#411e06;margin:0;padding:24px 16px;line-height:1.55;font-size:17px}' +
+    '.w{max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:18px}h1,h2{font-family:Georgia,serif;margin:0}h1{font-size:30px}h2{font-size:22px}' +
+    '.card{background:#fff;border:1px solid #e2d6cd;border-radius:14px;padding:16px 18px}dl{display:grid;grid-template-columns:10rem 1fr;gap:6px 12px;margin:0}dt{font-weight:700;color:#6f5441}dd{margin:0;white-space:pre-wrap}' +
+    '.chip{display:inline-block;background:#f1e1f4;color:#7c360c;border-radius:999px;padding:2px 10px;font-weight:700;font-size:14px}' +
+    'button{font:inherit;font-weight:700;border-radius:999px;padding:10px 20px;border:2px solid #a05222;cursor:pointer;min-height:46px}.ok{background:#a05222;color:#fff}.no{background:#fff;color:#7c360c;border-color:#7c360c}' +
+    'textarea{font:inherit;width:100%;box-sizing:border-box;min-height:6rem;border:2px solid #e2d6cd;border-radius:10px;padding:10px}.row{display:flex;flex-wrap:wrap;gap:10px}img{max-width:160px;border-radius:12px}' +
+    '@media(max-width:30rem){dl{grid-template-columns:1fr}}</style>';
+  if (!r) return HtmlService.createHtmlOutput(head + '<div class="w"><h1>Review not found</h1><p>This review link isn\'t valid.</p></div>').setTitle('Resilient Healers review');
+  const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(r['Leader ID']));
+  const w = r['Walk ID'] ? readTab_('Walks').find(x => String(x['Walk ID']) === String(r['Walk ID'])) : null;
+  const labels = { application: 'New walk leader application', walk: 'New walk proposal', 'walk-edit': 'Changes to a live walk', 'profile-edit': 'Walk leader profile changes' };
+
+  let profile = l ? {
+    Name: l['Name'], Email: l['Email'], Phone: l['Phone'], City: l['City'], Background: l['Background'], Bio: l['Bio']
+  } : {};
+  let photo = l ? l['Photo'] : '';
+  if (r['Type'] === 'profile-edit' && l && l['Pending edit']) {
+    const pe = JSON.parse(l['Pending edit']);
+    profile = { Name: pe.name, Email: l['Email'], Phone: pe.phone, City: pe.city, Background: pe.background, Bio: pe.bio };
+    if (pe.photo) photo = pe.photo;
+  }
+  let walk = null;
+  if (w) {
+    const src = (r['Type'] === 'walk-edit' && w['Pending edit']) ? JSON.parse(w['Pending edit']) : walkOut_(w);
+    walk = {
+      Title: src.title, Date: niceDate_(src.date), Time: niceTime_(src.start) + (src.end ? ' to ' + niceTime_(src.end) : ''), Repeats: src.repeats,
+      Place: src.place, Address: src.address, Pin: src.lat + ', ' + src.lng, 'How to find the spot': src.find, Parking: src.parking,
+      Spots: src.spots, 'Shorter route': src.shorter, Description: src.description
+    };
+  }
+  const dl = o => '<dl>' + Object.keys(o).map(k => '<dt>' + esc_(k) + '</dt><dd>' + esc_(o[k]) + '</dd>').join('') + '</dl>';
+  const showProfile = r['Type'] === 'application' || r['Type'] === 'profile-edit';
+  const showWalk = !!walk && r['Type'] !== 'profile-edit';
+  const decided = r['Status'] !== 'Open';
+  const html = head + '<div class="w">' +
+    '<p class="chip">' + esc_(labels[r['Type']] || r['Type']) + '</p><h1>' + esc_(l ? l['Name'] : '') + '</h1>' +
+    (showProfile ? '<div class="card"><h2>Walk leader profile</h2>' + (photo ? '<p><img alt="Photo of ' + esc_(profile.Name) + '" src="' + esc_(photo) + '"></p>' : '') + dl(profile) + '</div>' : '') +
+    (showWalk ? '<div class="card"><h2>Walk</h2>' + dl(walk) + '<p><a target="_blank" href="https://www.google.com/maps/search/?api=1&query=' + esc_(walk.Pin.replace(' ', '')) + '">Check the pin in Google Maps</a></p></div>' : '') +
+    (decided
+      ? '<div class="card"><h2>Already decided</h2><p>' + esc_(r['Status']) + (r['Staff note'] ? ': ' + esc_(r['Staff note']) : '') + '</p></div>'
+      : '<div class="card" id="act"><h2>Your decision</h2><div class="row"><button class="ok" id="approve">Approve</button></div>' +
+        '<p><label for="note"><strong>Or request changes.</strong> Tell the walk leader what to fix:</label></p><textarea id="note"></textarea>' +
+        '<div class="row"><button class="no" id="changes">Request changes</button></div><p id="msg" role="status"></p></div>') +
+    '</div><script>' +
+    'function go(d){var n=document.getElementById("note").value.trim();if(d==="changes"&&!n){document.getElementById("msg").textContent="Add a note so the walk leader knows what to change.";return;}' +
+    'document.querySelectorAll("button").forEach(function(b){b.disabled=true});document.getElementById("msg").textContent="Saving…";' +
+    'google.script.run.withSuccessHandler(function(t){document.getElementById("act").innerHTML="<h2>Done</h2><p>"+t+"</p>"}).withFailureHandler(function(e){document.getElementById("msg").textContent="That didn\'t save: "+e.message;document.querySelectorAll("button").forEach(function(b){b.disabled=false})}).decide(' + JSON.stringify(String(r['Review code'])) + ',d,n)}' +
+    'var a=document.getElementById("approve");if(a){a.onclick=function(){go("approve")};document.getElementById("changes").onclick=function(){go("changes")}}' +
+    '</script>';
+  return HtmlService.createHtmlOutput(html).setTitle('Resilient Healers review').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/** Called from the review page. */
+function decide(code, decision, note) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const r = readTab_('Reviews').find(x => String(x['Review code']) === String(code));
+    if (!r) throw new Error('Review not found.');
+    if (r['Status'] !== 'Open') return 'This was already decided (' + r['Status'] + ').';
+    note = clean_(note, 1500);
+    const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(r['Leader ID']));
+    const w = r['Walk ID'] ? readTab_('Walks').find(x => String(x['Walk ID']) === String(r['Walk ID'])) : null;
+    const approve = decision === 'approve';
+    const t = r['Type'];
+
+    if (t === 'application') {
+      writeCells_('Leaders', l._row, { 'Status': approve ? 'Approved' : 'Changes requested', 'Staff note': approve ? '' : note, 'Updated': new Date() });
+      if (w) writeCells_('Walks', w._row, { 'Status': approve ? 'Live' : 'Changes requested', 'Staff note': approve ? '' : note, 'Updated': new Date() });
+    } else if (t === 'walk') {
+      writeCells_('Walks', w._row, { 'Status': approve ? 'Live' : 'Changes requested', 'Staff note': approve ? '' : note, 'Updated': new Date() });
+    } else if (t === 'walk-edit') {
+      if (approve && w['Pending edit']) {
+        const cells = walkCells_(JSON.parse(w['Pending edit']));
+        cells['Pending edit'] = ''; cells['Staff note'] = '';
+        writeCells_('Walks', w._row, cells);
+      } else {
+        writeCells_('Walks', w._row, { 'Pending edit': '', 'Staff note': note, 'Updated': new Date() });
+      }
+    } else if (t === 'profile-edit') {
+      if (approve && l['Pending edit']) {
+        const cells = profileCells_(JSON.parse(l['Pending edit']));
+        cells['Pending edit'] = ''; cells['Staff note'] = '';
+        writeCells_('Leaders', l._row, cells);
+      } else {
+        writeCells_('Leaders', l._row, { 'Pending edit': '', 'Staff note': note, 'Updated': new Date() });
+      }
+    }
+    writeCells_('Reviews', r._row, { 'Status': approve ? 'Approved' : 'Changes requested', 'Decided': new Date(), 'Staff note': note });
+
+    // Tell the walk leader.
+    const first = String(l['Name']).split(' ')[0];
+    const what = { application: 'your application and first walk', walk: 'your walk "' + (w ? w['Title'] : '') + '"', 'walk-edit': 'your changes to "' + (w ? w['Title'] : '') + '"', 'profile-edit': 'your profile changes' }[t];
+    const lines = approve
+      ? ['Hi ' + first + ',', '', 'Good news: we approved ' + what + '.' + (t === 'application' || t === 'walk' ? ' It is now live on the Resilient Healers map, and people can sign up.' : ''), '',
+         'Your walk leader page, where you can see sign-ups and propose new walks:', leaderLink_(l['Private link code']), '', 'Resilient Healers']
+      : ['Hi ' + first + ',', '', 'Thanks for ' + what.replace(/^your /, 'your ') + '. Before it goes live, we have a request:', '', note, '',
+         'Make the changes and resubmit from your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'];
+    if (l['Email']) MailApp.sendEmail({ to: String(l['Email']), name: 'Resilient Healers', subject: approve ? 'Approved: ' + what.replace(/^your /, '') : 'Changes requested: ' + what.replace(/^your /, ''), body: lines.join('\n') });
+    return approve ? 'Approved. We emailed the walk leader.' : 'Changes requested. We emailed the walk leader your note.';
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ===================== walkers: sign-up, cancel, contact ===================== */
+
+function liveWalk_(walkId) {
+  return readTab_('Walks').find(w => String(w['Walk ID']) === String(walkId) && w['Status'] === 'Live') || null;
+}
+function walkWhen_(w) { const o = walkOut_(w); return o.dateText + ', ' + o.timeText; }
+function walkWhere_(w) { return w['Place'] + (w['How to find the spot'] ? '. ' + w['How to find the spot'] : ''); }
 
 function signup_(b) {
-  const walk = WALKS[b.walk];
+  const walk = liveWalk_(b.walk);
   if (!walk) return { ok: false, error: 'unknown_walk' };
+  const capacity = Number(walk['Spots']) || 0;
   const d = {
-    name: clean_(b.name, 120), email: clean_(b.email, 200).toLowerCase(), phone: clean_(b.phone, 40),
-    profession: clean_(b.profession, 120), accommodation: clean_(b.accommodation, 500)
+    name: cleanLine_(b.name, 120), email: cleanLine_(b.email, 200).toLowerCase(), phone: cleanLine_(b.phone, 40),
+    profession: cleanLine_(b.profession, 120), accommodation: cleanLine_(b.accommodation, 500)
   };
   if (!d.name || !/^\S+@\S+\.\S+$/.test(d.email) || d.phone.replace(/\D/g, '').length < 7 || !d.profession || b.hcw !== true) {
     return { ok: false, error: 'missing_fields' };
   }
-  const already = rows_().find(r => r.walk === b.walk && r.email === d.email && (r.status === 'Going' || r.status === 'Waitlist'));
-  if (already) return { ok: true, status: already.status === 'Going' ? 'going' : 'waitlist', duplicate: true, ...counts_(b.walk) };
+  const rows = readTab_('Sign-ups');
+  const already = rows.find(r => String(r['Walk']) === String(b.walk) && String(r['Email']).toLowerCase() === d.email && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
+  if (already) return Object.assign({ ok: true, status: already['Status'] === 'Going' ? 'going' : 'waitlist', duplicate: true, capacity: capacity }, counts_(b.walk));
 
   const c = counts_(b.walk);
-  const status = c.going < walk.capacity ? 'Going' : 'Waitlist';
+  const status = c.going < capacity ? 'Going' : 'Waitlist';
   const code = Utilities.getUuid();
   const now = new Date();
-  signupsSheet_().appendRow([now, b.walk, status, safeCell_(d.name), safeCell_(d.email), safeCell_(d.phone), safeCell_(d.profession), safeCell_(d.accommodation), code, now]);
+  appendObj_('Sign-ups', {
+    'Signed up': now, 'Walk': String(b.walk), 'Status': status, 'Name': safeCell_(d.name), 'Email': safeCell_(d.email), 'Phone': safeCell_(d.phone),
+    'Profession': safeCell_(d.profession), 'Accommodation': safeCell_(d.accommodation), 'Cancel code': code, 'Updated': now
+  });
 
-  const cancelUrl = (props_().getProperty('SITE_URL') || '') + '?cancel=' + encodeURIComponent(code) + '#walk';
+  const cancelUrl = siteUrl_() + '?walk=' + encodeURIComponent(b.walk) + '&cancel=' + encodeURIComponent(code) + '#walk';
   const first = d.name.split(' ')[0];
-  const subject = status === 'Going' ? "You're signed up: " + walk.title : "You're on the waitlist: " + walk.title;
+  const subject = status === 'Going' ? "You're signed up: " + walk['Title'] : "You're on the waitlist: " + walk['Title'];
   const lines = status === 'Going'
-    ? ['Hi ' + first + ',', '', "You're signed up for the Resilient Healers walk.", '', 'When: ' + walk.when, 'Where: ' + walk.where, '', 'Bring a water bottle.', '', "Can't make it? Cancel here so someone on the waitlist can take your spot:", cancelUrl, '', 'See you there,', 'Resilient Healers']
-    : ['Hi ' + first + ',', '', 'The walk is full right now, so you are on the waitlist. If a spot opens, you will move up automatically and we will email you.', '', 'When: ' + walk.when, 'Where: ' + walk.where, '', 'To leave the waitlist:', cancelUrl, '', 'Resilient Healers'];
+    ? ['Hi ' + first + ',', '', "You're signed up for the Resilient Healers walk.", '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'Bring a water bottle.', '', "Can't make it? Cancel here so someone on the waitlist can take your spot:", cancelUrl, '', 'See you there,', 'Resilient Healers']
+    : ['Hi ' + first + ',', '', 'The walk is full right now, so you are on the waitlist. If a spot opens, you will move up automatically and we will email you.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'To leave the waitlist:', cancelUrl, '', 'Resilient Healers'];
   MailApp.sendEmail({ to: d.email, subject: subject, body: lines.join('\n'), name: 'Resilient Healers' });
 
-  return { ok: true, status: status === 'Going' ? 'going' : 'waitlist', ...counts_(b.walk) };
+  return Object.assign({ ok: true, status: status === 'Going' ? 'going' : 'waitlist', capacity: capacity }, counts_(b.walk));
 }
 
 function cancel_(b) {
-  const code = clean_(b.code, 80);
+  const code = cleanLine_(b.code, 80);
   if (!code) return { ok: false, error: 'missing_code' };
-  const rs = rows_();
-  const r = rs.find(x => x.code === code);
+  const rows = readTab_('Sign-ups');
+  const r = rows.find(x => String(x['Cancel code']) === code);
   if (!r) return { ok: false, error: 'not_found' };
-  if (r.status === 'Cancelled') return { ok: true, already: true, ...counts_(r.walk) };
-  const sh = signupsSheet_();
-  const wasGoing = r.status === 'Going';
-  sh.getRange(r.row, 3).setValue('Cancelled');
-  sh.getRange(r.row, 10).setValue(new Date());
+  const walkId = String(r['Walk']);
+  const walk = readTab_('Walks').find(w => String(w['Walk ID']) === walkId);
+  const capacity = walk ? Number(walk['Spots']) || 0 : 0;
+  if (r['Status'] === 'Cancelled') return Object.assign({ ok: true, already: true, capacity: capacity }, counts_(walkId));
+  const wasGoing = r['Status'] === 'Going';
+  writeCells_('Sign-ups', r._row, { 'Status': 'Cancelled', 'Updated': new Date() });
 
-  if (wasGoing) {
-    const walk = WALKS[r.walk];
-    const next = rs.filter(x => x.walk === r.walk && x.status === 'Waitlist').sort((a, c) => a.ts - c.ts)[0];
-    if (next && walk) {
-      sh.getRange(next.row, 3).setValue('Going');
-      sh.getRange(next.row, 10).setValue(new Date());
-      const cancelUrl = (props_().getProperty('SITE_URL') || '') + '?cancel=' + encodeURIComponent(next.code) + '#walk';
+  if (wasGoing && walk) {
+    const next = rows.filter(x => String(x['Walk']) === walkId && x['Status'] === 'Waitlist').sort((a, c) => a['Signed up'] - c['Signed up'])[0];
+    if (next) {
+      writeCells_('Sign-ups', next._row, { 'Status': 'Going', 'Updated': new Date() });
+      const cancelUrl = siteUrl_() + '?walk=' + encodeURIComponent(walkId) + '&cancel=' + encodeURIComponent(next['Cancel code']) + '#walk';
       MailApp.sendEmail({
-        to: next.email, name: 'Resilient Healers',
-        subject: "A spot opened up: you're in for " + walk.title,
-        body: ['Hi ' + String(next.name).split(' ')[0] + ',', '', 'Good news: a spot opened up and you are now signed up.', '', 'When: ' + walk.when, 'Where: ' + walk.where, '', "Can't make it? Cancel here:", cancelUrl, '', 'Resilient Healers'].join('\n')
+        to: String(next['Email']), name: 'Resilient Healers',
+        subject: "A spot opened up: you're in for " + walk['Title'],
+        body: ['Hi ' + String(next['Name']).split(' ')[0] + ',', '', 'Good news: a spot opened up and you are now signed up.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', "Can't make it? Cancel here:", cancelUrl, '', 'Resilient Healers'].join('\n')
       });
     }
   }
-  return { ok: true, ...counts_(r.walk) };
+  return Object.assign({ ok: true, capacity: capacity }, counts_(walkId));
 }
 
 function message_(b) {
-  const m = { name: clean_(b.name, 120), email: clean_(b.email, 200), message: String(b.message || '').trim().slice(0, 4000) };
+  const m = { name: cleanLine_(b.name, 120), email: cleanLine_(b.email, 200), message: String(b.message || '').trim().slice(0, 4000) };
   if (!m.name || !/^\S+@\S+\.\S+$/.test(m.email) || !m.message) return { ok: false, error: 'missing_fields' };
-  ss_().getSheetByName('Messages').appendRow([new Date(), safeCell_(m.name), safeCell_(m.email), safeCell_(m.message)]);
+  appendObj_('Messages', { 'Received': new Date(), 'Name': safeCell_(m.name), 'Email': safeCell_(m.email), 'Message': safeCell_(m.message) });
   const to = props_().getProperty('ORGANIZER_EMAIL');
   if (to) {
     MailApp.sendEmail({ to: to, replyTo: m.email, name: 'Resilient Healers website', subject: 'New message from ' + m.name, body: m.name + ' (' + m.email + ') wrote:\n\n' + m.message });
