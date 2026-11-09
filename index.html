@@ -170,7 +170,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     </nav>
   </div>
 </header>
-<div class="demo-note" role="note"><div class="wrap">Draft site. Sign-ups and messages are saved only on this device for now.</div></div>
+<div class="demo-note" role="note"><div class="wrap">Draft site. Details marked "Draft" may still change.</div></div>
 
 <main>
   <div class="wrap">
@@ -209,6 +209,13 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
         <h1>December walk at Lake Murray</h1>
         <div class="when"><strong>Sunday, December 13, 2026</strong><span>9:00 to 10:30 AM</span></div>
         <p class="muted">Walk. Connect. Recharge. Led by Priya Reddy, PMHNP-BC, FNP-C.</p>
+      </div>
+
+      <div id="cancel-panel" class="notice notice-ok" hidden>
+        <h3>Cancel your spot?</h3>
+        <p>This frees your place for someone on the waitlist.</p>
+        <div class="btn-row"><button class="btn btn-danger" type="button" id="cancel-yes">Cancel my spot</button><a class="btn btn-ghost" href="#walk">Keep my spot</a></div>
+        <p class="error" id="cancel-msg" role="alert"></p>
       </div>
 
       <div class="spots" aria-live="polite">
@@ -287,6 +294,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
               <textarea id="f-accom" aria-describedby="f-accom-hint"></textarea>
               <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only Priya sees this.</span>
             </div>
+            <div class="sr-only" aria-hidden="true"><label for="f-website">Leave this empty</label><input type="text" id="f-website" tabindex="-1" autocomplete="off"></div>
             <label class="check" for="f-hcw"><input type="checkbox" id="f-hcw"><span>I work in healthcare.</span></label>
             <p class="error" id="signup-error" role="alert" hidden></p>
             <div class="btn-row"><button class="btn" type="submit" id="signup-submit">Reserve my spot</button></div>
@@ -333,8 +341,9 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
           <div class="field"><label for="c-name">Your name</label><input type="text" id="c-name" autocomplete="name"></div>
           <div class="field"><label for="c-email">Your email</label><input type="email" id="c-email" autocomplete="email"></div>
           <div class="field"><label for="c-msg">Message</label><textarea id="c-msg"></textarea></div>
+          <div class="sr-only" aria-hidden="true"><label for="c-website">Leave this empty</label><input type="text" id="c-website" tabindex="-1" autocomplete="off"></div>
           <p class="error" id="contact-error" role="alert" hidden></p>
-          <div class="btn-row"><button class="btn" type="submit">Send message</button></div>
+          <div class="btn-row"><button class="btn" type="submit" id="contact-submit">Send message</button></div>
         </form>
       </div>
     </div>
@@ -344,7 +353,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Resilient Healers · Draft site. Online sign-ups, confirmation emails and the organizer view arrive once a backend is connected.</p>
+    <p>Resilient Healers · Draft site.</p>
     <p>Map data © OpenStreetMap contributors. City search by OpenStreetMap Nominatim.</p>
   </div>
 </footer>
@@ -371,10 +380,23 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  /* ---------- demo storage (this device only) ---------- */
+  /* ---------- sign-up backend (Google Sheets + Apps Script) ---------- */
+  const API_URL = "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec";
+  const WALK_ID = "lake-murray-2026-12-13";
+  async function apiGet(params) {
+    const res = await fetch(API_URL + "?" + new URLSearchParams(params));
+    return res.json();
+  }
+  async function apiPost(body) {
+    // text/plain keeps this a "simple" request, so browsers skip the CORS preflight Apps Script can't answer
+    const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    return res.json();
+  }
+  // This device remembers its own sign-ups (name + cancel code) so people can cancel from here too.
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
   function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
-  let signups = load();
+  let signups = load().filter(s => s.walk === WALK_ID);
+  let counts = null; // {going, waitlist, capacity} from the Sheet
 
   /* ---------- maps ---------- */
   const pinIcon = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
@@ -468,26 +490,39 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     $("search-results").innerHTML = "";
   });
 
-  /* ---------- walk page: spots + sign-up (demo) ---------- */
+  /* ---------- walk page: spots + sign-up (live, via the Sheet) ---------- */
   function renderSpots() {
-    const going = signups.filter(s => s.status === "going").length;
-    const wait = signups.filter(s => s.status === "waitlist").length;
-    const full = going >= CAPACITY;
-    $("spots-count").innerHTML = going + " <span>of " + CAPACITY + " spots taken</span>";
-    $("spots-bar").style.width = Math.min(100, going / CAPACITY * 100) + "%";
-    $("spots-bar-label").setAttribute("aria-label", going + " of " + CAPACITY + " spots taken");
+    const known = counts !== null;
+    const cap = known ? counts.capacity : CAPACITY;
+    const going = known ? counts.going : 0;
+    const wait = known ? counts.waitlist : 0;
+    const full = known && going >= cap;
+    $("spots-count").innerHTML = (known ? going : "–") + " <span>of " + cap + " spots taken</span>";
+    $("spots-bar").style.width = Math.min(100, going / cap * 100) + "%";
+    $("spots-bar-label").setAttribute("aria-label", known ? going + " of " + cap + " spots taken" : "Checking spots");
     $("spots-chip").textContent = full ? "Full" : "Open";
     $("spots-chip").className = "chip " + (full ? "chip-full" : "chip-open");
-    $("spots-sub").textContent = full ? "This walk is full. Join the waitlist" + (wait ? " (" + wait + " waiting)" : "") + " and you'll move up if someone cancels." : (CAPACITY - going) + (CAPACITY - going === 1 ? " spot" : " spots") + " left.";
+    $("spots-sub").textContent = !known ? "Checking spots…"
+      : full ? "This walk is full. Join the waitlist" + (wait ? " (" + wait + " waiting)" : "") + " and you'll move up if someone cancels."
+      : (cap - going) + (cap - going === 1 ? " spot" : " spots") + " left.";
     $("cta").textContent = full ? "Join the waitlist" : "Sign up";
     $("signup-submit").textContent = full ? "Join the waitlist" : "Reserve my spot";
     $("mine").hidden = signups.length === 0;
     $("mine-list").innerHTML = signups.map(s =>
-      '<li class="row"><div class="row-main"><span class="row-name">' + esc(s.name) + '</span><span class="muted">Sunday, December 13, 9:00 AM · Lake Murray</span></div>' +
-      (s.status === "going" ? '<span class="chip chip-open">Going</span>' : '<span class="chip chip-full">Waitlist</span>') +
-      '<button class="btn btn-small btn-danger" type="button" data-cancel="' + esc(s.id) + '">Cancel</button></li>').join("");
+      '<li class="row"><div class="row-main"><span class="row-name">' + esc(s.name) + '</span><span class="muted">Sunday, December 13, 9:00 AM · Lake Murray</span>' +
+      '<span class="hint">To cancel, use the link in your confirmation email.</span></div>' +
+      (s.status === "going" ? '<span class="chip chip-open">Signed up</span>' : '<span class="chip chip-full">Waitlist</span>') + '</li>').join("");
   }
-  $("signup-form").addEventListener("submit", (e) => {
+  async function refreshCounts() {
+    try {
+      const r = await apiGet({ action: "count", walk: WALK_ID });
+      if (r && r.ok) { counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity }; renderSpots(); return; }
+      throw new Error("bad");
+    } catch (e) {
+      $("spots-sub").textContent = "We can't load the spot count right now. You can still sign up below.";
+    }
+  }
+  $("signup-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = $("signup-error"); err.hidden = true;
     const d = { name: $("f-name").value.trim(), email: $("f-email").value.trim(), phone: $("f-phone").value.trim(), profession: $("f-prof").value.trim(), accommodation: $("f-accom").value.trim() };
@@ -498,49 +533,78 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     if (!d.profession) missing.push("your profession");
     if (!$("f-hcw").checked) missing.push("confirmation that you work in healthcare");
     if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
-    const going = signups.filter(s => s.status === "going").length;
-    const status = going >= CAPACITY ? "waitlist" : "going";
-    signups.push({ ...d, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), status, ts: Date.now() });
-    save(signups);
-    const first = esc(d.name.split(" ")[0]);
-    const done = $("signup-done");
-    done.innerHTML = status === "going"
-      ? "<h3>You're signed up, " + first + ".</h3><p>Sunday, December 13, 2026, 9:00 AM at Lake Murray, in front of the ranger station.</p>"
-      : "<h3>You're on the waitlist, " + first + ".</h3><p>The walk is full right now. If a spot opens, you'll move up automatically.</p>";
-    done.hidden = false;
-    $("signup-form").reset();
-    renderSpots();
-    done.focus();
-  });
-  document.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-cancel]");
-    if (!b) return;
-    if (!b.dataset.armed) {
-      b.dataset.armed = "1"; const t = b.textContent; b.textContent = "Tap again to confirm";
-      setTimeout(() => { if (b.isConnected && b.dataset.armed) { delete b.dataset.armed; b.textContent = t; } }, 4000);
-      return;
+    const btn = $("signup-submit"); const label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Saving your spot…";
+    try {
+      const r = await apiPost({ action: "signup", walk: WALK_ID, ...d, hcw: true, website: $("f-website").value });
+      if (!r || !r.ok) throw new Error(r && r.error || "failed");
+      counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity };
+      signups = signups.filter(s => !(s.name === d.name && s.walk === WALK_ID));
+      signups.push({ name: d.name, walk: WALK_ID, status: r.status, ts: Date.now() });
+      save(signups);
+      const first = esc(d.name.split(" ")[0]);
+      const done = $("signup-done");
+      done.innerHTML = r.duplicate
+        ? "<h3>You're already on the list, " + first + ".</h3><p>We found an earlier sign-up with this email, so nothing changed.</p>"
+        : r.status === "going"
+        ? "<h3>You're signed up, " + first + ".</h3><p>Sunday, December 13, 2026, 9:00 AM at Lake Murray, in front of the ranger station. A confirmation email is on its way to " + esc(d.email) + ". It has a link to cancel if your plans change.</p>"
+        : "<h3>You're on the waitlist, " + first + ".</h3><p>The walk is full right now. If a spot opens, you'll move up automatically and we'll email you at " + esc(d.email) + ".</p>";
+      done.hidden = false;
+      $("signup-form").reset();
+      renderSpots();
+      done.focus();
+    } catch (ex) {
+      err.textContent = "Your sign-up didn't go through. Check your connection and try again, or use the contact form.";
+      err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = label; renderSpots();
     }
-    const gone = signups.find(s => s.id === b.dataset.cancel);
-    signups = signups.filter(s => s.id !== b.dataset.cancel);
-    if (gone && gone.status === "going") {
-      const next = signups.filter(s => s.status === "waitlist").sort((a, c) => a.ts - c.ts)[0];
-      if (next) next.status = "going";
-    }
-    save(signups);
-    renderSpots();
   });
 
-  /* ---------- contact (demo) ---------- */
-  $("contact-form").addEventListener("submit", (e) => {
+  /* ---------- cancel from the email link (?cancel=<code>) ---------- */
+  const cancelCode = new URLSearchParams(location.search).get("cancel");
+  if (cancelCode) {
+    $("cancel-panel").hidden = false;
+    $("cancel-yes").addEventListener("click", async () => {
+      const b = $("cancel-yes"); b.disabled = true; b.textContent = "Cancelling…";
+      try {
+        const r = await apiPost({ action: "cancel", code: cancelCode });
+        if (r && r.ok) {
+          if (r.going != null) counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity };
+          $("cancel-panel").innerHTML = "<h3>Your spot is cancelled.</h3><p>Thanks for letting us know. Someone on the waitlist can take your place.</p>";
+          history.replaceState(null, "", location.pathname + "#walk");
+          renderSpots();
+        } else {
+          $("cancel-panel").innerHTML = "<h3>We couldn't find that sign-up.</h3><p>It may already be cancelled. If you still need help, use the contact form.</p>";
+        }
+      } catch (e) {
+        b.disabled = false; b.textContent = "Cancel my spot";
+        $("cancel-msg").textContent = "That didn't go through. Check your connection and try again.";
+      }
+    });
+  }
+
+  /* ---------- contact (live, via the Sheet) ---------- */
+  $("contact-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = $("contact-error"); err.hidden = true;
     const name = $("c-name").value.trim(), email = $("c-email").value.trim(), msg = $("c-msg").value.trim();
     if (!name || !/^\S+@\S+\.\S+$/.test(email) || !msg) { err.textContent = "Please add your name, a valid email and a message."; err.hidden = false; return; }
-    const done = $("contact-done");
-    done.innerHTML = "<h3>Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>This draft site can't deliver messages yet. Once it's connected, Priya will reply to " + esc(email) + ".</p>";
-    done.hidden = false;
-    $("contact-form").reset();
-    done.focus();
+    const btn = $("contact-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "message", name, email, message: msg, website: $("c-website").value });
+      if (!r || !r.ok) throw new Error("failed");
+      const done = $("contact-done");
+      done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>Priya will reply to " + esc(email) + ".</p>";
+      done.hidden = false;
+      $("contact-form").reset();
+      done.focus();
+    } catch (ex) {
+      err.textContent = "Your message didn't send. Check your connection and try again.";
+      err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = "Send message";
+    }
   });
 
   /* ---------- routing ---------- */
@@ -563,6 +627,8 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
   renderList(null);
   renderSpots();
   route();
+  refreshCounts();
+  if (cancelCode) setTimeout(() => $("cancel-panel").scrollIntoView(), 60);
 })();
 </script>
 </body>
