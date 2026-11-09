@@ -223,6 +223,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <h2 id="list-h">Upcoming walks</h2>
         <ul class="walk-list" id="walk-list"><li class="empty">Loading walks…</li></ul>
       </section>
+      <aside class="sponsor" aria-label="Sponsored" id="find-sponsor" hidden></aside>
     </div>
 
     <!-- WALK PAGE (filled from the Sheet) -->
@@ -291,12 +292,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         </div>
       </section>
 
-      <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden>
-        <span class="sponsor-label">Sponsored</span>
-        <h3>Metamorphosis Coaching with Priya</h3>
-        <p>One-on-one coaching for stress, burnout, career change and life transitions. Free one-hour discovery call.</p>
-        <a href="https://www.metamorphosis-health-coaching.com/" target="_blank" rel="noopener">Visit Metamorphosis Coaching</a>
-      </aside>
+      <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden></aside>
 
       <hr class="rule">
 
@@ -502,7 +498,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 (() => {
   const API_URL = "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec";
   const US_VIEW = { center: [39.5, -98.35], zoom: 4 };
-  const SPONSOR_LEADER = "L-priya";
+  // Local sponsored ads. Each ad covers an area (center + radius). How ads are chosen when several
+  // overlap is tabled for now: this simply shows the nearest ad whose area includes the location.
+  const ADS = [
+    { id: "metamorphosis", name: "Metamorphosis Coaching with Priya", text: "One-on-one coaching for stress, burnout, career change and life transitions. Free one-hour discovery call.",
+      url: "https://www.metamorphosis-health-coaching.com/", linkText: "Visit Metamorphosis Coaching", lat: 32.7157, lng: -117.1611, radiusMiles: 60 }
+  ];
   const KEY = "rh-signups";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -566,6 +567,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(h));
   }
+  function adFor(origin) {
+    if (!origin) return null;
+    return ADS.map(a => ({ a, d: miles(origin, [a.lat, a.lng]) })).filter(x => x.d <= x.a.radiusMiles).sort((x, y) => x.d - y.d).map(x => x.a)[0] || null;
+  }
+  function showAd(el, origin) {
+    const ad = adFor(origin);
+    el.hidden = !ad;
+    el.innerHTML = ad ? '<span class="sponsor-label">Sponsored</span><h3>' + esc(ad.name) + '</h3><p>' + esc(ad.text) + '</p><a href="' + esc(ad.url) + '" target="_blank" rel="noopener">' + esc(ad.linkText) + '</a>' : "";
+  }
   function walkCard(w, d) {
     return '<li class="walk-card"><div class="info"><span class="name">' + esc(w.title) + '</span><span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span><span class="muted">' +
       esc(w.place) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span>' +
@@ -597,6 +607,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     const near = WALKS.filter(w => miles([lat, lng], [w.lat, w.lng]) <= 100).length;
     $("search-status").textContent = "Showing " + label + ". " + (near ? near + (near === 1 ? " walk" : " walks") + " nearby." : "No walks nearby yet.");
     $("search-results").innerHTML = "";
+    showAd($("find-sponsor"), [lat, lng]);
   }
   $("city-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -615,7 +626,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment."; }
   });
   $("show-us").addEventListener("click", () => {
-    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null);
+    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null); $("find-sponsor").hidden = true;
     $("search-status").textContent = "Showing all of the US."; $("search-results").innerHTML = "";
   });
 
@@ -649,7 +660,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-leader-avatar").innerHTML = avatarHTML(w.leader);
     $("w-leader-name").textContent = w.leader ? w.leader.name : "";
     $("w-leader-bg").textContent = w.leader ? w.leader.background : "";
-    $("w-sponsor").hidden = !(w.leader && w.leader.id === SPONSOR_LEADER);
+    showAd($("w-sponsor"), [w.lat, w.lng]);
     renderSpots(w);
     renderMine();
   }
