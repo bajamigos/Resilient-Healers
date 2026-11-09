@@ -25,7 +25,7 @@
 /* ===================== sheet layout ===================== */
 
 const TABS = {
-  'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],
+  'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],   // + columns added in other files
   'Messages': ['Received', 'Name', 'Email', 'Message'],
   'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Sample'],
   'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Photo', 'Photo credit', 'Photo source', 'Sample', 'City', 'Takes over'],
@@ -103,10 +103,10 @@ function setup() {
   }
   getPhotoFolder_();
   if (!siteProp_('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v10-' + SITE_, '1', 21600);
+  CacheService.getScriptCache().put('setup-v11-' + SITE_, '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v10-' + SITE_)) return;
+  if (CacheService.getScriptCache().get('setup-v11-' + SITE_)) return;
   setup();
 }
 
@@ -160,6 +160,10 @@ function niceDate_(ymd) {
 }
 
 /* ===================== shapes sent to the site ===================== */
+
+// The walk agreement walkers accept at sign-up (wording lives in index.html; DRAFT pending lawyer review).
+const AGREEMENT_VERSION_ = '2026-11-09 draft';
+// Its columns ('Photo OK', 'Agreed', 'Agreement version') are added at the end of Sign-ups in Recurring.gs, which loads last.
 
 function walkOut_(w, extra) {
   const out = {
@@ -265,7 +269,7 @@ function leaderPage_(code) {
     return walkOut_(w, {
       staffNote: w['Staff note'], pendingEdit: !!w['Pending edit'], series: seriesDates_(w, 6),
       // Walkers' email and phone are never sent to walk leaders.
-      roster: rs.map(r => ({ status: r['Status'], name: r['Name'], profession: r['Profession'], accommodation: r['Accommodation'] }))
+      roster: rs.map(r => ({ status: r['Status'], name: r['Name'], profession: r['Profession'], accommodation: r['Accommodation'], photoOk: r['Photo OK'] === 'Yes' }))
     });
   });
   return {
@@ -820,7 +824,7 @@ function signup_(b) {
     name: cleanLine_(b.name, 120), email: cleanLine_(b.email, 200).toLowerCase(), phone: cleanLine_(b.phone, 40),
     profession: cleanLine_(b.profession, 120), accommodation: cleanLine_(b.accommodation, 500)
   };
-  if (!d.name || !/^\S+@\S+\.\S+$/.test(d.email) || d.phone.replace(/\D/g, '').length < 7 || !d.profession || b.hcw !== true) {
+  if (!d.name || !/^\S+@\S+\.\S+$/.test(d.email) || d.phone.replace(/\D/g, '').length < 7 || !d.profession || b.hcw !== true || b.agree !== true) {
     return { ok: false, error: 'missing_fields' };
   }
   const rows = readTab_('Sign-ups');
@@ -833,7 +837,8 @@ function signup_(b) {
   const now = new Date();
   appendObj_('Sign-ups', {
     'Signed up': now, 'Walk': String(b.walk), 'Status': status, 'Name': safeCell_(d.name), 'Email': safeCell_(d.email), 'Phone': safeCell_(d.phone),
-    'Profession': safeCell_(d.profession), 'Accommodation': safeCell_(d.accommodation), 'Cancel code': code, 'Updated': now
+    'Profession': safeCell_(d.profession), 'Accommodation': safeCell_(d.accommodation), 'Cancel code': code, 'Updated': now,
+    'Photo OK': b.photoOk === true ? 'Yes' : 'No', 'Agreed': now, 'Agreement version': AGREEMENT_VERSION_
   });
 
   const cancelUrl = siteUrl_() + '?walk=' + encodeURIComponent(b.walk) + '&cancel=' + encodeURIComponent(code) + '#walk';

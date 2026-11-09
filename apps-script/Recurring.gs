@@ -21,7 +21,9 @@
  *  - The "How was your walk?" email offers to save a spot on the next date (?again=<sign-up code>#again).
  */
 
-TABS['Walks'] = TABS['Walks'].concat(['Next walk', 'Skip dates']);   // Skip dates: comma-separated yyyy-mm-dd
+TABS['Walks'] = TABS['Walks'].concat(['Next walk', 'Skip dates']);
+// Walk agreement and photo preference (see Code.gs). Added here because new columns must go at the end, after the other files' columns.
+TABS['Sign-ups'] = TABS['Sign-ups'].concat(['Photo OK', 'Agreed', 'Agreement version']);   // Skip dates: comma-separated yyyy-mm-dd
 
 const NTH_ = ['first', 'second', 'third', 'fourth'];
 const DAYS_ = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -186,6 +188,7 @@ function signupAgain_(b) {
   if (!c || !c.next) return { ok: false, error: 'not_found' };
   const s = c.s;
   return signup_({ walk: String(c.next['Walk ID']), name: String(s['Name']), email: String(s['Email']), phone: String(s['Phone']),
-    profession: String(s['Profession']), accommodation: String(s['Accommodation'] || ''), hcw: true });
+    profession: String(s['Profession']), accommodation: String(s['Accommodation'] || ''), hcw: true,
+    agree: b.agree === true, photoOk: b.photoOk === true });
 }
 function againUrl_(code) { return siteUrl_() + '?again=' + encodeURIComponent(code) + '#again'; }

@@ -74,6 +74,10 @@ main .wrap { padding-block: 2rem 3rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .7rem 1.3rem; border-radius: 999px; border: 2px solid var(--copper); background: var(--copper); color: var(--on-copper); font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
 .btn:hover { filter: brightness(1.07); }
 .btn-ghost { background: transparent; color: var(--copper); }
+.agreement { background: var(--lavender, #f1e1f4); border-radius: 12px; padding: .9rem 1.1rem; }
+.agreement h3 { margin: 0 0 .4rem; }
+.agreement ul { margin: 0; padding-left: 1.2rem; }
+.agreement li { margin: .35rem 0; }
 .btn-small { min-height: 40px; padding: .4rem 1rem; font-size: .95rem; }
 .btn-danger { background: transparent; color: var(--rust); border-color: var(--rust); }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
@@ -385,10 +389,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             <div class="field">
               <label for="f-accom">Mobility accommodations (optional)</label>
               <textarea id="f-accom" aria-describedby="f-accom-hint"></textarea>
-              <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only your walk leader sees this.</span>
+              <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only your walk leader and our staff see this.</span>
             </div>
             <div class="sr-only" aria-hidden="true"><label for="f-website">Leave this empty</label><input type="text" id="f-website" tabindex="-1" autocomplete="off"></div>
             <label class="check" for="f-hcw"><input type="checkbox" id="f-hcw"><span>I work in healthcare.</span></label>
+            <label class="check" for="f-photo"><input type="checkbox" id="f-photo" aria-describedby="f-photo-hint"><span>It's OK to include me in group photos from the walk (optional).</span></label>
+            <span class="hint" id="f-photo-hint">Leave this unchecked and your walk leader will keep you out of photos.</span>
+            <div class="agreement" data-agreement></div>
+            <label class="check" for="f-agree"><input type="checkbox" id="f-agree"><span>I've read and agree to the walk agreement above.</span></label>
+            <p class="hint">How we use your details: <a href="#privacy">privacy policy</a>.</p>
             <p class="error" id="signup-error" role="alert" hidden></p>
             <div class="btn-row"><button class="btn" type="submit" id="signup-submit">Reserve my spot</button></div>
           </form>
@@ -602,7 +611,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       </div>
       <div id="ag-done" class="notice notice-ok" tabindex="-1" hidden></div>
       <p id="ag-msg" hidden></p>
-      <div class="btn-row" id="ag-actions" hidden><button class="btn" type="button" id="ag-go">Save my spot</button></div>
+      <div id="ag-actions" class="stack" hidden>
+        <label class="check" for="ag-photo"><input type="checkbox" id="ag-photo"><span>It's OK to include me in group photos from the walk (optional).</span></label>
+        <div class="agreement" data-agreement></div>
+        <label class="check" for="ag-agree"><input type="checkbox" id="ag-agree"><span>I've read and agree to the walk agreement above.</span></label>
+        <div class="btn-row"><button class="btn" type="button" id="ag-go">Save my spot</button></div>
+      </div>
       <p class="hint" id="ag-hint" hidden>We'll use the same name, email, phone and notes as last time, and email you a confirmation with a cancel link.</p>
       <p class="error" id="ag-error" role="alert" hidden></p>
     </div>
@@ -661,6 +675,65 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       </section>
     </div>
 
+    <!-- PRIVACY POLICY (DRAFT, to be reviewed by a lawyer) -->
+    <div id="view-privacy" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Privacy policy · Draft, November 2026</p>
+        <h1>How we use your details</h1>
+        <p>Resilient Healers runs free small-group walks for healthcare workers. We collect only what we need to run the walks, we don't sell your information, and we don't use it for advertising.</p>
+      </div>
+      <section class="block stack">
+        <h2>What we collect</h2>
+        <ul>
+          <li><strong>When you sign up for a walk:</strong> your name, email, mobile phone, profession, any mobility accommodations you choose to share, whether you're OK being in group photos, and that you agreed to the walk agreement.</li>
+          <li><strong>When you join an interest list:</strong> your name, email and profession.</li>
+          <li><strong>When you message on the site:</strong> your messages, kept as a record of the conversation, and any reports.</li>
+          <li><strong>When you leave a review:</strong> your rating, your words, and the first name and role you choose to show.</li>
+          <li><strong>When you use the contact form:</strong> your name, email and message.</li>
+          <li><strong>When you apply to lead walks:</strong> your name, email, phone, city, background, bio, optional photo, and your walks' details and photos.</li>
+        </ul>
+        <p>We don't use tracking or advertising cookies. Your browser remembers which walks you signed up for, on your device only.</p>
+      </section>
+      <section class="block stack">
+        <h2>Who sees it</h2>
+        <ul>
+          <li><strong>Everyone:</strong> walk details, walk leader profiles, how many people are signed up, and published reviews (first name and role only).</li>
+          <li><strong>Your walk leader:</strong> your name, profession, accommodations and photo preference. Never your email or phone number.</li>
+          <li><strong>Resilient Healers staff:</strong> everything above, to run the walks, keep people safe and handle reports.</li>
+        </ul>
+      </section>
+      <section class="block stack">
+        <h2>Services we use</h2>
+        <ul>
+          <li><strong>Google</strong> stores sign-ups, messages and photos (Google Sheets and Drive) and sends our emails (Gmail).</li>
+          <li><strong>GitHub</strong> hosts this website.</li>
+          <li><strong>OpenStreetMap</strong> provides the maps and place search. What you type in the search box goes to OpenStreetMap to find the place.</li>
+          <li><strong>Google Fonts</strong> and <strong>Wikimedia Commons</strong> supply the fonts and some walk photos.</li>
+        </ul>
+        <p>Like most websites, these services receive your device's internet address when your browser loads the page.</p>
+      </section>
+      <section class="block stack">
+        <h2>Your location</h2>
+        <p>"Use my location" works only after you allow it, and only on your device: it sorts walks by distance. We don't save or send your location.</p>
+      </section>
+      <section class="block stack">
+        <h2>Email</h2>
+        <p>We email you only about walks you signed up for or lists you joined: confirmations, reminders, a "How was your walk?" note, and notices of new messages. No newsletters or marketing.</p>
+      </section>
+      <section class="block stack">
+        <h2>Your choices</h2>
+        <p>Cancel a sign-up or leave a list any time with the link in your email. To see, correct or delete your information, <a href="#contact">contact us</a>. We'll remove it unless we must keep a record, for example of a reported message.</p>
+      </section>
+      <section class="block stack">
+        <h2>Health information</h2>
+        <p>Please share only what helps your walk leader plan, like needing a slower pace. Don't share medical details on the site. Walks are peer support, not healthcare, and the site isn't designed to hold medical records.</p>
+      </section>
+      <section class="block stack">
+        <h2>Questions</h2>
+        <p>Write to us through the <a href="#contact">contact page</a> or at resilienthealers@gmail.com.</p>
+      </section>
+    </div>
+
     <!-- CONTACT -->
     <div id="view-contact" class="stack-lg narrow" hidden>
       <div class="stack">
@@ -688,7 +761,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Resilient Healers · Test site.</p>
+    <p>Resilient Healers · Test site. <a href="#privacy">Privacy policy</a></p>
     <p>Map data © OpenStreetMap contributors. Place search by OpenStreetMap Nominatim.</p>
   </div>
 </footer>
@@ -972,10 +1045,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (d.phone.replace(/\D/g, "").length < 7) missing.push("a phone number");
     if (!d.profession) missing.push("your profession");
     if (!$("f-hcw").checked) missing.push("confirmation that you work in healthcare");
+    if (!$("f-agree").checked) missing.push("your OK to the walk agreement");
     if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
     const btn = $("signup-submit"); btn.disabled = true; btn.textContent = "Saving your spot…";
     try {
-      const r = await apiPost({ action: "signup", walk: w.id, ...d, hcw: true, website: $("f-website").value });
+      const r = await apiPost({ action: "signup", walk: w.id, ...d, hcw: true, agree: true, photoOk: $("f-photo").checked, website: $("f-website").value });
       if (!r || !r.ok) throw new Error((r && r.error) || "failed");
       w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity;
       mine = mine.filter(s => !(s.walk === w.id && s.name === d.name));
@@ -1344,7 +1418,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("me-walks").innerHTML = me.walks.map(w => {
       const going = w.roster.filter(x => x.status === "Going"), waiting = w.roster.filter(x => x.status === "Waitlist");
       const person = (x) => '<li><span class="row-name">' + esc(x.name) + '</span><span class="muted">' + esc(x.profession) + '</span>' +
-        (x.accommodation ? '<span class="accom">Accommodation: ' + esc(x.accommodation) + '</span>' : '') + '</li>';
+        (x.accommodation ? '<span class="accom">Accommodation: ' + esc(x.accommodation) + '</span>' : '') +
+        '<span class="muted">' + (x.photoOk ? 'OK with group photos' : 'Please keep out of photos') + '</span></li>';
       const pend = w.pendingEdit ? "<span>Your changes are waiting for review. The live page keeps its current details until they're approved.</span>" : "";
       return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.title) + '</span>' +
         '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + ' · ' + esc(w.place) + '</span>' +
@@ -1707,6 +1782,17 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { err.textContent = ex.message === "already_reviewed" ? "We've already received your review for this walk." : "Your review didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send my review"; }
   });
 
+  /* ---------- walk agreement (DRAFT wording, November 9, 2026: to be reviewed by a lawyer) ----------
+     Bump AGREEMENT_VERSION whenever the wording changes; the version is saved with each sign-up. */
+  const AGREEMENT_VERSION = "2026-11-09 draft";
+  const AGREEMENT_HTML =
+    '<h3>Walk agreement</h3><ul>' +
+    '<li><strong>Peer support, not care.</strong> These walks are conversation and support among healthcare workers. They are not therapy, counseling or medical care. Walk leaders don\'t give individual medical or mental health advice on walks, even if they are licensed clinicians, and joining a walk doesn\'t make anyone your healthcare provider.</li>' +
+    '<li><strong>Walking has risks.</strong> Uneven ground, falls, traffic, animals, heat and weather. You\'re able to walk this route, you\'ll go at your own pace, and you\'ll check with your own doctor if you\'re unsure.</li>' +
+    '<li><strong>Your own risk.</strong> You take part at your own risk and release Resilient Healers, its walk leaders and volunteers from claims for injury, illness or loss from taking part, as far as the law allows.</li>' +
+    '<li><strong>If you\'re in crisis,</strong> don\'t wait for a walk: call or text <a href="tel:988">988</a> (Suicide and Crisis Lifeline), or call <a href="tel:911">911</a>.</li></ul>';
+  document.querySelectorAll("[data-agreement]").forEach(el => { el.innerHTML = AGREEMENT_HTML; });
+
   /* ---------- save my spot on the next date (?again=<sign-up code>#again) ---------- */
   const againCode = params.get("again");
   let againWalk = null;
@@ -1733,16 +1819,18 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("ag-done").hidden = false; $("ag-done").focus();
   }
   $("ag-go").addEventListener("click", async () => {
-    const err = $("ag-error"), btn = $("ag-go"); err.hidden = true; btn.disabled = true; btn.textContent = "Saving…";
+    const err = $("ag-error"), btn = $("ag-go"); err.hidden = true;
+    if (!$("ag-agree").checked) { err.textContent = "Please check the box to agree to the walk agreement."; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = "Saving…";
     try {
-      const r = await apiPost({ action: "signupAgain", code: againCode });
+      const r = await apiPost({ action: "signupAgain", code: againCode, agree: true, photoOk: $("ag-photo").checked });
       if (!r || !r.ok) throw new Error("failed");
       showAgainDone(r.status, !!r.duplicate);
     } catch (ex) { err.textContent = "That didn't go through. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Try again"; }
   });
 
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate", "again"];
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate", "again", "privacy"];
   const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead", "me-messages": "my-walks" };
   function route() {
     const h = (location.hash || "").slice(1);
