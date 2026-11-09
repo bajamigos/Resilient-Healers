@@ -1,58 +1,450 @@
 [
-{"id":"sd-balboa","lat":32.7325462,"lng":-117.1492345,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Lily_pond_and_Botanical_Building_among_palms%2C_Balboa_Park%2C_San_Diego%2C_California.jpg/960px-Lily_pond_and_Botanical_Building_among_palms%2C_Balboa_Park%2C_San_Diego%2C_California.jpg","page":"https://commons.wikimedia.org/wiki/File:Lily_pond_and_Botanical_Building_among_palms,_Balboa_Park,_San_Diego,_California.jpg","credit":"Christian David, CC BY-SA 4.0"},
-{"id":"sd-missionbay","lat":32.7719069,"lng":-117.2086893,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg/960px-Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg","page":"https://commons.wikimedia.org/wiki/File:Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg","credit":"Tony Webster, CC BY 3.0"},
-{"id":"sd-miramar","lat":32.9165682,"lng":-117.0957023,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Miramar_Reservoir%2C_San_Diego.jpg/960px-Miramar_Reservoir%2C_San_Diego.jpg","page":"https://commons.wikimedia.org/wiki/File:Miramar_Reservoir,_San_Diego.jpg","credit":"Kong of Lasers, CC BY-SA 4.0"},
-{"id":"sd-coronado","lat":32.697772,"lng":-117.170091,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Coronado_Ferry_Landing.jpg/960px-Coronado_Ferry_Landing.jpg","page":"https://commons.wikimedia.org/wiki/File:Coronado_Ferry_Landing.jpg","credit":"Bernard Gagnon, CC BY-SA 3.0"},
-{"id":"sd-liberty","lat":32.7345954,"lng":-117.2132479,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Promenade_-_Liberty_station.jpg/960px-Promenade_-_Liberty_station.jpg","page":"https://commons.wikimedia.org/wiki/File:Promenade_-_Liberty_station.jpg","credit":"Alan Islas, CC BY-SA 4.0"},
-{"id":"lake-murray","lat":32.78509,"lng":-117.04161,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Lake_Murray%2C_San_Diego%2C_CA%2C_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_%283%29.jpg/960px-Lake_Murray%2C_San_Diego%2C_CA%2C_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_%283%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Lake_Murray,_San_Diego,_CA,_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_(3).jpg","credit":"Mountain Mike Johans…, CC BY 3.0"},
-{"id":"boston","lat":42.3587242,"lng":-71.0737127,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Charles_River_Esplanade_Boston_May_2018_panorama.jpg/960px-Charles_River_Esplanade_Boston_May_2018_panorama.jpg","page":"https://commons.wikimedia.org/wiki/File:Charles_River_Esplanade_Boston_May_2018_panorama.jpg","credit":"King of Hearts, CC BY-SA 4.0"},
-{"id":"nyc","lat":40.785451,"lng":-73.9626104,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Jacqueline_Kennedy_Onassis_Reservoir%2C_Central_Park%2C_New_York_City%2C_20231004_1611_2087.jpg/960px-Jacqueline_Kennedy_Onassis_Reservoir%2C_Central_Park%2C_New_York_City%2C_20231004_1611_2087.jpg","page":"https://commons.wikimedia.org/wiki/File:Jacqueline_Kennedy_Onassis_Reservoir,_Central_Park,_New_York_City,_20231004_1611_2087.jpg","credit":"Jakub Hałun, CC BY 4.0"},
-{"id":"philly","lat":39.9569537,"lng":-75.1786946,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Schuylkill_River_Trail_2018.jpg/960px-Schuylkill_River_Trail_2018.jpg","page":"https://commons.wikimedia.org/wiki/File:Schuylkill_River_Trail_2018.jpg","credit":"Ii2nmd, CC BY-SA 4.0"},
-{"id":"baltimore","lat":39.2859597,"lng":-76.6120433,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Inner_Harbor_Promenade.JPG/960px-Inner_Harbor_Promenade.JPG","page":"https://commons.wikimedia.org/wiki/File:Inner_Harbor_Promenade.JPG","credit":"Kimberlyshorter, CC BY-SA 4.0"},
-{"id":"dc","lat":38.8897927,"lng":-77.0222415,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Washington_Monument_and_the_National_Mall_2.jpg/960px-Washington_Monument_and_the_National_Mall_2.jpg","page":"https://commons.wikimedia.org/wiki/File:Washington_Monument_and_the_National_Mall_2.jpg","credit":"Kurt Kaiser, CC0"},
-{"id":"pittsburgh","lat":40.4415144,"lng":-80.0100858,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Point_State_Park_in_Fall.jpg/960px-Point_State_Park_in_Fall.jpg","page":"https://commons.wikimedia.org/wiki/File:Point_State_Park_in_Fall.jpg","credit":"John, CC BY-SA 2.0"},
-{"id":"cleveland","lat":41.4892603,"lng":-81.7379941,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Edgewater_Park_%2826346391210%29.jpg/960px-Edgewater_Park_%2826346391210%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Edgewater_Park_(26346391210).jpg","credit":"Erik Drost, CC BY 2.0"},
-{"id":"columbus","lat":39.9594163,"lng":-83.0031822,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Columbus_Scioto_Mile_%28cropped%29.jpg/960px-Columbus_Scioto_Mile_%28cropped%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Columbus_Scioto_Mile_(cropped).jpg","credit":"Scott, CC BY-SA 2.0"},
-{"id":"cincinnati","lat":39.0952324,"lng":-84.5102436,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Roebling_Bridge_from_Smale_Riverfront_Park%2C_Cincinnati%2C_OH_-_51386405622.jpg/960px-Roebling_Bridge_from_Smale_Riverfront_Park%2C_Cincinnati%2C_OH_-_51386405622.jpg","page":"https://commons.wikimedia.org/wiki/File:Roebling_Bridge_from_Smale_Riverfront_Park,_Cincinnati,_OH_-_51386405622.jpg","credit":"w_lemay, CC BY-SA 2.0"},
-{"id":"detroit","lat":42.3278485,"lng":-83.0389954,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Detroit_Skyline_from_Riverwalk_May_2024.jpg/960px-Detroit_Skyline_from_Riverwalk_May_2024.jpg","page":"https://commons.wikimedia.org/wiki/File:Detroit_Skyline_from_Riverwalk_May_2024.jpg","credit":"TheWxResearcher, CC0"},
-{"id":"chicago","lat":41.9216992,"lng":-87.647832,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Lincoln_Park_kz01.jpg/960px-Lincoln_Park_kz01.jpg","page":"https://commons.wikimedia.org/wiki/File:Lincoln_Park_kz01.jpg","credit":"Krzysztof Ziarnek, Kenraiz, CC BY-SA 4.0"},
-{"id":"milwaukee","lat":43.0326963,"lng":-87.8954344,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Milwaukee_June_2022_13_%28Lakeshore_State_Park%29.jpg/960px-Milwaukee_June_2022_13_%28Lakeshore_State_Park%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Milwaukee_June_2022_13_(Lakeshore_State_Park).jpg","credit":"Michael Barera, CC BY-SA 4.0"},
-{"id":"minneapolis","lat":44.9216567,"lng":-93.3049429,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Minneapolis-Lake_Harriet-2012.jpg/960px-Minneapolis-Lake_Harriet-2012.jpg","page":"https://commons.wikimedia.org/wiki/File:Minneapolis-Lake_Harriet-2012.jpg","credit":"SusanLesch, CC0"},
-{"id":"stlouis","lat":38.6381922,"lng":-90.2847033,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Golden_trees_in_Forest_Park%2C_St._Louis%2C_Missouri.jpg/960px-Golden_trees_in_Forest_Park%2C_St._Louis%2C_Missouri.jpg","page":"https://commons.wikimedia.org/wiki/File:Golden_trees_in_Forest_Park,_St._Louis,_Missouri.jpg","credit":"AmyBautz, CC BY-SA 3.0"},
-{"id":"indy","lat":39.76772,"lng":-86.1762245,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg/960px-White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg","page":"https://commons.wikimedia.org/wiki/File:White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg","credit":"adstarkel, CC BY-SA 2.0"},
-{"id":"louisville","lat":38.2643212,"lng":-85.7289348,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Dusk_in_Waterfront_Park_%289267527279%29.jpg/960px-Dusk_in_Waterfront_Park_%289267527279%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Dusk_in_Waterfront_Park_(9267527279).jpg","credit":"U.S. Department of the Interior, CC BY-SA 2.0"},
-{"id":"nashville","lat":36.1498435,"lng":-86.8140736,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Centennial_Park_Nashville.JPG/960px-Centennial_Park_Nashville.JPG","page":"https://commons.wikimedia.org/wiki/File:Centennial_Park_Nashville.JPG","credit":"Altairisfar, Public domain"},
-{"id":"memphis","lat":35.136167,"lng":-89.8327432,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg/960px-Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg","page":"https://commons.wikimedia.org/wiki/File:Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg","credit":"Thomas R Machnitzki, CC BY 3.0"},
-{"id":"atlanta","lat":33.7890478,"lng":-84.3718862,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Piedmont_Park_Atlanta.jpg/960px-Piedmont_Park_Atlanta.jpg","page":"https://commons.wikimedia.org/wiki/File:Piedmont_Park_Atlanta.jpg","credit":"EternalAhsoka, CC BY-SA 4.0"},
-{"id":"charlotte","lat":35.1915353,"lng":-80.8434432,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Images_at_Freedom_Park_09.jpg/960px-Images_at_Freedom_Park_09.jpg","page":"https://commons.wikimedia.org/wiki/File:Images_at_Freedom_Park_09.jpg","credit":"ReoMartins, CC BY-SA 4.0"},
-{"id":"richmond","lat":37.5354752,"lng":-77.4778401,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Maymont_Japanese_Garden.jpg/960px-Maymont_Japanese_Garden.jpg","page":"https://commons.wikimedia.org/wiki/File:Maymont_Japanese_Garden.jpg","credit":"Sdkb, CC BY-SA 4.0"},
-{"id":"jacksonville","lat":30.3195384,"lng":-81.6551483,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Southbank_Riverwalk_1_%28Jacksonville%2C_Florida%29.jpg/960px-Southbank_Riverwalk_1_%28Jacksonville%2C_Florida%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Southbank_Riverwalk_1_(Jacksonville,_Florida).jpg","credit":"PicoOrdinalo, CC BY-SA 4.0"},
-{"id":"orlando","lat":28.543965,"lng":-81.3704323,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Lake-eola-park-orlando-florida.jpg/960px-Lake-eola-park-orlando-florida.jpg","page":"https://commons.wikimedia.org/wiki/File:Lake-eola-park-orlando-florida.jpg","credit":"OrlandoThings.com, CC BY-SA 4.0"},
-{"id":"tampa","lat":27.9172721,"lng":-82.4912475,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tampa_Bayshore_Blvd_looking_south01.jpg/960px-Tampa_Bayshore_Blvd_looking_south01.jpg","page":"https://commons.wikimedia.org/wiki/File:Tampa_Bayshore_Blvd_looking_south01.jpg","credit":"Ebyabe, CC BY 2.5"},
-{"id":"miami","lat":25.7659229,"lng":-80.1334471,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Miami_Beach_from_South_Pointe_Park_Pier.jpeg/960px-Miami_Beach_from_South_Pointe_Park_Pier.jpeg","page":"https://commons.wikimedia.org/wiki/File:Miami_Beach_from_South_Pointe_Park_Pier.jpeg","credit":"Dough4872, CC BY-SA 4.0"},
-{"id":"nola","lat":30.0006067,"lng":-90.0932876,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/City_Park%2C_New_Orleans%2C_21_Feb_2017_-_02.jpg/960px-City_Park%2C_New_Orleans%2C_21_Feb_2017_-_02.jpg","page":"https://commons.wikimedia.org/wiki/File:City_Park,_New_Orleans,_21_Feb_2017_-_02.jpg","credit":"Infrogmation of New Orleans, CC BY-SA 4.0"},
-{"id":"houston","lat":29.7148176,"lng":-95.3849214,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Hermann_Park%2C_Houston_Texas.jpg/960px-Hermann_Park%2C_Houston_Texas.jpg","page":"https://commons.wikimedia.org/wiki/File:Hermann_Park,_Houston_Texas.jpg","credit":"Zp 2298, CC BY-SA 4.0"},
-{"id":"dallas","lat":32.836714,"lng":-96.714721,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg/960px-View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg","page":"https://commons.wikimedia.org/wiki/File:View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg","credit":"IcedCowboyCoffee, CC0"},
-{"id":"austin","lat":30.2688103,"lng":-97.7633824,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Downtown_Austin_Skyline_On_Town_Lake.jpg/960px-Downtown_Austin_Skyline_On_Town_Lake.jpg","page":"https://commons.wikimedia.org/wiki/File:Downtown_Austin_Skyline_On_Town_Lake.jpg","credit":"Vuemobi Media, CC BY-SA 4.0"},
-{"id":"sanantonio","lat":29.4554497,"lng":-98.4748283,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Brackenridge_Park_San_Antonio_River.jpg/960px-Brackenridge_Park_San_Antonio_River.jpg","page":"https://commons.wikimedia.org/wiki/File:Brackenridge_Park_San_Antonio_River.jpg","credit":"Dogfort04, CC BY-SA 4.0"},
-{"id":"okc","lat":35.5623348,"lng":-97.5939938,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Lake_Hefner_March_2020.jpg/960px-Lake_Hefner_March_2020.jpg","page":"https://commons.wikimedia.org/wiki/File:Lake_Hefner_March_2020.jpg","credit":"TheDoctorWho, CC BY-SA 4.0"},
-{"id":"denver","lat":39.7020811,"lng":-104.9710337,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Washington_Park_Denver.JPG/960px-Washington_Park_Denver.JPG","page":"https://commons.wikimedia.org/wiki/File:Washington_Park_Denver.JPG","credit":"Jeffrey Beall, CC BY-SA 3.0"},
-{"id":"slc","lat":40.7454541,"lng":-111.8740313,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Liberty_Park%2C_Salt_Lake_City%2C_UT.jpg/960px-Liberty_Park%2C_Salt_Lake_City%2C_UT.jpg","page":"https://commons.wikimedia.org/wiki/File:Liberty_Park,_Salt_Lake_City,_UT.jpg","credit":"Pollardjosephd, CC BY-SA 4.0"},
-{"id":"abq","lat":35.0854784,"lng":-106.6730199,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Tingley_Beach_Albuquerque.jpg/960px-Tingley_Beach_Albuquerque.jpg","page":"https://commons.wikimedia.org/wiki/File:Tingley_Beach_Albuquerque.jpg","credit":"Asaavedra32, CC BY-SA 3.0"},
-{"id":"phoenix","lat":33.4749925,"lng":-112.08922,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Phoenix%2C_AZ%2C_Encanto_Park%2C_2011_-_panoramio.jpg/960px-Phoenix%2C_AZ%2C_Encanto_Park%2C_2011_-_panoramio.jpg","page":"https://commons.wikimedia.org/wiki/File:Phoenix,_AZ,_Encanto_Park,_2011_-_panoramio.jpg","credit":"Chris English, CC BY-SA 3.0"},
-{"id":"vegas","lat":36.0643096,"lng":-115.113592,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Sunset_Park_-_Las_Vegas_%2811044584144%29.jpg/960px-Sunset_Park_-_Las_Vegas_%2811044584144%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Sunset_Park_-_Las_Vegas_(11044584144).jpg","credit":"Tomás Del Coro from Las Vegas, Nevada, USA, CC BY-SA 2.0"},
-{"id":"la","lat":34.0727,"lng":-118.2606,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Echo_Park_Lake_-_Los_Angeles%2C_California.jpg/960px-Echo_Park_Lake_-_Los_Angeles%2C_California.jpg","page":"https://commons.wikimedia.org/wiki/File:Echo_Park_Lake_-_Los_Angeles,_California.jpg","credit":"Ramsey Isler, CC BY-SA 4.0"},
-{"id":"irvine","lat":33.6549028,"lng":-117.8323979,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/William_mason_park_irvine_california.jpg/960px-William_mason_park_irvine_california.jpg","page":"https://commons.wikimedia.org/wiki/File:William_mason_park_irvine_california.jpg","credit":"John Salatas, CC BY-SA 4.0"},
-{"id":"sf","lat":37.8045961,"lng":-122.4666072,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Old_Crissy_Field_Coast_Guard_Station_in_the_fog_%28December_2015%29.jpg/960px-Old_Crissy_Field_Coast_Guard_Station_in_the_fog_%28December_2015%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Old_Crissy_Field_Coast_Guard_Station_in_the_fog_(December_2015).jpg","credit":"Frank Schulenburg, CC BY-SA 4.0"},
-{"id":"sanjose","lat":37.3309868,"lng":-121.8962827,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Guadalupe_River_trail_%2823835759271%29.jpg/960px-Guadalupe_River_trail_%2823835759271%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Guadalupe_River_trail_(23835759271).jpg","credit":"Sandip Bhattacharya from San Jose, United States, CC BY 2.0"},
-{"id":"portland","lat":45.5201241,"lng":-122.6705385,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Portland%2C_Willamette_River%2C_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg/960px-Portland%2C_Willamette_River%2C_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg","page":"https://commons.wikimedia.org/wiki/File:Portland,_Willamette_River,_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg","credit":"Gary Halvorson, Oregon State Archives, CC BY 4.0"},
-{"id":"seattle","lat":47.6777459,"lng":-122.3323665,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Trees-path-greenlake.jpg/960px-Trees-path-greenlake.jpg","page":"https://commons.wikimedia.org/wiki/File:Trees-path-greenlake.jpg","credit":"Monikasj, CC BY-SA 4.0"},
-{"id":"boise","lat":43.6078796,"lng":-116.202065,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Julia_Davis_Park_%282%29.jpg/960px-Julia_Davis_Park_%282%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Julia_Davis_Park_(2).jpg","credit":"Tamanoeconomico, CC BY-SA 4.0"},
-{"id":"honolulu","lat":21.2653527,"lng":-157.8191592,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Waikiki_from_Kapiolani_Park_%284671606548%29.jpg/960px-Waikiki_from_Kapiolani_Park_%284671606548%29.jpg","page":"https://commons.wikimedia.org/wiki/File:Waikiki_from_Kapiolani_Park_(4671606548).jpg","credit":"Daniel Ramirez from Honolulu, USA, CC BY 2.0"},
-{"id":"anchorage","lat":61.2131073,"lng":-149.8976409,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Downtown_Anchorage%2C_Alaska_from_Delaney_Park.jpg/960px-Downtown_Anchorage%2C_Alaska_from_Delaney_Park.jpg","page":"https://commons.wikimedia.org/wiki/File:Downtown_Anchorage,_Alaska_from_Delaney_Park.jpg","credit":"Laura Alier, CC BY 4.0"},
-{"id":"omaha","lat":41.2622829,"lng":-96.0027278,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Memorial_Park_Omaha_April_2011.JPG/960px-Memorial_Park_Omaha_April_2011.JPG","page":"https://commons.wikimedia.org/wiki/File:Memorial_Park_Omaha_April_2011.JPG","credit":"Ericci8996, CC BY-SA 3.0"},
-{"id":"kc","lat":39.0317049,"lng":-94.5945712,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Loose_Park_Duck_Pond.jpg/960px-Loose_Park_Duck_Pond.jpg","page":"https://commons.wikimedia.org/wiki/File:Loose_Park_Duck_Pond.jpg","credit":"Brit By Birth, CC BY-SA 4.0"},
-{"id":"tucson","lat":32.2101871,"lng":-110.9222783,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Reid_Park_Duck_Pond.jpg/960px-Reid_Park_Duck_Pond.jpg","page":"https://commons.wikimedia.org/wiki/File:Reid_Park_Duck_Pond.jpg","credit":"Gatomasgordo, CC BY-SA 4.0"},
-{"id":"raleigh","lat":35.7700706,"lng":-78.6568071,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg/960px-Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg","page":"https://commons.wikimedia.org/wiki/File:Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg","credit":"bobistraveling, CC BY 2.0"},
-{"id":"sacramento","lat":38.5762248,"lng":-121.4617004,"url":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Sacramento_-_McKinley_Park_-_20210419130150.jpg/960px-Sacramento_-_McKinley_Park_-_20210419130150.jpg","page":"https://commons.wikimedia.org/wiki/File:Sacramento_-_McKinley_Park_-_20210419130150.jpg","credit":"Pena645, CC BY-SA 4.0"}
+ {
+  "id": "sd-balboa",
+  "lat": 32.7325462,
+  "lng": -117.1492345,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Lily_pond_and_Botanical_Building_among_palms%2C_Balboa_Park%2C_San_Diego%2C_California.jpg/960px-Lily_pond_and_Botanical_Building_among_palms%2C_Balboa_Park%2C_San_Diego%2C_California.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lily_pond_and_Botanical_Building_among_palms,_Balboa_Park,_San_Diego,_California.jpg",
+  "credit": "Christian David, CC BY-SA 4.0"
+ },
+ {
+  "id": "sd-missionbay",
+  "lat": 32.7719069,
+  "lng": -117.2086893,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg/960px-Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mission_Bay_Park_Sunset_San_Diego_6D2B4215.jpg",
+  "credit": "Tony Webster, CC BY 3.0"
+ },
+ {
+  "id": "sd-miramar",
+  "lat": 32.9165682,
+  "lng": -117.0957023,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Miramar_Reservoir%2C_San_Diego.jpg/960px-Miramar_Reservoir%2C_San_Diego.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Miramar_Reservoir,_San_Diego.jpg",
+  "credit": "Kong of Lasers, CC BY-SA 4.0"
+ },
+ {
+  "id": "sd-coronado",
+  "lat": 32.697772,
+  "lng": -117.170091,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Coronado_Ferry_Landing.jpg/960px-Coronado_Ferry_Landing.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Coronado_Ferry_Landing.jpg",
+  "credit": "Bernard Gagnon, CC BY-SA 3.0"
+ },
+ {
+  "id": "sd-liberty",
+  "lat": 32.7345954,
+  "lng": -117.2132479,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Promenade_-_Liberty_station.jpg/960px-Promenade_-_Liberty_station.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Promenade_-_Liberty_station.jpg",
+  "credit": "Alan Islas, CC BY-SA 4.0"
+ },
+ {
+  "id": "lake-murray",
+  "lat": 32.78509,
+  "lng": -117.04161,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg/960px-Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg",
+  "credit": "Bill Rand, CC BY 2.0"
+ },
+ {
+  "id": "boston",
+  "lat": 42.3587242,
+  "lng": -71.0737127,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Charles_River_Esplanade_Boston_May_2018_panorama.jpg/960px-Charles_River_Esplanade_Boston_May_2018_panorama.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Charles_River_Esplanade_Boston_May_2018_panorama.jpg",
+  "credit": "King of Hearts, CC BY-SA 4.0"
+ },
+ {
+  "id": "nyc",
+  "lat": 40.785451,
+  "lng": -73.9626104,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Jacqueline_Kennedy_Onassis_Reservoir%2C_Central_Park%2C_New_York_City%2C_20231004_1611_2087.jpg/960px-Jacqueline_Kennedy_Onassis_Reservoir%2C_Central_Park%2C_New_York_City%2C_20231004_1611_2087.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Jacqueline_Kennedy_Onassis_Reservoir,_Central_Park,_New_York_City,_20231004_1611_2087.jpg",
+  "credit": "Jakub Hałun, CC BY 4.0"
+ },
+ {
+  "id": "philly",
+  "lat": 39.9569537,
+  "lng": -75.1786946,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Schuylkill_River_Trail_2018.jpg/960px-Schuylkill_River_Trail_2018.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Schuylkill_River_Trail_2018.jpg",
+  "credit": "Ii2nmd, CC BY-SA 4.0"
+ },
+ {
+  "id": "baltimore",
+  "lat": 39.2859597,
+  "lng": -76.6120433,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Inner_Harbor_Aerial_2022.jpg/960px-Inner_Harbor_Aerial_2022.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Inner_Harbor_Aerial_2022.jpg",
+  "credit": "Matthew Binebrink, CC BY-SA 4.0"
+ },
+ {
+  "id": "dc",
+  "lat": 38.8897927,
+  "lng": -77.0222415,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Washington_Monument_and_the_National_Mall_2.jpg/960px-Washington_Monument_and_the_National_Mall_2.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Washington_Monument_and_the_National_Mall_2.jpg",
+  "credit": "Kurt Kaiser, CC0"
+ },
+ {
+  "id": "pittsburgh",
+  "lat": 40.4415144,
+  "lng": -80.0100858,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Point-state-park-fountain-panorama.jpg/960px-Point-state-park-fountain-panorama.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Point-state-park-fountain-panorama.jpg",
+  "credit": "MartinThoma, CC0"
+ },
+ {
+  "id": "cleveland",
+  "lat": 41.4892603,
+  "lng": -81.7379941,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Edgewater_Park_%2826346391210%29.jpg/960px-Edgewater_Park_%2826346391210%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Edgewater_Park_(26346391210).jpg",
+  "credit": "Erik Drost, CC BY 2.0"
+ },
+ {
+  "id": "columbus",
+  "lat": 39.9594163,
+  "lng": -83.0031822,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Columbus_Scioto_Mile_%28cropped%29.jpg/960px-Columbus_Scioto_Mile_%28cropped%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Columbus_Scioto_Mile_(cropped).jpg",
+  "credit": "Scott, CC BY-SA 2.0"
+ },
+ {
+  "id": "cincinnati",
+  "lat": 39.0952324,
+  "lng": -84.5102436,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Roebling_Bridge_from_Smale_Riverfront_Park%2C_Cincinnati%2C_OH_-_51386405622.jpg/960px-Roebling_Bridge_from_Smale_Riverfront_Park%2C_Cincinnati%2C_OH_-_51386405622.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Roebling_Bridge_from_Smale_Riverfront_Park,_Cincinnati,_OH_-_51386405622.jpg",
+  "credit": "w_lemay, CC BY-SA 2.0"
+ },
+ {
+  "id": "detroit",
+  "lat": 42.3278485,
+  "lng": -83.0389954,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Detroit_Skyline_from_Riverwalk_May_2024.jpg/960px-Detroit_Skyline_from_Riverwalk_May_2024.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Detroit_Skyline_from_Riverwalk_May_2024.jpg",
+  "credit": "TheWxResearcher, CC0"
+ },
+ {
+  "id": "chicago",
+  "lat": 41.9216992,
+  "lng": -87.647832,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Lincoln_Park_kz01.jpg/960px-Lincoln_Park_kz01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lincoln_Park_kz01.jpg",
+  "credit": "Krzysztof Ziarnek, Kenraiz, CC BY-SA 4.0"
+ },
+ {
+  "id": "milwaukee",
+  "lat": 43.0326963,
+  "lng": -87.8954344,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Milwaukee_June_2022_13_%28Lakeshore_State_Park%29.jpg/960px-Milwaukee_June_2022_13_%28Lakeshore_State_Park%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Milwaukee_June_2022_13_(Lakeshore_State_Park).jpg",
+  "credit": "Michael Barera, CC BY-SA 4.0"
+ },
+ {
+  "id": "minneapolis",
+  "lat": 44.9216567,
+  "lng": -93.3049429,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Minneapolis-Lake_Harriet-2012.jpg/960px-Minneapolis-Lake_Harriet-2012.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Minneapolis-Lake_Harriet-2012.jpg",
+  "credit": "SusanLesch, CC0"
+ },
+ {
+  "id": "stlouis",
+  "lat": 38.6381922,
+  "lng": -90.2847033,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Grand_Basin_in_Forest_Park_-_panoramio.jpg/960px-Grand_Basin_in_Forest_Park_-_panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Grand_Basin_in_Forest_Park_-_panoramio.jpg",
+  "credit": "Bohao Zhao, CC BY 3.0"
+ },
+ {
+  "id": "indy",
+  "lat": 39.76772,
+  "lng": -86.1762245,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg/960px-White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:White_River_State_Park_-_July_2016_-_Ad_Starkel_03.jpg",
+  "credit": "adstarkel, CC BY-SA 2.0"
+ },
+ {
+  "id": "louisville",
+  "lat": 38.2643212,
+  "lng": -85.7289348,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/WaterfrontPkDwnt.jpg/960px-WaterfrontPkDwnt.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:WaterfrontPkDwnt.jpg",
+  "credit": "Angry Aspie, CC BY 3.0"
+ },
+ {
+  "id": "nashville",
+  "lat": 36.1498435,
+  "lng": -86.8140736,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Centennial_Park_Nashville.JPG/960px-Centennial_Park_Nashville.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Centennial_Park_Nashville.JPG",
+  "credit": "Altairisfar, Public domain"
+ },
+ {
+  "id": "memphis",
+  "lat": 35.136167,
+  "lng": -89.8327432,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Shelby_farms_park_scenic.jpg/960px-Shelby_farms_park_scenic.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Shelby_farms_park_scenic.jpg",
+  "credit": "Thomas R Machnitzki, CC BY-SA 3.0"
+ },
+ {
+  "id": "atlanta",
+  "lat": 33.7890478,
+  "lng": -84.3718862,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Piedmont_Park_Atlanta.jpg/960px-Piedmont_Park_Atlanta.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Piedmont_Park_Atlanta.jpg",
+  "credit": "EternalAhsoka, CC BY-SA 4.0"
+ },
+ {
+  "id": "charlotte",
+  "lat": 35.1915353,
+  "lng": -80.8434432,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Freedom_Park%2C_Charlotte_-_panoramio.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Freedom_Park%2C_Charlotte_-_panoramio.jpg",
+  "credit": "James Willamor, CC BY-SA 3.0"
+ },
+ {
+  "id": "richmond",
+  "lat": 37.5354752,
+  "lng": -77.4778401,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Maymont_Japanese_Garden.jpg/960px-Maymont_Japanese_Garden.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Maymont_Japanese_Garden.jpg",
+  "credit": "Sdkb, CC BY-SA 4.0"
+ },
+ {
+  "id": "jacksonville",
+  "lat": 30.3195384,
+  "lng": -81.6551483,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Southbank_Riverwalk_1_%28Jacksonville%2C_Florida%29.jpg/960px-Southbank_Riverwalk_1_%28Jacksonville%2C_Florida%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Southbank_Riverwalk_1_(Jacksonville,_Florida).jpg",
+  "credit": "PicoOrdinalo, CC BY-SA 4.0"
+ },
+ {
+  "id": "orlando",
+  "lat": 28.543965,
+  "lng": -81.3704323,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Lake-eola-park-orlando-florida.jpg/960px-Lake-eola-park-orlando-florida.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lake-eola-park-orlando-florida.jpg",
+  "credit": "OrlandoThings.com, CC BY-SA 4.0"
+ },
+ {
+  "id": "tampa",
+  "lat": 27.9172721,
+  "lng": -82.4912475,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tampa_Bayshore_Blvd_looking_south01.jpg/960px-Tampa_Bayshore_Blvd_looking_south01.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tampa_Bayshore_Blvd_looking_south01.jpg",
+  "credit": "Ebyabe, CC BY 2.5"
+ },
+ {
+  "id": "miami",
+  "lat": 25.7659229,
+  "lng": -80.1334471,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Miami_Beach_from_South_Pointe_Park_Pier.jpeg/960px-Miami_Beach_from_South_Pointe_Park_Pier.jpeg",
+  "page": "https://commons.wikimedia.org/wiki/File:Miami_Beach_from_South_Pointe_Park_Pier.jpeg",
+  "credit": "Dough4872, CC BY-SA 4.0"
+ },
+ {
+  "id": "nola",
+  "lat": 30.0006067,
+  "lng": -90.0932876,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/City_Park%2C_New_Orleans%2C_21_Feb_2017_-_02.jpg/960px-City_Park%2C_New_Orleans%2C_21_Feb_2017_-_02.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:City_Park,_New_Orleans,_21_Feb_2017_-_02.jpg",
+  "credit": "Infrogmation of New Orleans, CC BY-SA 4.0"
+ },
+ {
+  "id": "houston",
+  "lat": 29.7148176,
+  "lng": -95.3849214,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Hermann_Park%2C_Houston_Texas.jpg/960px-Hermann_Park%2C_Houston_Texas.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Hermann_Park,_Houston_Texas.jpg",
+  "credit": "Zp 2298, CC BY-SA 4.0"
+ },
+ {
+  "id": "dallas",
+  "lat": 32.836714,
+  "lng": -96.714721,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/North_Side_of_White_Rock_Lake.jpg/960px-North_Side_of_White_Rock_Lake.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:North_Side_of_White_Rock_Lake.jpg",
+  "credit": "DronePhotographer, CC0"
+ },
+ {
+  "id": "austin",
+  "lat": 30.2688103,
+  "lng": -97.7633824,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Austin_Hike-and-Bike_Trail_-_June_2019_%282%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Austin_Hike-and-Bike_Trail_-_June_2019_%282%29.jpg",
+  "credit": "MX, CC BY-SA 4.0"
+ },
+ {
+  "id": "sanantonio",
+  "lat": 29.4554497,
+  "lng": -98.4748283,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Brackenridge_Park_San_Antonio_River.jpg/960px-Brackenridge_Park_San_Antonio_River.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Brackenridge_Park_San_Antonio_River.jpg",
+  "credit": "Dogfort04, CC BY-SA 4.0"
+ },
+ {
+  "id": "okc",
+  "lat": 35.5623348,
+  "lng": -97.5939938,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Lake_Hefner_March_2020.jpg/960px-Lake_Hefner_March_2020.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lake_Hefner_March_2020.jpg",
+  "credit": "TheDoctorWho, CC BY-SA 4.0"
+ },
+ {
+  "id": "denver",
+  "lat": 39.7020811,
+  "lng": -104.9710337,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Washington_Park_Denver.JPG/960px-Washington_Park_Denver.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Washington_Park_Denver.JPG",
+  "credit": "Jeffrey Beall, CC BY-SA 3.0"
+ },
+ {
+  "id": "slc",
+  "lat": 40.7454541,
+  "lng": -111.8740313,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Liberty_Park%2C_Salt_Lake_City%2C_UT.jpg/960px-Liberty_Park%2C_Salt_Lake_City%2C_UT.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Liberty_Park,_Salt_Lake_City,_UT.jpg",
+  "credit": "Pollardjosephd, CC BY-SA 4.0"
+ },
+ {
+  "id": "abq",
+  "lat": 35.0854784,
+  "lng": -106.6730199,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Tingley_Beach_Albuquerque.jpg/960px-Tingley_Beach_Albuquerque.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Tingley_Beach_Albuquerque.jpg",
+  "credit": "Asaavedra32, CC BY-SA 3.0"
+ },
+ {
+  "id": "phoenix",
+  "lat": 33.4749925,
+  "lng": -112.08922,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Encanto_Lake-1.jpg/960px-Encanto_Lake-1.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Encanto_Lake-1.jpg",
+  "credit": "Visitor7, CC BY-SA 3.0"
+ },
+ {
+  "id": "vegas",
+  "lat": 36.0643096,
+  "lng": -115.113592,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg/960px-Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg",
+  "credit": "Barbara Whitney, CC BY-SA 4.0"
+ },
+ {
+  "id": "la",
+  "lat": 34.0727,
+  "lng": -118.2606,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Echo_Park_Lake_-_Los_Angeles%2C_California.jpg/960px-Echo_Park_Lake_-_Los_Angeles%2C_California.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Echo_Park_Lake_-_Los_Angeles,_California.jpg",
+  "credit": "Ramsey Isler, CC BY-SA 4.0"
+ },
+ {
+  "id": "irvine",
+  "lat": 33.6549028,
+  "lng": -117.8323979,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/William_mason_park_irvine_california.jpg/960px-William_mason_park_irvine_california.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:William_mason_park_irvine_california.jpg",
+  "credit": "John Salatas, CC BY-SA 4.0"
+ },
+ {
+  "id": "sf",
+  "lat": 37.8045961,
+  "lng": -122.4666072,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Old_Crissy_Field_Coast_Guard_Station_in_the_fog_%28December_2015%29.jpg/960px-Old_Crissy_Field_Coast_Guard_Station_in_the_fog_%28December_2015%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Old_Crissy_Field_Coast_Guard_Station_in_the_fog_(December_2015).jpg",
+  "credit": "Frank Schulenburg, CC BY-SA 4.0"
+ },
+ {
+  "id": "sanjose",
+  "lat": 37.3309868,
+  "lng": -121.8962827,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Guadalupe_River_trail_%2823835759271%29.jpg/960px-Guadalupe_River_trail_%2823835759271%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Guadalupe_River_trail_(23835759271).jpg",
+  "credit": "Sandip Bhattacharya from San Jose, United States, CC BY 2.0"
+ },
+ {
+  "id": "portland",
+  "lat": 45.5201241,
+  "lng": -122.6705385,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Portland%2C_Willamette_River%2C_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg/960px-Portland%2C_Willamette_River%2C_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Portland,_Willamette_River,_Tom_McCall_Waterfront_Park_-_DPLA_-_fe4b31e2754a1ebe7cae396491ee9cbd.jpg",
+  "credit": "Gary Halvorson, Oregon State Archives, CC BY 4.0"
+ },
+ {
+  "id": "seattle",
+  "lat": 47.6777459,
+  "lng": -122.3323665,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Trees-path-greenlake.jpg/960px-Trees-path-greenlake.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Trees-path-greenlake.jpg",
+  "credit": "Monikasj, CC BY-SA 4.0"
+ },
+ {
+  "id": "boise",
+  "lat": 43.6078796,
+  "lng": -116.202065,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Julia_Davis_Park_%282%29.jpg/960px-Julia_Davis_Park_%282%29.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Julia_Davis_Park_(2).jpg",
+  "credit": "Tamanoeconomico, CC BY-SA 4.0"
+ },
+ {
+  "id": "honolulu",
+  "lat": 21.2653527,
+  "lng": -157.8191592,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Diamond_Head_Kapiolani_Park.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Diamond_Head_Kapiolani_Park.jpg",
+  "credit": "Abendstrom, CC BY-SA 3.0"
+ },
+ {
+  "id": "anchorage",
+  "lat": 61.2131073,
+  "lng": -149.8976409,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Delaney_Park_ENBLA08.jpg/960px-Delaney_Park_ENBLA08.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Delaney_Park_ENBLA08.jpg",
+  "credit": "Enrico Blasutto, CC BY-SA 4.0"
+ },
+ {
+  "id": "omaha",
+  "lat": 41.2622829,
+  "lng": -96.0027278,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Memorial_Park_Omaha_April_2011.JPG/960px-Memorial_Park_Omaha_April_2011.JPG",
+  "page": "https://commons.wikimedia.org/wiki/File:Memorial_Park_Omaha_April_2011.JPG",
+  "credit": "Ericci8996, CC BY-SA 3.0"
+ },
+ {
+  "id": "kc",
+  "lat": 39.0317049,
+  "lng": -94.5945712,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Loose_Park_Duck_Pond.jpg/960px-Loose_Park_Duck_Pond.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Loose_Park_Duck_Pond.jpg",
+  "credit": "Brit By Birth, CC BY-SA 4.0"
+ },
+ {
+  "id": "tucson",
+  "lat": 32.2101871,
+  "lng": -110.9222783,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Reid_Park_Duck_Pond.jpg/960px-Reid_Park_Duck_Pond.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Reid_Park_Duck_Pond.jpg",
+  "credit": "Gatomasgordo, CC BY-SA 4.0"
+ },
+ {
+  "id": "raleigh",
+  "lat": 35.7700706,
+  "lng": -78.6568071,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg/960px-Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg",
+  "credit": "bobistraveling, CC BY 2.0"
+ },
+ {
+  "id": "sacramento",
+  "lat": 38.5762248,
+  "lng": -121.4617004,
+  "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Sacramento_-_McKinley_Park_-_20210419130150.jpg/960px-Sacramento_-_McKinley_Park_-_20210419130150.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Sacramento_-_McKinley_Park_-_20210419130150.jpg",
+  "credit": "Pena645, CC BY-SA 4.0"
+ }
 ]

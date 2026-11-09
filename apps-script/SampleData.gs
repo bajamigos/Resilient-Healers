@@ -171,9 +171,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Inner Harbor Promenade is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 39.2859597,
    "lng": -76.6120433,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Inner_Harbor_Promenade.JPG/960px-Inner_Harbor_Promenade.JPG",
-   "photoCredit": "Kimberlyshorter, CC BY-SA 4.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Inner_Harbor_Promenade.JPG"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Inner_Harbor_Aerial_2022.jpg/960px-Inner_Harbor_Aerial_2022.jpg",
+   "photoCredit": "Matthew Binebrink, CC BY-SA 4.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Inner_Harbor_Aerial_2022.jpg"
   },
   {
    "id": "S-dc",
@@ -205,9 +205,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Point State Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 40.4415144,
    "lng": -80.0100858,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Point_State_Park_in_Fall.jpg/960px-Point_State_Park_in_Fall.jpg",
-   "photoCredit": "John, CC BY-SA 2.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Point_State_Park_in_Fall.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Point-state-park-fountain-panorama.jpg/960px-Point-state-park-fountain-panorama.jpg",
+   "photoCredit": "MartinThoma, CC0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Point-state-park-fountain-panorama.jpg"
   },
   {
    "id": "S-cleveland",
@@ -341,9 +341,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Forest Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 38.6381922,
    "lng": -90.2847033,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Golden_trees_in_Forest_Park%2C_St._Louis%2C_Missouri.jpg/960px-Golden_trees_in_Forest_Park%2C_St._Louis%2C_Missouri.jpg",
-   "photoCredit": "AmyBautz, CC BY-SA 3.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Golden_trees_in_Forest_Park,_St._Louis,_Missouri.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Grand_Basin_in_Forest_Park_-_panoramio.jpg/960px-Grand_Basin_in_Forest_Park_-_panoramio.jpg",
+   "photoCredit": "Bohao Zhao, CC BY 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Grand_Basin_in_Forest_Park_-_panoramio.jpg"
   },
   {
    "id": "S-kc",
@@ -392,9 +392,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Waterfront Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 38.2643212,
    "lng": -85.7289348,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Dusk_in_Waterfront_Park_%289267527279%29.jpg/960px-Dusk_in_Waterfront_Park_%289267527279%29.jpg",
-   "photoCredit": "U.S. Department of the Interior, CC BY-SA 2.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Dusk_in_Waterfront_Park_(9267527279).jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/WaterfrontPkDwnt.jpg/960px-WaterfrontPkDwnt.jpg",
+   "photoCredit": "Angry Aspie, CC BY 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:WaterfrontPkDwnt.jpg"
   },
   {
    "id": "S-nashville",
@@ -426,9 +426,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Shelby Farms Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 35.136167,
    "lng": -89.8327432,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg/960px-Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg",
-   "photoCredit": "Thomas R Machnitzki, CC BY 3.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Gate_11_at_Shelby_Farms_Park_Memphis_TN_03.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Shelby_farms_park_scenic.jpg/960px-Shelby_farms_park_scenic.jpg",
+   "photoCredit": "Thomas R Machnitzki, CC BY-SA 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Shelby_farms_park_scenic.jpg"
   },
   {
    "id": "S-atlanta",
@@ -460,9 +460,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Freedom Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 35.1915353,
    "lng": -80.8434432,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Images_at_Freedom_Park_09.jpg/960px-Images_at_Freedom_Park_09.jpg",
-   "photoCredit": "ReoMartins, CC BY-SA 4.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Images_at_Freedom_Park_09.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Freedom_Park%2C_Charlotte_-_panoramio.jpg",
+   "photoCredit": "James Willamor, CC BY-SA 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Freedom_Park%2C_Charlotte_-_panoramio.jpg"
   },
   {
    "id": "S-raleigh",
@@ -477,9 +477,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Dorothea Dix Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 35.7700706,
    "lng": -78.6568071,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg/960px-Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg",
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg/960px-Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg",
    "photoCredit": "bobistraveling, CC BY 2.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Sunflowers_Dix_Park_Raleigh_NC_20210722_135537898.jpg"
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Sunflowers_Dix_Park_Raleigh_NC_20210722_134803869.jpg"
   },
   {
    "id": "S-richmond",
@@ -613,9 +613,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at White Rock Lake Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 32.836714,
    "lng": -96.714721,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg/960px-View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg",
-   "photoCredit": "IcedCowboyCoffee, CC0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:View_of_the_Dallas_skyline_over_White_Rock_Lake_as_seen_from_the_Dallas_Arboretum_02.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/North_Side_of_White_Rock_Lake.jpg/960px-North_Side_of_White_Rock_Lake.jpg",
+   "photoCredit": "DronePhotographer, CC0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:North_Side_of_White_Rock_Lake.jpg"
   },
   {
    "id": "S-austin",
@@ -630,9 +630,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Lady Bird Lake is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 30.2688103,
    "lng": -97.7633824,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Downtown_Austin_Skyline_On_Town_Lake.jpg/960px-Downtown_Austin_Skyline_On_Town_Lake.jpg",
-   "photoCredit": "Vuemobi Media, CC BY-SA 4.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Downtown_Austin_Skyline_On_Town_Lake.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/7/77/Austin_Hike-and-Bike_Trail_-_June_2019_%282%29.jpg",
+   "photoCredit": "MX, CC BY-SA 4.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Austin_Hike-and-Bike_Trail_-_June_2019_%282%29.jpg"
   },
   {
    "id": "S-sanantonio",
@@ -732,9 +732,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Encanto Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 33.4749925,
    "lng": -112.08922,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Phoenix%2C_AZ%2C_Encanto_Park%2C_2011_-_panoramio.jpg/960px-Phoenix%2C_AZ%2C_Encanto_Park%2C_2011_-_panoramio.jpg",
-   "photoCredit": "Chris English, CC BY-SA 3.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Phoenix,_AZ,_Encanto_Park,_2011_-_panoramio.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Encanto_Lake-1.jpg/960px-Encanto_Lake-1.jpg",
+   "photoCredit": "Visitor7, CC BY-SA 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Encanto_Lake-1.jpg"
   },
   {
    "id": "S-tucson",
@@ -766,9 +766,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Sunset Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 36.0643096,
    "lng": -115.113592,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Sunset_Park_-_Las_Vegas_%2811044584144%29.jpg/960px-Sunset_Park_-_Las_Vegas_%2811044584144%29.jpg",
-   "photoCredit": "Tomás Del Coro from Las Vegas, Nevada, USA, CC BY-SA 2.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Sunset_Park_-_Las_Vegas_(11044584144).jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg/960px-Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg",
+   "photoCredit": "Barbara Whitney, CC BY-SA 4.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Sunset_Park_Landscape%2C_Las_Vegas%2C_NV.jpg"
   },
   {
    "id": "S-la",
@@ -919,9 +919,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Kapiolani Park is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 21.2653527,
    "lng": -157.8191592,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Waikiki_from_Kapiolani_Park_%284671606548%29.jpg/960px-Waikiki_from_Kapiolani_Park_%284671606548%29.jpg",
-   "photoCredit": "Daniel Ramirez from Honolulu, USA, CC BY 2.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Waikiki_from_Kapiolani_Park_(4671606548).jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Diamond_Head_Kapiolani_Park.jpg",
+   "photoCredit": "Abendstrom, CC BY-SA 3.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Diamond_Head_Kapiolani_Park.jpg"
   },
   {
    "id": "S-anchorage",
@@ -936,9 +936,9 @@ const SAMPLE_DATA = {
    "description": "A Resilient Healers walk at Delaney Park Strip is coming soon. We're looking for a local walk leader to set the date, time and meeting spot.",
    "lat": 61.2131073,
    "lng": -149.8976409,
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Downtown_Anchorage%2C_Alaska_from_Delaney_Park.jpg/960px-Downtown_Anchorage%2C_Alaska_from_Delaney_Park.jpg",
-   "photoCredit": "Laura Alier, CC BY 4.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Downtown_Anchorage,_Alaska_from_Delaney_Park.jpg"
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Delaney_Park_ENBLA08.jpg/960px-Delaney_Park_ENBLA08.jpg",
+   "photoCredit": "Enrico Blasutto, CC BY-SA 4.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Delaney_Park_ENBLA08.jpg"
   },
   {
    "id": "S-omaha",
@@ -961,9 +961,9 @@ const SAMPLE_DATA = {
  "photos": [
   {
    "walkId": "lake-murray-2026-12-13",
-   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Lake_Murray%2C_San_Diego%2C_CA%2C_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_%283%29.jpg/960px-Lake_Murray%2C_San_Diego%2C_CA%2C_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_%283%29.jpg",
-   "photoCredit": "Mountain Mike Johans…, CC BY 3.0",
-   "photoSource": "https://commons.wikimedia.org/wiki/File:Lake_Murray,_San_Diego,_CA,_USA_-_panoramio_-_Mountain_Mike_Johans%E2%80%A6_(3).jpg",
+   "photo": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg/960px-Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg",
+   "photoCredit": "Bill Rand, CC BY 2.0",
+   "photoSource": "https://commons.wikimedia.org/wiki/File:Cowles_Mountain_over_Lake_Murray_in_San_Diego_2009.jpg",
    "city": "La Mesa, CA"
   }
  ]

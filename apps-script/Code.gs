@@ -253,6 +253,12 @@ function doPost(e) {
       case 'send': return json_(send_(body));
       case 'report': return json_(report_(body));
       case 'walkerLink': return json_(walkerLink_(body));
+      // Staff-only maintenance through the website (needs the staff code), for when the editor can't run functions.
+      case 'admin':
+        if (cleanLine_(body.code, 80) !== staffCode_()) return json_({ ok: false, error: 'not_allowed' });
+        if (body.op === 'loadSamples') { loadSamples(); return json_({ ok: true }); }
+        if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
+        return json_({ ok: false, error: 'unknown_op' });
       default: return json_({ ok: false, error: 'unknown_action' });
     }
   } catch (err) {
@@ -298,7 +304,15 @@ function readWalk_(w) {
   if (!out.find) missing.push('how to find the spot');
   if (!(out.spots >= 2 && out.spots <= 50)) missing.push('number of spots (2 to 50)');
   if (out.description.length < 20) missing.push('description');
-  return { data: out, missing: missing };
+  // An uploaded walk photo arrives as a data URL; it's saved to Drive separately, never stored in a cell.
+  const photoData = typeof w.photo === 'string' && /^data:image\/(jpeg|png);base64,/.test(w.photo) ? w.photo : '';
+  return { data: out, missing: missing, photoData: photoData };
+}
+// Saves a walk leader's uploaded walk photo and returns the Walks cells for it (or {} if none).
+function walkPhotoCells_(photoData, walkId) {
+  if (!photoData) return {};
+  const url = savePhoto_(photoData, 'walk-' + walkId);
+  return url ? { 'Photo': url, 'Photo credit': 'the walk leader', 'Photo source': '' } : {};
 }
 function walkRow_(id, leaderId, status, w) {
   const now = new Date();
@@ -310,11 +324,12 @@ function walkRow_(id, leaderId, status, w) {
   };
 }
 function walkCells_(w) {
-  return {
+  const photo = w.photo ? { 'Photo': w.photo, 'Photo credit': w.photoCredit || 'the walk leader', 'Photo source': '' } : {};
+  return Object.assign(photo, {
     'Title': safeCell_(w.title), 'Date': "'" + w.date, 'Start': "'" + w.start, 'End': w.end ? "'" + w.end : '', 'Repeats': safeCell_(w.repeats),
     'Place': safeCell_(w.place), 'Address': safeCell_(w.address), 'Lat': w.lat, 'Lng': w.lng, 'How to find the spot': safeCell_(w.find),
     'Parking': safeCell_(w.parking), 'Spots': w.spots, 'Shorter route': safeCell_(w.shorter), 'Description': safeCell_(w.description), 'Updated': new Date()
-  };
+  });
 }
 function profileCells_(p) {
   const c = { 'Name': safeCell_(p.name), 'Phone': safeCell_(p.phone), 'City': safeCell_(p.city), 'Background': safeCell_(p.background), 'Bio': safeCell_(p.bio), 'Updated': new Date() };
@@ -389,7 +404,7 @@ function apply_(b) {
     'Private link code': code, 'Created': now, 'Updated': now
   });
   const walkId = newId_('W');
-  appendObj_('Walks', Object.assign(walkRow_(walkId, leaderId, 'Pending review', w.data), takeoverCells_(b.forWalk)));
+  appendObj_('Walks', Object.assign(walkRow_(walkId, leaderId, 'Pending review', w.data), takeoverCells_(b.forWalk), walkPhotoCells_(w.photoData, walkId)));
   openReview_('application', leaderId, walkId);
   MailApp.sendEmail({
     to: p.data.email, name: 'Resilient Healers',
@@ -411,7 +426,7 @@ function propose_(b) {
   const w = readWalk_(b.walk);
   if (w.missing.length) return { ok: false, error: 'missing_fields', missing: w.missing };
   const walkId = newId_('W');
-  appendObj_('Walks', Object.assign(walkRow_(walkId, String(l['Leader ID']), 'Pending review', w.data), takeoverCells_(b.forWalk)));
+  appendObj_('Walks', Object.assign(walkRow_(walkId, String(l['Leader ID']), 'Pending review', w.data), takeoverCells_(b.forWalk), walkPhotoCells_(w.photoData, walkId)));
   openReview_('walk', String(l['Leader ID']), walkId);
   return { ok: true, walkId: walkId };
 }
@@ -426,8 +441,10 @@ function editWalk_(b) {
   const w = readWalk_(b.walk);
   if (w.missing.length) return { ok: false, error: 'missing_fields', missing: w.missing };
   const leaderId = String(l['Leader ID']), walkId = String(walk['Walk ID']);
+  const photo = walkPhotoCells_(w.photoData, walkId);
+  if (photo['Photo']) { w.data.photo = photo['Photo']; w.data.photoCredit = photo['Photo credit']; }
   if (walk['Status'] === 'Live') {
-    // Live walk: keep it live with its current details until staff approve the edit.
+    // Live walk: keep it live with its current details (and photo) until staff approve the edit.
     writeCells_('Walks', walk._row, { 'Pending edit': JSON.stringify(w.data), 'Staff note': '', 'Updated': new Date() });
     closeOpenReviews_(leaderId, walkId, ['walk-edit']);
     openReview_('walk-edit', leaderId, walkId);

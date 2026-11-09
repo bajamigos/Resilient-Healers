@@ -190,6 +190,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 .link-btn { background: none; border: 0; padding: .3rem 0; min-height: 44px; color: var(--copper); font: inherit; font-size: .95rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; align-self: flex-start; }
 .report-form { display: flex; flex-direction: column; gap: .5rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .chip-reported { background: var(--warn-bg); color: var(--warn); }
+.walk-photo-preview { width: 100%; max-width: 28rem; height: auto; aspect-ratio: 16 / 9; border: 0; object-fit: cover; border-radius: var(--radius); }
 .thread-box { display: flex; flex-direction: column; gap: .8rem; padding-top: .6rem; }
 </style>
 </head>
@@ -573,6 +574,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <h2 id="rv-walk-h">Walk</h2>
         <div class="pin-map" id="rv-map" role="region" aria-label="Map of the proposed meeting spot"></div>
         <p><a id="rv-maplink" target="_blank" rel="noopener" href="#">Check the pin in Google Maps</a></p>
+        <img class="hero-photo" id="rv-wphoto" alt="Walk photo uploaded by the walk leader" hidden>
         <ul class="facts" id="rv-walk"></ul>
       </section>
       <section class="block" id="rv-decide" aria-labelledby="rv-decide-h" hidden>
@@ -985,6 +987,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<div class="two"><div class="field"><label for="' + p + '-spots">Number of spots</label><input type="number" id="' + p + '-spots" min="2" max="50" value="20"></div></div>' +
       '<div class="field"><label for="' + p + '-shorter">Shorter route option (optional)</label><input type="text" id="' + p + '-shorter" placeholder="For example: Turn back at the first picnic area"></div>' +
       '<div class="field"><label for="' + p + '-desc">Walk description</label><textarea id="' + p + '-desc" placeholder="What walkers can expect, in a few sentences."></textarea></div>' +
+      '<div class="field"><label for="' + p + '-photo">Walk photo (optional)</label><input type="file" id="' + p + '-photo" accept="image/*" aria-describedby="' + p + '-photo-hint">' +
+      '<span class="hint" id="' + p + '-photo-hint">A photo of the path or meeting spot that shows the place at its best, ideally without people\'s faces. On a phone you can take one or choose one from your photos. Our team checks it before it appears.</span>' +
+      '<span class="hint" id="' + p + '-photo-current" hidden>Current photo. Choose a new one to replace it.</span>' +
+      '<img class="photo-preview walk-photo-preview" id="' + p + '-photo-preview" alt="" hidden></div>' +
       '</fieldset>';
   }
 
@@ -1005,6 +1011,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       if (msg) $(p + "-pin-status").textContent = msg;
     }
     st.place = place;
+    initPhoto(p, 1400);
     if (start && isFinite(start.lat)) place(start.lat, start.lng, "Drag the pin to change the meeting spot.");
     st.map.on("click", (e) => place(e.latlng.lat, e.latlng.lng, "Pin moved."));
     const doFind = async () => {
@@ -1029,6 +1036,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $(p + "-repeats").value = w.repeats && w.repeats.startsWith("Monthly") ? "Monthly, same week and day" : "One time";
     $(p + "-place").value = w.place || ""; $(p + "-address").value = w.address || ""; $(p + "-find-text").value = w.find || "";
     $(p + "-parking").value = w.parking || ""; $(p + "-spots").value = w.spots || 20; $(p + "-shorter").value = w.shorter || ""; $(p + "-desc").value = w.description || "";
+    if (w.photo && !photoData[p]) { $(p + "-photo-preview").src = w.photo; $(p + "-photo-preview").alt = "Current walk photo"; $(p + "-photo-preview").hidden = false; $(p + "-photo-current").hidden = false; }
   }
   function readWalk(p) {
     const st = pinForms[p] || {};
@@ -1036,7 +1044,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       title: $(p + "-title").value.trim(), date: $(p + "-date").value, start: $(p + "-start").value, end: $(p + "-end").value,
       repeats: $(p + "-repeats").value, place: $(p + "-place").value.trim(), address: $(p + "-address").value.trim(),
       lat: st.lat, lng: st.lng, find: $(p + "-find-text").value.trim(), parking: $(p + "-parking").value.trim(),
-      spots: Number($(p + "-spots").value), shorter: $(p + "-shorter").value.trim(), description: $(p + "-desc").value.trim()
+      spots: Number($(p + "-spots").value), shorter: $(p + "-shorter").value.trim(), description: $(p + "-desc").value.trim(),
+      photo: photoData[p] || ""
     };
   }
   function walkProblems(w) {
@@ -1052,13 +1061,14 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $(p + "-bg").value = l.background || ""; $(p + "-bio").value = l.bio || "";
   }
   const photoData = {};
-  function initPhoto(p) {
+  function initPhoto(p, maxSide) {
     $(p + "-photo").addEventListener("change", () => {
       const f = $(p + "-photo").files[0]; photoData[p] = null;
+      if ($(p + "-photo-current")) $(p + "-photo-current").hidden = true;
       if (!f) { $(p + "-photo-preview").hidden = true; return; }
       const img = new Image(); const url = URL.createObjectURL(f);
       img.onload = () => {
-        const max = 600, s = Math.min(1, max / Math.max(img.width, img.height));
+        const max = maxSide || 600, s = Math.min(1, max / Math.max(img.width, img.height));
         const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
         c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
         photoData[p] = c.toDataURL("image/jpeg", 0.85);
@@ -1245,7 +1255,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       leadFor = null; $("me-lead-note").hidden = true;
       if (!r || !r.ok) throw new Error("failed");
       $("me-new-done").innerHTML = "<h3>Walk sent for review.</h3><p>We'll email you when it's approved, or if we need changes.</p>";
-      $("me-new-done").hidden = false; $("me-new-form").reset(); await loadMe(); $("me-new-done").focus();
+      $("me-new-done").hidden = false; $("me-new-form").reset(); photoData.nw = null; $("nw-photo-preview").hidden = true; await loadMe(); $("me-new-done").focus();
     } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; }
     finally { btn.disabled = false; btn.textContent = "Send for review"; }
   });
@@ -1276,6 +1286,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
           ["Pin", Number(w.lat).toFixed(5) + ", " + Number(w.lng).toFixed(5)], ["How to find it", w.find], ["Parking", w.parking], ["Spots", w.spots], ["Shorter route", w.shorter], ["Description", w.description],
           ["Takes over", r.takesOver ? r.takesOver.title + (r.takesOver.city ? ", " + r.takesOver.city : "") + " (coming soon). Approving replaces it and emails its " + r.takesOver.interested + " interested " + (r.takesOver.interested === 1 ? "person" : "people") + "." : ""]]);
         $("rv-maplink").href = "https://www.google.com/maps/search/?api=1&query=" + w.lat + "," + w.lng;
+        $("rv-wphoto").hidden = !w.photo; if (w.photo) $("rv-wphoto").src = w.photo;
         setTimeout(() => {
           if (!rvMap) { rvMap = L.map("rv-map", { scrollWheelZoom: false }); tiles().addTo(rvMap); wheelOnFocus(rvMap); }
           rvMap.invalidateSize(); rvMap.setView([w.lat, w.lng], 16);
