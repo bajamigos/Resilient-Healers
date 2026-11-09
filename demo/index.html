@@ -449,7 +449,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <ul class="facts">
           <li><span>Who comes</span><span>Healthcare workers, and the healthcare-worker friends they bring</span></li>
           <li><span>Group size</span><span>You choose, usually up to 20. When it's full, new sign-ups join a waitlist.</span></li>
-          <li><span>How often</span><span>One time, or once a month on a set day</span></li>
+          <li><span>How often</span><span>One time, or repeating: every week, every 2 weeks, or once a month on a set day. Repeating walks add their next date automatically.</span></li>
           <li><span>How long</span><span>About 90 minutes, including gathering at the start</span></li>
           <li><span>Cost</span><span>Free for everyone who walks</span></li>
           <li><span>Pace</span><span>Conversational. Offer a shorter turnaround for anyone who needs it.</span></li>
@@ -480,7 +480,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <section class="block" aria-labelledby="lead-before-h">
         <h2 id="lead-before-h">Before each walk</h2>
         <ul class="ticks">
-          <li>Check your walk leader page for sign-ups and accommodation notes</li>
+          <li>Check your walk leader page for sign-ups, accommodation notes and who would rather not be in photos</li>
           <li>Decide where people who need a shorter route can turn back</li>
           <li>Check the meeting spot still matches the pin and description</li>
           <li>Arrive a little early so first-timers can find you</li>
@@ -998,7 +998,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     const nd = (!soon && w.nextDates) || [];
     $("w-next-row").hidden = !nd.length;
     $("w-next").textContent = nd.map(x => x.text).join("; ");
-    $("w-parking").textContent = w.parking || "No parking details yet.";
+    $("w-parking").textContent = w.parking || "";
+    $("w-parking").closest("li").hidden = !w.parking;
     $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
     $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
     $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";

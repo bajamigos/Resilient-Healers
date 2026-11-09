@@ -89,6 +89,7 @@ function rollRecurringWalks_() {
     if (ids[id]) id = newId_('W');
     const row = {};
     TABS['Walks'].forEach(h => { row[h] = w[h]; });
+    row['Title'] = retitle_(String(w['Title'] || ''), date, next);   // "December walk at Lake Murray" -> "January walk at Lake Murray"
     Object.assign(row, { 'Walk ID': id, 'Date': "'" + next, 'Start': "'" + timeText_(w['Start']), 'End': w['End'] ? "'" + timeText_(w['End']) : '',
       'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Skip dates': skipCell_(skips.filter(d => d > next)), 'Created': new Date(), 'Updated': new Date() });
     appendObj_('Walks', row);
@@ -192,3 +193,12 @@ function signupAgain_(b) {
     agree: b.agree === true, photoOk: b.photoOk === true });
 }
 function againUrl_(code) { return siteUrl_() + '?again=' + encodeURIComponent(code) + '#again'; }
+
+// If a walk's title names its month (or year), update it for the new date.
+const MONTHS_ = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function retitle_(title, oldYmd, newYmd) {
+  const om = MONTHS_[+oldYmd.slice(5, 7) - 1], nm = MONTHS_[+newYmd.slice(5, 7) - 1];
+  let t = title.replace(new RegExp('\\b' + om + '\\b', 'g'), nm);
+  if (oldYmd.slice(0, 4) !== newYmd.slice(0, 4)) t = t.replace(new RegExp('\\b' + oldYmd.slice(0, 4) + '\\b', 'g'), newYmd.slice(0, 4));
+  return t;
+}
