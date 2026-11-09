@@ -339,6 +339,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <p class="hint">Opens directions in Google Maps.</p>
         <ul class="facts">
           <li id="w-repeats-row"><span>Repeats</span><span id="w-repeats"></span></li>
+          <li id="w-next-row" hidden><span>Next dates</span><span><span id="w-next"></span><span class="muted" style="display:block">Sign-up for each date opens after the walk before it.</span></span></li>
           <li><span>Parking</span><span id="w-parking"></span></li>
           <li id="w-shorter-row"><span>Shorter route</span><span id="w-shorter"></span></li>
           <li id="w-bring-row"><span>Bring</span><span>A water bottle. Bring a healthcare-worker friend or colleague, and ask them to sign up too.</span></li>
@@ -590,6 +591,20 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
           <div class="btn-row"><button class="btn" type="submit" id="rt-submit">Send my review</button></div>
         </form>
       </div>
+    </div>
+
+    <!-- SAVE MY SPOT ON THE NEXT DATE (private link from the after-walk email) -->
+    <div id="view-again" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Walk again</p>
+        <h1 id="ag-title">Loading…</h1>
+        <p id="ag-walk"></p>
+      </div>
+      <div id="ag-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <p id="ag-msg" hidden></p>
+      <div class="btn-row" id="ag-actions" hidden><button class="btn" type="button" id="ag-go">Save my spot</button></div>
+      <p class="hint" id="ag-hint" hidden>We'll use the same name, email, phone and notes as last time, and email you a confirmation with a cancel link.</p>
+      <p class="error" id="ag-error" role="alert" hidden></p>
     </div>
 
     <!-- STAFF MESSAGES (private link from the staff email) -->
@@ -907,6 +922,9 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-address").textContent = w.address || "";
     $("w-directions").href = "https://www.google.com/maps/dir/?api=1&destination=" + w.lat + "," + w.lng;
     $("w-repeats").textContent = w.repeats || "One time";
+    const nd = (!soon && w.nextDates) || [];
+    $("w-next-row").hidden = !nd.length;
+    $("w-next").textContent = nd.map(x => x.text).join("; ");
     $("w-parking").textContent = w.parking || "No parking details yet.";
     $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
     $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
@@ -1335,6 +1353,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         (w.status === "Live" ? '<details><summary>Who\'s coming (' + going.length + ')</summary><ul class="roster">' + (going.map(person).join("") || '<li class="muted">No sign-ups yet.</li>') + '</ul>' +
           (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') +
           '<p class="muted">Walkers\' email addresses and phone numbers stay private. Messaging your group through this page is coming soon.</p></details>' : '') +
+        seriesHTML(w) +
         '<details data-edit="' + esc(w.id) + '"' + (w.status === "Changes requested" ? " open" : "") + '><summary>' + (w.status === "Changes requested" ? "Fix and resubmit this walk" : "Edit this walk") + '</summary>' +
         '<div class="form-card" style="margin-top:.8rem"><form data-walkform="' + esc(w.id) + '" novalidate><div id="ew-' + esc(w.id) + '-wrap"></div>' +
         '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn" type="submit">' + (w.status === "Changes requested" ? "Resubmit for review" : "Send changes for review") + '</button></div></form></div></details></div>';
@@ -1355,6 +1374,38 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("me-new-wrap").hidden = l.status !== "Approved";
     if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => { initWalkForm("nw", null); prefillLead("nw", "me-lead-note", "You're proposing to lead the"); }, 0); }
   }
+  // Repeating walks: skip a single date, or end the series. Takes effect right away (no staff review).
+  function seriesHTML(w) {
+    if (w.status !== "Live" || !w.series || !w.series.length) return "";
+    return '<details data-series="' + esc(w.id) + '"><summary>Upcoming dates (' + esc(w.repeats) + ')</summary>' +
+      '<p class="muted">Each date is added to the site, with its own sign-up list, once the walk before it has passed. Skip a date for a holiday or a day you can\'t lead.</p>' +
+      '<ul class="roster">' + w.series.map(d => '<li><span class="row-name">' + esc(d.text) + (d.skipped ? ' (skipped)' : '') + '</span>' +
+        '<button class="btn btn-ghost" type="button" data-skip="' + esc(d.date) + '" data-on="' + (d.skipped ? "0" : "1") + '" aria-label="' + (d.skipped ? "Bring back " : "Skip ") + esc(d.text) + '">' + (d.skipped ? "Bring back this date" : "Skip this date") + '</button></li>').join("") + '</ul>' +
+      '<div class="btn-row"><button class="btn btn-ghost" type="button" data-end="ask">End this series</button></div>' +
+      '<div data-end-confirm hidden><p>End the series? The ' + esc(w.dateText) + ' walk still happens, but no new dates will be added after it. To start repeating again later, edit the walk and send it for review.</p>' +
+      '<div class="btn-row"><button class="btn" type="button" data-end="yes">Yes, end the series</button><button class="btn btn-ghost" type="button" data-end="no">Keep it repeating</button></div></div>' +
+      '<p class="error" role="alert" hidden></p></details>';
+  }
+  $("me-walks").addEventListener("click", async (e) => {
+    const box = e.target.closest("details[data-series]"); if (!box) return;
+    const btn = e.target.closest("button"); if (!btn) return;
+    const err = box.querySelector(".error"); err.hidden = true;
+    const id = box.dataset.series;
+    if (btn.dataset.end === "ask") { box.querySelector("[data-end-confirm]").hidden = false; btn.hidden = true; box.querySelector('[data-end="yes"]').focus(); return; }
+    if (btn.dataset.end === "no") { box.querySelector("[data-end-confirm]").hidden = true; const a = box.querySelector('[data-end="ask"]'); a.hidden = false; a.focus(); return; }
+    let body = null, done = "";
+    if (btn.dataset.end === "yes") { body = { action: "endSeries", code: leaderCode, walkId: id }; done = "Series ended. No new dates will be added."; }
+    else if (btn.dataset.skip) { const on = btn.dataset.on === "1"; body = { action: "skipDate", code: leaderCode, walkId: id, date: btn.dataset.skip, skip: on }; done = on ? "Date skipped." : "Date brought back."; }
+    if (!body) return;
+    btn.disabled = true;
+    try {
+      const r = await apiPost(body);
+      if (!r || !r.ok) throw new Error("failed");
+      await loadMe();
+      const again = document.querySelector('#me-walks details[data-series="' + CSS.escape(id) + '"]'); if (again) again.open = true;
+      announce(done);
+    } catch (ex) { err.textContent = "That didn't go through. Try again."; err.hidden = false; btn.disabled = false; }
+  });
   $("me-walks").addEventListener("submit", async (e) => {
     const form = e.target.closest("form[data-walkform]"); if (!form) return;
     e.preventDefault();
@@ -1656,12 +1707,46 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { err.textContent = ex.message === "already_reviewed" ? "We've already received your review for this walk." : "Your review didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send my review"; }
   });
 
+  /* ---------- save my spot on the next date (?again=<sign-up code>#again) ---------- */
+  const againCode = params.get("again");
+  let againWalk = null;
+  async function loadAgain() {
+    if (!againCode) { $("ag-title").textContent = "Open this page from the link in your email."; return; }
+    try {
+      const r = await apiPost({ action: "againInfo", code: againCode });
+      if (!r || !r.ok) { $("ag-title").textContent = "We couldn't find your sign-up."; $("ag-walk").textContent = "Check the link in your email."; return; }
+      if (r.none) { $("ag-title").textContent = "No next date yet"; $("ag-walk").innerHTML = 'This walk doesn\'t have another date on the site right now. <a href="#find">See other walks</a>.'; return; }
+      againWalk = r.walk;
+      $("ag-title").textContent = r.walk.title;
+      $("ag-walk").textContent = r.walk.dateText + ", " + r.walk.timeText + " · " + r.walk.place + " · " + r.walk.going + " of " + r.walk.spots + " spots taken";
+      if (r.already) { showAgainDone(r.already, true); return; }
+      $("ag-go").textContent = r.walk.going >= r.walk.spots ? "Join the waitlist" : "Save my spot";
+      $("ag-actions").hidden = false; $("ag-hint").hidden = false;
+    } catch (e) { $("ag-title").textContent = "This page couldn't load. Try again in a moment."; }
+  }
+  function showAgainDone(status, before) {
+    $("ag-actions").hidden = true; $("ag-hint").hidden = true;
+    const link = '<a href="?walk=' + encodeURIComponent(againWalk.id) + '#walk">See the walk page</a>';
+    $("ag-done").innerHTML = status === "going"
+      ? "<h3>" + (before ? "You're already signed up." : "You're signed up.") + "</h3><p>" + (before ? "" : "We've emailed you a confirmation with a cancel link. ") + link + "</p>"
+      : "<h3>" + (before ? "You're already on the waitlist." : "You're on the waitlist.") + "</h3><p>If a spot opens you'll move up automatically and we'll email you. " + link + "</p>";
+    $("ag-done").hidden = false; $("ag-done").focus();
+  }
+  $("ag-go").addEventListener("click", async () => {
+    const err = $("ag-error"), btn = $("ag-go"); err.hidden = true; btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      const r = await apiPost({ action: "signupAgain", code: againCode });
+      if (!r || !r.ok) throw new Error("failed");
+      showAgainDone(r.status, !!r.duplicate);
+    } catch (ex) { err.textContent = "That didn't go through. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Try again"; }
+  });
+
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate"];
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate", "again"];
   const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead", "me-messages": "my-walks" };
   function route() {
     const h = (location.hash || "").slice(1);
-    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : rateCode ? "rate" : "find"));
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : rateCode ? "rate" : againCode ? "again" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
       const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
@@ -1702,6 +1787,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   if (inboxCode) loadInbox();
   if (staffCode) loadStaff();
   if (rateCode) loadRate();
+  if (againCode) loadAgain();
 })();
 </script>
 </body>

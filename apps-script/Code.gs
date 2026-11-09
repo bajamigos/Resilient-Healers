@@ -103,10 +103,10 @@ function setup() {
   }
   getPhotoFolder_();
   if (!siteProp_('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v9-' + SITE_, '1', 21600);
+  CacheService.getScriptCache().put('setup-v10-' + SITE_, '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v9-' + SITE_)) return;
+  if (CacheService.getScriptCache().get('setup-v10-' + SITE_)) return;
   setup();
 }
 
@@ -171,6 +171,7 @@ function walkOut_(w, extra) {
   };
   out.photo = w['Photo'] || ''; out.photoCredit = w['Photo credit'] || ''; out.photoSource = w['Photo source'] || '';
   out.city = w['City'] || ''; out.sample = !!w['Sample'];
+  out.nextDates = nextDates_(w);   // Recurring.gs
   out.comingSoon = !out.date;
   out.dateText = out.comingSoon ? 'Coming soon' : niceDate_(out.date);
   out.timeText = out.comingSoon ? '' : niceTime_(out.start) + (out.end ? ' to ' + niceTime_(out.end) : '');
@@ -262,7 +263,7 @@ function leaderPage_(code) {
   const walks = readTab_('Walks').filter(w => String(w['Leader ID']) === id).map(w => {
     const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
     return walkOut_(w, {
-      staffNote: w['Staff note'], pendingEdit: !!w['Pending edit'],
+      staffNote: w['Staff note'], pendingEdit: !!w['Pending edit'], series: seriesDates_(w, 6),
       // Walkers' email and phone are never sent to walk leaders.
       roster: rs.map(r => ({ status: r['Status'], name: r['Name'], profession: r['Profession'], accommodation: r['Accommodation'] }))
     });
@@ -307,11 +308,16 @@ function doPost(e) {
       case 'walkerLink': return json_(walkerLink_(body));
       case 'rateInfo': return json_(rateInfo_(body));
       case 'submitReview': return json_(submitReview_(body));
+      case 'skipDate': return json_(skipDate_(body));
+      case 'endSeries': return json_(endSeries_(body));
+      case 'againInfo': return json_(againInfo_(body));
+      case 'signupAgain': return json_(signupAgain_(body));
       // Staff-only maintenance through the website (needs that site's staff code), for when the editor can't run functions.
       case 'admin':
         if (cleanLine_(body.code, 80) !== staffCode_()) return json_({ ok: false, error: 'not_allowed' });
         if (body.op === 'loadSamples') { loadSamples(); return json_({ ok: true }); }
         if (body.op === 'removeSamples') { removeSamples(); return json_({ ok: true }); }
+        if (body.op === 'leaderCode') { const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(body.leaderId)); return json_(l ? { ok: true, code: String(l['Private link code']) } : { ok: false, error: 'not_found' }); }
         if (body.op === 'rollRecurring') return json_({ ok: true, added: rollRecurringWalks_() });
         if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
         return json_({ ok: false, error: 'unknown_op' });

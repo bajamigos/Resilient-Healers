@@ -13,9 +13,15 @@
  * walk with its own ID and an empty sign-up list, copying everything else (details, pin, photo,
  * walk leader, Sample flag). The old walk keeps its sign-ups, messages and reviews, and its
  * "Next walk" column points to the new one so it's never copied twice.
+ *
+ * Also here (decided November 9, 2026):
+ *  - The walk page shows the next few dates of a repeating walk.
+ *  - Walk leaders can skip a single future date (a holiday, say) or end the series, from their walk leader page.
+ *    Both take effect right away, without staff review, since they only remove dates.
+ *  - The "How was your walk?" email offers to save a spot on the next date (?again=<sign-up code>#again).
  */
 
-TABS['Walks'] = TABS['Walks'].concat(['Next walk']);
+TABS['Walks'] = TABS['Walks'].concat(['Next walk', 'Skip dates']);   // Skip dates: comma-separated yyyy-mm-dd
 
 const NTH_ = ['first', 'second', 'third', 'fourth'];
 const DAYS_ = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -71,19 +77,110 @@ function rollRecurringWalks_() {
   walks.forEach(w => {
     const date = dateText_(w['Date']);
     if (w['Status'] !== 'Live' || !date || date >= today || w['Next walk']) return;
+    const skips = skipList_(w);
     let next = nextOccurrence_(date, w['Repeats']);
     if (!next) return;
-    while (next < today) next = nextOccurrence_(next, w['Repeats']);   // skip dates missed while nobody checked
+    // Skip dates missed while nobody checked, and dates the walk leader skipped.
+    while (next < today || skips.indexOf(next) >= 0) next = nextOccurrence_(next, w['Repeats']);
     const base = String(w['Walk ID']).replace(/-\d{4}-\d{2}-\d{2}$/, '');
     let id = base + '-' + next;
     if (ids[id]) id = newId_('W');
     const row = {};
     TABS['Walks'].forEach(h => { row[h] = w[h]; });
     Object.assign(row, { 'Walk ID': id, 'Date': "'" + next, 'Start': "'" + timeText_(w['Start']), 'End': w['End'] ? "'" + timeText_(w['End']) : '',
-      'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Created': new Date(), 'Updated': new Date() });
+      'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Skip dates': skips.filter(d => d > next).join(','), 'Created': new Date(), 'Updated': new Date() });
     appendObj_('Walks', row);
     writeCells_('Walks', w._row, { 'Next walk': id });
     ids[id] = true; added++;
   });
   return added;
 }
+
+/* ---------- upcoming dates, skipping and ending a series ---------- */
+
+function isRepeating_(w) { return /^(weekly|every 2 weeks|monthly)/i.test(String(w['Repeats'] || '')); }
+function skipList_(w) { return String(w['Skip dates'] || '').split(',').map(s => s.trim()).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s)); }
+
+// The next n dates after this walk's own date, with skipped ones marked.
+function seriesDates_(w, n) {
+  const date = dateText_(w['Date']);
+  if (!date || !isRepeating_(w) || w['Next walk']) return [];
+  const skips = skipList_(w), out = [];
+  let d = date;
+  for (let i = 0; i < n; i++) {
+    d = nextOccurrence_(d, w['Repeats']);
+    if (!d) break;
+    out.push({ date: d, text: niceDate_(d), skipped: skips.indexOf(d) >= 0 });
+  }
+  return out;
+}
+// For the public walk page: the next few dates that will happen.
+function nextDates_(w) { return seriesDates_(w, 8).filter(x => !x.skipped).slice(0, 3).map(x => ({ date: x.date, text: x.text })); }
+
+function leaderSeriesWalk_(b) {
+  const l = leaderByCode_(b.code);
+  if (!l) return null;
+  const w = readTab_('Walks').find(x => String(x['Walk ID']) === String(b.walkId) && String(x['Leader ID']) === String(l['Leader ID']));
+  if (!w || w['Status'] !== 'Live' || !isRepeating_(w) || w['Next walk']) return null;
+  return w;
+}
+// Walk leader skips (or un-skips) one future date of their repeating walk.
+function skipDate_(b) {
+  const w = leaderSeriesWalk_(b);
+  if (!w) return { ok: false, error: 'not_found' };
+  const date = cleanLine_(b.date, 10);
+  if (!seriesDates_(w, 6).some(x => x.date === date)) return { ok: false, error: 'bad_date' };
+  let skips = skipList_(w).filter(d => d !== date);
+  if (b.skip !== false) skips.push(date);
+  skips.sort();
+  writeCells_('Walks', w._row, { 'Skip dates': skips.join(','), 'Updated': new Date() });
+  return { ok: true };
+}
+// Walk leader ends the series: the current date still happens; no new dates are added after it.
+function endSeries_(b) {
+  const w = leaderSeriesWalk_(b);
+  if (!w) return { ok: false, error: 'not_found' };
+  writeCells_('Walks', w._row, { 'Repeats': 'One time', 'Skip dates': '', 'Updated': new Date() });
+  return { ok: true };
+}
+
+/* ---------- "save my spot on the next date" (?again=<sign-up code>#again) ---------- */
+
+// The next upcoming live date of the series a sign-up belongs to.
+function nextInSeries_(walkId, walks) {
+  const today = todayPT_();
+  let w = walks.find(x => String(x['Walk ID']) === String(walkId)), guard = 0;
+  while (w && guard++ < 60) {
+    if (w['Status'] === 'Live' && dateText_(w['Date']) > today && String(w['Walk ID']) !== String(walkId)) return w;
+    const nx = String(w['Next walk'] || '');
+    w = nx ? walks.find(x => String(x['Walk ID']) === nx) : null;
+  }
+  return null;
+}
+function againContext_(code) {
+  code = cleanLine_(code, 80);
+  if (!code) return null;
+  const s = readTab_('Sign-ups').find(r => String(r['Cancel code']) === code && r['Status'] !== 'Interested');
+  if (!s) return null;
+  const walks = readTab_('Walks');
+  return { s: s, next: nextInSeries_(s['Walk'], walks) };
+}
+function againInfo_(b) {
+  const c = againContext_(b.code);
+  if (!c) return { ok: false, error: 'not_found' };
+  if (!c.next) return { ok: true, none: true };
+  const out = walkOut_(c.next), email = String(c.s['Email']).toLowerCase();
+  const mine = readTab_('Sign-ups').find(r => String(r['Walk']) === out.id && String(r['Email']).toLowerCase() === email && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
+  const cnt = counts_(out.id);
+  return { ok: true, firstName: String(c.s['Name']).split(' ')[0],
+    walk: { id: out.id, title: out.title, dateText: out.dateText, timeText: out.timeText, place: out.place, spots: out.spots, going: cnt.going },
+    already: mine ? (mine['Status'] === 'Going' ? 'going' : 'waitlist') : '' };
+}
+function signupAgain_(b) {
+  const c = againContext_(b.code);
+  if (!c || !c.next) return { ok: false, error: 'not_found' };
+  const s = c.s;
+  return signup_({ walk: String(c.next['Walk ID']), name: String(s['Name']), email: String(s['Email']), phone: String(s['Phone']),
+    profession: String(s['Profession']), accommodation: String(s['Accommodation'] || ''), hcw: true });
+}
+function againUrl_(code) { return siteUrl_() + '?again=' + encodeURIComponent(code) + '#again'; }

@@ -91,13 +91,15 @@ function sendReviewRequests_() {
     const out = walkOut_(w);
     if (daysUntil_(out.date, now) !== -1) return;
     const l = leaders.find(x => String(x['Leader ID']) === String(w['Leader ID']));
+    const nextW = nextInSeries_(w['Walk ID'], walks);   // Recurring.gs: the next date, if the walk repeats
     signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && r['Status'] === 'Going' && !r['Review request']).forEach(r => {
       try {
         MailApp.sendEmail({ to: String(r['Email']), name: senderName_(), subject: 'How was your walk?',
           body: ['Hi ' + String(r['Name']).split(' ')[0] + ',', '', 'Thanks for joining "' + w['Title'] + '"' + (l ? ' with ' + l['Name'] : '') + ' yesterday.', '',
             'Would you share how it went? A few sentences help other healthcare workers decide to come, and help your walk leader.', '',
             'Leave a review here (it takes a minute):', rateUrl_(r['Cancel code']), '',
-            'Only your first name and role are shown with your review, never your email. Our team reads every review before it is published.', '', 'Resilient Healers'].join('\n') });
+            ].concat(nextW ? ['Coming again on ' + walkOut_(nextW).dateText + '? Save your spot with one tap:', againUrl_(r['Cancel code']), ''] : []).concat([
+            'Only your first name and role are shown with your review, never your email. Our team reads every review before it is published.', '', 'Resilient Healers']).join('\n') });
         writeCells_('Sign-ups', r._row, { 'Review request': new Date() });
         sent++;
       } catch (e) { /* daily email limit: try again next hour */ }
