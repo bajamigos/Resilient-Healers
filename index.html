@@ -463,6 +463,37 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       </section>
     </div>
 
+    <!-- STAFF REVIEW (private link from the staff email) -->
+    <div id="view-review" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Resilient Healers staff</p>
+        <p><span class="chip chip-draft" id="rv-type">Review</span></p>
+        <h1 id="rv-title">Loading…</h1>
+        <p class="hint">This page is private to staff. Don't share its link.</p>
+      </div>
+      <section class="block" id="rv-profile-wrap" aria-labelledby="rv-profile-h" hidden>
+        <h2 id="rv-profile-h">Walk leader profile</h2>
+        <div class="coach-mini" id="rv-photo"></div>
+        <ul class="facts" id="rv-profile"></ul>
+      </section>
+      <section class="block" id="rv-walk-wrap" aria-labelledby="rv-walk-h" hidden>
+        <h2 id="rv-walk-h">Walk</h2>
+        <div class="pin-map" id="rv-map" role="region" aria-label="Map of the proposed meeting spot"></div>
+        <p><a id="rv-maplink" target="_blank" rel="noopener" href="#">Check the pin in Google Maps</a></p>
+        <ul class="facts" id="rv-walk"></ul>
+      </section>
+      <section class="block" id="rv-decide" aria-labelledby="rv-decide-h" hidden>
+        <h2 id="rv-decide-h">Your decision</h2>
+        <div id="rv-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div class="form-card stack" id="rv-form">
+          <div class="btn-row"><button class="btn" type="button" id="rv-approve">Approve</button></div>
+          <div class="field"><label for="rv-note">Or request changes. Tell the walk leader what to fix:</label><textarea id="rv-note"></textarea></div>
+          <p class="error" id="rv-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn btn-danger" type="button" id="rv-changes">Request changes</button></div>
+        </div>
+      </section>
+    </div>
+
     <!-- CONTACT -->
     <div id="view-contact" class="stack-lg narrow" hidden>
       <div class="stack">
@@ -1019,6 +1050,61 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     finally { btn.disabled = false; btn.textContent = "Send for review"; }
   });
 
+
+  /* ---------- staff review (?review=<code>#review) ---------- */
+  const reviewCode = params.get("review");
+  const REVIEW_LABELS = { application: "New walk leader application", walk: "New walk proposal", "walk-edit": "Changes to a live walk", "profile-edit": "Walk leader profile changes" };
+  let rvMap = null;
+  function factsHTML(pairs) { return pairs.filter(p => p[1] !== undefined && p[1] !== null && p[1] !== "").map(p => '<li><span>' + esc(p[0]) + '</span><span>' + esc(p[1]) + '</span></li>').join(""); }
+  async function loadReview() {
+    if (!reviewCode) { $("rv-title").textContent = "Open this page from the link in a staff email."; return; }
+    try {
+      const r = await apiGet({ action: "reviewData", code: reviewCode });
+      if (!r || !r.ok) { $("rv-title").textContent = "Review not found."; return; }
+      $("rv-type").textContent = REVIEW_LABELS[r.type] || "Review";
+      $("rv-title").textContent = r.profile ? r.profile.name : "Review";
+      const showProfile = r.type === "application" || r.type === "profile-edit";
+      $("rv-profile-wrap").hidden = !showProfile;
+      if (showProfile && r.profile) {
+        $("rv-photo").innerHTML = r.profile.photo ? '<img class="leader-photo" src="' + esc(r.profile.photo) + '" alt="Photo of ' + esc(r.profile.name) + '">' : '<span class="muted">No photo</span>';
+        $("rv-profile").innerHTML = factsHTML([["Name", r.profile.name], ["Email", r.profile.email], ["Phone", r.profile.phone], ["City", r.profile.city], ["Background", r.profile.background], ["Bio", r.profile.bio]]);
+      }
+      const w = r.walk, showWalk = !!w && r.type !== "profile-edit";
+      $("rv-walk-wrap").hidden = !showWalk;
+      if (showWalk) {
+        $("rv-walk").innerHTML = factsHTML([["Name", w.title], ["Date", w.dateText], ["Time", w.timeText], ["Repeats", w.repeats], ["Place", w.place], ["Address", w.address],
+          ["Pin", Number(w.lat).toFixed(5) + ", " + Number(w.lng).toFixed(5)], ["How to find it", w.find], ["Parking", w.parking], ["Spots", w.spots], ["Shorter route", w.shorter], ["Description", w.description]]);
+        $("rv-maplink").href = "https://www.google.com/maps/search/?api=1&query=" + w.lat + "," + w.lng;
+        setTimeout(() => {
+          if (!rvMap) { rvMap = L.map("rv-map", { scrollWheelZoom: false }); tiles().addTo(rvMap); wheelOnFocus(rvMap); }
+          rvMap.invalidateSize(); rvMap.setView([w.lat, w.lng], 16);
+          L.marker([w.lat, w.lng], { icon: pinIcon, title: "Proposed meeting spot", alt: "Proposed meeting spot" }).addTo(rvMap);
+        }, 0);
+      }
+      $("rv-decide").hidden = false;
+      if (r.status !== "Open") {
+        $("rv-form").hidden = true;
+        $("rv-done").innerHTML = "<h3>Already decided</h3><p>" + esc(r.status === "Replaced" ? "The walk leader resubmitted, so a newer review replaced this one." : r.status) + (r.note ? ": " + esc(r.note) : "") + "</p>";
+        $("rv-done").hidden = false;
+      }
+    } catch (e) { $("rv-title").textContent = "This review couldn't load. Try again in a moment."; }
+  }
+  async function decide(decision) {
+    const err = $("rv-error"); err.hidden = true;
+    const note = $("rv-note").value.trim();
+    if (decision === "changes" && !note) { err.textContent = "Add a note so the walk leader knows what to change."; err.hidden = false; return; }
+    $("rv-approve").disabled = $("rv-changes").disabled = true;
+    try {
+      const r = await apiPost({ action: "decide", code: reviewCode, decision, note });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      $("rv-form").hidden = true;
+      $("rv-done").innerHTML = "<h3>" + (decision === "approve" ? "Approved" : "Changes requested") + "</h3><p>" + esc(r.message) + "</p>";
+      $("rv-done").hidden = false; $("rv-done").focus();
+    } catch (e) { err.textContent = "That didn't save. Check your connection and try again."; err.hidden = false; $("rv-approve").disabled = $("rv-changes").disabled = false; }
+  }
+  $("rv-approve").addEventListener("click", () => decide("approve"));
+  $("rv-changes").addEventListener("click", () => decide("changes"));
+
   /* ---------- contact ---------- */
   $("contact-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1037,11 +1123,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   });
 
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "contact"];
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact"];
   const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead" };
   function route() {
     const h = (location.hash || "").slice(1);
-    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (leaderCode ? "my-walks" : "find"));
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
       const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
@@ -1074,6 +1160,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   route();
   loadWalks();
   if (leaderCode) loadMe();
+  if (reviewCode) loadReview();
 })();
 </script>
 </body>

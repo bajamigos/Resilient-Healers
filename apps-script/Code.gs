@@ -159,6 +159,7 @@ function doGet(e) {
   if (p.action === 'count') return json_(countOut_(p.walk));
   if (p.action === 'leader') return json_(leaderPage_(p.code));
   if (p.action === 'review') return reviewPage_(p.code);
+  if (p.action === 'reviewData') return json_(reviewData_(p.code));
   return json_({ ok: false, error: 'unknown_request' });
 }
 
@@ -231,6 +232,7 @@ function doPost(e) {
       case 'editWalk': return json_(editWalk_(body));
       case 'editProfile': return json_(editProfile_(body));
       case 'sendLink': return json_(sendLink_(body));
+      case 'decide': return json_(decideApi_(body));
       default: return json_({ ok: false, error: 'unknown_action' });
     }
   } finally {
@@ -320,7 +322,7 @@ function savePhoto_(dataUrl, leaderId) {
 function openReview_(type, leaderId, walkId) {
   const code = newCode_();
   appendObj_('Reviews', { 'Review code': code, 'Type': type, 'Leader ID': leaderId, 'Walk ID': walkId || '', 'Status': 'Open', 'Created': new Date() });
-  const reviewUrl = ScriptApp.getService().getUrl() + '?action=review&code=' + code;
+  const reviewUrl = siteUrl_() + '?review=' + code + '#review';
   const labels = { application: 'New walk leader application', walk: 'New walk proposal', 'walk-edit': 'Changes to a live walk', 'profile-edit': 'Walk leader profile changes' };
   const leader = readTab_('Leaders').find(l => String(l['Leader ID']) === String(leaderId));
   const walk = walkId ? readTab_('Walks').find(w => String(w['Walk ID']) === String(walkId)) : null;
@@ -537,7 +539,12 @@ function reviewPage_(code) {
 function decide(code, decision, note) {
   const lock = LockService.getScriptLock();
   lock.waitLock(25000);
-  try {
+  try { return decideLocked_(code, decision, note); } finally { lock.releaseLock(); }
+}
+
+/** The decision itself. Callers must already hold the script lock. */
+function decideLocked_(code, decision, note) {
+  {
     const r = readTab_('Reviews').find(x => String(x['Review code']) === String(code));
     if (!r) throw new Error('Review not found.');
     if (r['Status'] !== 'Open') return 'This was already decided (' + r['Status'] + ').';
@@ -581,9 +588,36 @@ function decide(code, decision, note) {
          'Make the changes and resubmit from your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'];
     if (l['Email']) MailApp.sendEmail({ to: String(l['Email']), name: 'Resilient Healers', subject: approve ? 'Approved: ' + what.replace(/^your /, '') : 'Changes requested: ' + what.replace(/^your /, ''), body: lines.join('\n') });
     return approve ? 'Approved. We emailed the walk leader.' : 'Changes requested. We emailed the walk leader your note.';
-  } finally {
-    lock.releaseLock();
   }
+}
+
+
+/* ===================== staff review: data for the website's review page ===================== */
+
+function reviewData_(code) {
+  const r = readTab_('Reviews').find(x => String(x['Review code']) === cleanLine_(code, 80));
+  if (!r) return { ok: false, error: 'not_found' };
+  const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(r['Leader ID']));
+  const w = r['Walk ID'] ? readTab_('Walks').find(x => String(x['Walk ID']) === String(r['Walk ID'])) : null;
+  let profile = l ? { name: l['Name'], email: l['Email'], phone: l['Phone'], city: l['City'], background: l['Background'], bio: l['Bio'], photo: l['Photo'] } : null;
+  if (r['Type'] === 'profile-edit' && l && l['Pending edit']) {
+    const pe = JSON.parse(l['Pending edit']);
+    profile = Object.assign({}, profile, { name: pe.name, phone: pe.phone, city: pe.city, background: pe.background, bio: pe.bio }, pe.photo ? { photo: pe.photo } : {});
+  }
+  let walk = null;
+  if (w) {
+    const src = (r['Type'] === 'walk-edit' && w['Pending edit']) ? JSON.parse(w['Pending edit']) : walkOut_(w);
+    walk = Object.assign({}, src, { dateText: niceDate_(src.date), timeText: niceTime_(src.start) + (src.end ? ' to ' + niceTime_(src.end) : '') });
+  }
+  return { ok: true, type: r['Type'], status: r['Status'], note: r['Staff note'], profile: profile, walk: walk };
+}
+
+function decideApi_(b) {
+  const decision = b.decision === 'approve' ? 'approve' : 'changes';
+  const note = clean_(b.note, 1500);
+  if (decision === 'changes' && !note) return { ok: false, error: 'missing_note' };
+  try { return { ok: true, message: decideLocked_(cleanLine_(b.code, 80), decision, note) }; }
+  catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 
 /* ===================== walkers: sign-up, cancel, contact ===================== */
