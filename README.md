@@ -9,7 +9,8 @@ Free small-group walks for healthcare workers, led by coaches. This is the draft
 - `index.html`: the whole site in one file.
   - **Find a walk:** a US map you can zoom, with city search. Walks appear as pins.
   - **Walk page:** date, time, meeting spot with a map and directions, spots left, sign-up and waitlist.
-  - **Coach** and **Contact** pages.
+  - **Lead a walk:** information for walk leaders, a pin dropper for the meeting spot, and an interest form.
+  - **Walk leader profile** and **Contact** pages.
 
 ## Current limits
 

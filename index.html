@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Resilient Healers</title>
-<meta name="description" content="Free small-group walks for healthcare workers, led by coaches. Find a walk near you.">
+<meta name="description" content="Free small-group walks for healthcare workers, led by walk leaders. Find a walk near you, or lead one in your community.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,700;1,6..12,400&display=swap">
@@ -93,6 +93,10 @@ textarea { min-height: 6rem; resize: vertical; }
 .results button:hover { border-color: var(--copper); }
 #big-map { height: min(62vh, 540px); width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
 #small-map { height: 280px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+#pin-map { height: 320px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+.steps { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+.ticks { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
+.tabular { font-variant-numeric: tabular-nums; }
 .leaflet-container { font-family: var(--font-body); font-size: 1rem; }
 .leaflet-popup-content { margin: .9rem 1rem; line-height: 1.5; }
 .leaflet-popup-content a.btn { color: var(--on-copper); margin-top: .4rem; }
@@ -164,7 +168,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     <nav aria-label="Main">
       <ul>
         <li><a href="#find" data-nav="find">Find a walk</a></li>
-        <li><a href="#coach" data-nav="coach">Coach</a></li>
+        <li><a href="#lead" data-nav="lead">Lead a walk</a></li>
         <li><a href="#contact" data-nav="contact">Contact</a></li>
       </ul>
     </nav>
@@ -180,7 +184,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       <div class="stack">
         <p class="eyebrow">Free small-group walks for healthcare workers</p>
         <h1>Find a walk near you</h1>
-        <p class="muted">Walk, connect with colleagues, and recharge, with a coach leading the way.</p>
+        <p class="muted">Walk, connect with colleagues, and recharge, with a walk leader showing the way.</p>
       </div>
 
       <div class="stack">
@@ -258,14 +262,14 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
         </ul>
       </section>
 
-      <section class="block" aria-labelledby="coach-mini-h">
-        <h2 id="coach-mini-h">Your coach</h2>
+      <section class="block" aria-labelledby="leader-mini-h">
+        <h2 id="leader-mini-h">Your walk leader</h2>
         <div class="coach-mini">
           <div class="avatar" aria-hidden="true">PR</div>
           <div>
             <span class="row-name">Priya Reddy, PMHNP-BC, FNP-C</span>
-            <span class="muted">Psychiatric mental health and family nurse practitioner, and transformative coach.</span>
-            <a href="#coach">Read Priya's profile</a>
+            <span class="muted">Psychiatric mental health and family nurse practitioner.</span>
+            <a href="#leader">Read Priya's profile</a>
           </div>
         </div>
       </section>
@@ -309,9 +313,9 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     </div>
 
     <!-- COACH -->
-    <div id="view-coach" class="stack-lg narrow" hidden>
+    <div id="view-leader" class="stack-lg narrow" hidden>
       <div class="stack">
-        <p class="eyebrow">Meet your coach</p>
+        <p class="eyebrow">Meet your walk leader</p>
         <h1>Priya Reddy, PMHNP-BC, FNP-C</h1>
         <span class="chip chip-draft" style="align-self:flex-start">Draft for Priya to review</span>
       </div>
@@ -326,6 +330,102 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
         <li><span>Coaching</span><span><a href="https://www.metamorphosis-health-coaching.com/" target="_blank" rel="noopener">Metamorphosis Coaching with Priya</a></span></li>
       </ul>
       <div class="btn-row"><a class="btn" href="#walk">See the next walk</a></div>
+    </div>
+
+    <!-- LEAD A WALK (for walk leaders) -->
+    <div id="view-lead" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">For walk leaders</p>
+        <h1>Lead a walk</h1>
+        <p>Walk leaders host a free, monthly small-group walk where healthcare workers can step away from work, talk with colleagues who understand, and recharge. You pick the place, lead the walk, and guide the conversation. We handle the walk page, sign-ups, confirmations and the waitlist.</p>
+        <div class="btn-row"><a class="btn" href="#lead-interest">I'm interested in leading a walk</a></div>
+      </div>
+
+      <section class="block" aria-labelledby="lead-what-h">
+        <h2 id="lead-what-h">What a walk looks like</h2>
+        <ul class="facts">
+          <li><span>Who comes</span><span>Healthcare workers, and the healthcare-worker friends they bring</span></li>
+          <li><span>Group size</span><span>Up to 20 people. When it's full, new sign-ups join a waitlist.</span></li>
+          <li><span>How often</span><span>Once a month, on a set day, so people can plan around it</span></li>
+          <li><span>How long</span><span>About 90 minutes, including gathering at the start</span></li>
+          <li><span>Cost</span><span>Free for everyone who walks</span></li>
+          <li><span>Pace</span><span>Conversational. Offer a shorter turnaround for anyone who needs it.</span></li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="lead-how-h">
+        <h2 id="lead-how-h">How it works for you</h2>
+        <ol class="steps">
+          <li><strong>Set up your walk.</strong> Send us the date, time, place and meeting spot. We create your public walk page with a map, directions and the live count of spots.</li>
+          <li><strong>People sign up online.</strong> Each sign-up gets a confirmation email with a cancel link. If someone cancels, the first person on the waitlist moves up and gets an email.</li>
+          <li><strong>See who's coming.</strong> You get access to a sign-up sheet with each person's name, email, phone, profession and any accommodation they need.</li>
+          <li><strong>Lead the walk.</strong> Meet the group at the pin, walk, and guide the conversation.</li>
+        </ol>
+      </section>
+
+      <section class="block" aria-labelledby="lead-spot-h">
+        <h2 id="lead-spot-h">Choosing your meeting spot</h2>
+        <p>The most common question from walkers is "where exactly do we meet?" A good meeting spot has:</p>
+        <ul class="ticks">
+          <li><strong>An exact pin,</strong> not just the park's address</li>
+          <li><strong>A landmark</strong> people can't miss, like a ranger station, a sign or a park entrance</li>
+          <li><strong>A short description</strong> of how to find you after parking</li>
+          <li><strong>A photo</strong> of the spot, taken from where people will walk in</li>
+          <li><strong>Parking details,</strong> including any fee</li>
+        </ul>
+        <h3>Drop your pin</h3>
+        <p class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. Copy the details below and send them to us with the contact form.</p>
+        <form class="search" id="pin-form" role="search">
+          <label for="pin-q" class="sr-only">Park or address</label>
+          <input type="search" id="pin-q" placeholder="Search a park or address" autocomplete="off">
+          <button class="btn" type="submit">Find</button>
+        </form>
+        <p class="hint" id="pin-status" aria-live="polite"></p>
+        <div id="pin-map" role="region" aria-label="Map for placing your meeting-spot pin. Drag the pin, or use the search above."></div>
+        <div class="form-card stack">
+          <p><strong>Your pin:</strong> <span id="pin-coords" class="tabular">32.78509, -117.04161</span></p>
+          <p><a id="pin-link" href="https://www.google.com/maps/search/?api=1&amp;query=32.78509,-117.04161" target="_blank" rel="noopener">Check this spot in Google Maps</a></p>
+          <div class="btn-row"><button class="btn btn-small btn-ghost" type="button" id="pin-copy">Copy pin details</button></div>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="lead-before-h">
+        <h2 id="lead-before-h">Before each walk</h2>
+        <ul class="ticks">
+          <li>Open the sign-up sheet and read the accommodation notes</li>
+          <li>Decide where people who need a shorter route can turn back</li>
+          <li>Check the meeting spot still matches the pin, photo and description</li>
+          <li>Arrive a little early so first-timers can find you</li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="lead-soon-h">
+        <div class="title-row"><h2 id="lead-soon-h">Coming soon for walk leaders</h2></div>
+        <ul class="ticks">
+          <li>Create and edit your own walks, and set the number of spots</li>
+          <li>Drag the meeting-spot pin right on your walk page</li>
+          <li>A walk leader view to manage sign-ups without the sheet</li>
+          <li>Reminder emails for walkers before each walk</li>
+        </ul>
+      </section>
+
+      <section class="block" id="lead-interest" aria-labelledby="lead-int-h">
+        <h2 id="lead-int-h">Interested in leading a walk?</h2>
+        <p class="muted">Tell us where you'd like to lead one, and we'll be in touch.</p>
+        <div id="lead-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div class="form-card">
+          <form id="lead-form" novalidate>
+            <div class="field"><label for="l-name">Your name</label><input type="text" id="l-name" autocomplete="name"></div>
+            <div class="field"><label for="l-email">Your email</label><input type="email" id="l-email" autocomplete="email"></div>
+            <div class="field"><label for="l-city">City and state where you'd lead a walk</label><input type="text" id="l-city" autocomplete="address-level2"></div>
+            <div class="field"><label for="l-bg">Your background</label><input type="text" id="l-bg" placeholder="For example: ER nurse, physical therapist, social worker"></div>
+            <div class="field"><label for="l-msg">Anything else? (optional)</label><textarea id="l-msg" placeholder="A park you have in mind, the day that would work, or questions for us"></textarea></div>
+            <div class="sr-only" aria-hidden="true"><label for="l-website">Leave this empty</label><input type="text" id="l-website" tabindex="-1" autocomplete="off"></div>
+            <p class="error" id="lead-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="lead-submit">Send</button></div>
+          </form>
+        </div>
+      </section>
     </div>
 
     <!-- CONTACT -->
@@ -369,7 +469,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       city: "San Diego, CA",
       date: "Sunday, December 13, 2026",
       time: "9:00 to 10:30 AM",
-      coach: "Priya Reddy, PMHNP-BC, FNP-C",
+      leader: "Priya Reddy, PMHNP-BC, FNP-C",
       place: "Lake Murray, by the ranger station",
       lat: 32.78509, lng: -117.04161,
       href: "#walk"
@@ -439,7 +539,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     $("list-h").textContent = origin ? "Walks near " + label : "Upcoming walks";
     $("walk-list").innerHTML = items.length ? items.map(({ w, d }) =>
       '<li class="walk-card"><div class="info"><span class="name">' + esc(w.title) + '</span><span>' + esc(w.date) + ', ' + esc(w.time) + '</span><span class="muted">' +
-      esc(w.place) + ', ' + esc(w.city) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span><span class="muted">Coach: ' + esc(w.coach) + '</span></div>' +
+      esc(w.place) + ', ' + esc(w.city) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span><span class="muted">Walk leader: ' + esc(w.leader) + '</span></div>' +
       '<a class="btn btn-small" href="' + w.href + '">See this walk</a></li>'
     ).join("") : '<li class="empty">No walks within 100 miles of ' + esc(label) + ' yet. Try another city, or show all of the US.</li>';
   }
@@ -607,11 +707,71 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     }
   });
 
+
+  /* ---------- lead a walk: pin dropper + interest form ---------- */
+  let pinMap = null, pinMarker = null;
+  function showPin(lat, lng) {
+    const c = lat.toFixed(5) + ", " + lng.toFixed(5);
+    $("pin-coords").textContent = c;
+    $("pin-link").href = "https://www.google.com/maps/search/?api=1&query=" + lat.toFixed(5) + "," + lng.toFixed(5);
+  }
+  function ensurePinMap() {
+    if (pinMap) { pinMap.invalidateSize(); return; }
+    const start = [WALKS[0].lat, WALKS[0].lng];
+    pinMap = L.map("pin-map", { scrollWheelZoom: false }).setView(start, 15);
+    tiles().addTo(pinMap);
+    pinMarker = L.marker(start, { icon: pinIcon, draggable: true, title: "Meeting spot pin. Drag to move.", alt: "Meeting spot pin" }).addTo(pinMap);
+    pinMarker.on("dragend", () => { const p = pinMarker.getLatLng(); showPin(p.lat, p.lng); $("pin-status").textContent = "Pin moved."; });
+    pinMap.on("click", (e) => { pinMarker.setLatLng(e.latlng); showPin(e.latlng.lat, e.latlng.lng); $("pin-status").textContent = "Pin moved."; });
+    pinMap.on("focus click", () => pinMap.scrollWheelZoom.enable());
+    pinMap.on("blur mouseout", () => pinMap.scrollWheelZoom.disable());
+  }
+  $("pin-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const q = $("pin-q").value.trim();
+    if (!q) { $("pin-status").textContent = "Type a park or address to search."; return; }
+    $("pin-status").textContent = "Searching…";
+    try {
+      const found = await searchCity(q);
+      if (!found.length) { $("pin-status").textContent = "No places found for " + q + "."; return; }
+      const lat = parseFloat(found[0].lat), lng = parseFloat(found[0].lon);
+      ensurePinMap();
+      pinMap.setView([lat, lng], 17);
+      pinMarker.setLatLng([lat, lng]);
+      showPin(lat, lng);
+      $("pin-status").textContent = "Showing " + found[0].display_name.split(",").slice(0, 3).join(",") + ". Now drag the pin to the exact meeting spot.";
+    } catch (ex) {
+      $("pin-status").textContent = "Search isn't responding right now. You can still drag the pin on the map.";
+    }
+  });
+  $("pin-copy").addEventListener("click", async () => {
+    const text = "Meeting spot pin: " + $("pin-coords").textContent + "\n" + $("pin-link").href;
+    try { await navigator.clipboard.writeText(text); $("pin-status").textContent = "Pin details copied. Paste them into the contact form."; }
+    catch (e) { $("pin-status").textContent = "Copy didn't work here. Select the pin numbers above and copy them."; }
+  });
+  $("lead-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("lead-error"); err.hidden = true;
+    const name = $("l-name").value.trim(), email = $("l-email").value.trim(), city = $("l-city").value.trim(), bg = $("l-bg").value.trim(), more = $("l-msg").value.trim();
+    if (!name || !/^\S+@\S+\.\S+$/.test(email) || !city) { err.textContent = "Please add your name, a valid email and the city where you'd lead a walk."; err.hidden = false; return; }
+    const btn = $("lead-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const message = "[Walk leader interest]\nCity: " + city + "\nBackground: " + (bg || "(not given)") + (more ? "\n\n" + more : "");
+      const r = await apiPost({ action: "message", name, email, message, website: $("l-website").value });
+      if (!r || !r.ok) throw new Error("failed");
+      const done = $("lead-done");
+      done.innerHTML = "<h3>Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + " about leading a walk in " + esc(city) + ".</p>";
+      done.hidden = false; $("lead-form").reset(); done.focus();
+    } catch (ex) {
+      err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false;
+    } finally { btn.disabled = false; btn.textContent = "Send"; }
+  });
+
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "coach", "contact"];
+  const VIEWS = ["find", "walk", "leader", "lead", "contact"];
   function route() {
     const h = (location.hash || "").slice(1);
-    let v = VIEWS.includes(h) ? h : (["signup", "where", "mine"].includes(h) ? "walk" : "find");
+    let v = VIEWS.includes(h) ? h : (["signup", "where", "mine"].includes(h) ? "walk" : (h === "lead-interest" ? "lead" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
       const active = a.dataset.nav === v || (v === "walk" && a.dataset.nav === "find");
@@ -619,6 +779,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     });
     if (v === "find") setTimeout(() => bigMap.invalidateSize(), 0);
     if (v === "walk") setTimeout(ensureSmallMap, 0);
+    if (v === "lead") setTimeout(ensurePinMap, 0);
     const target = !VIEWS.includes(h) && h ? document.getElementById(h) : null;
     if (target) setTimeout(() => target.scrollIntoView(), 30); else window.scrollTo(0, 0);
   }
