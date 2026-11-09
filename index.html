@@ -191,6 +191,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 .report-form { display: flex; flex-direction: column; gap: .5rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .chip-reported { background: var(--warn-bg); color: var(--warn); }
 .walk-photo-preview { width: 100%; max-width: 28rem; height: auto; aspect-ratio: 16 / 9; border: 0; object-fit: cover; border-radius: var(--radius); }
+.review-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .5rem; }
 .chip-sample { background: var(--lavender); color: var(--rust); font-size: .8rem; vertical-align: middle; }
 .reviews { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .8rem; }
 .review { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .45rem; }
@@ -252,6 +253,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <ul class="results" id="search-results"></ul>
         <div id="big-map" role="region" aria-label="Map of walks. Use the list below the map for the same information."></div>
       </div>
+      <aside class="review-card" aria-label="What walkers say" id="find-review" hidden></aside>
       <section class="block" aria-labelledby="list-h">
         <h2 id="list-h">Upcoming walks</h2>
         <ul class="walk-list" id="walk-list"><li class="empty">Loading walks…</li></ul>
@@ -361,12 +363,6 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             </div>
           </div>
         </div>
-      </section>
-
-      <section class="block" id="w-reviews" aria-labelledby="w-reviews-h" hidden>
-        <h2 id="w-reviews-h">What walkers say</h2>
-        <p class="muted" id="w-reviews-summary"></p>
-        <ul class="reviews" id="w-reviews-list"></ul>
       </section>
 
       <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden></aside>
@@ -779,7 +775,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
       (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span>' + (interestText(w) ? ' · ' + interestText(w) : '') + '</span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
       '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.max(1, Math.round(d)) + (Math.round(d) <= 1 ? ' mile away' : ' miles away') : '') + '</span>' +
-      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + (w.leader && w.leader.rating ? ' · <span class="stars" aria-hidden="true">★</span> ' + w.leader.rating + ' (' + w.leader.reviews.length + (w.leader.reviews.length === 1 ? ' review' : ' reviews') + ')' + (w.leader.sample ? ', sample' : '') : (w.leader && w.leader.sample ? ' (sample)' : '')) + '</span></div>' +
+      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + (w.leader && w.leader.sample ? ' (sample)' : '') + '</span></div>' +
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
   }
   let lastOrigin = null, lastLabel = "";
@@ -808,6 +804,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("search-status").textContent = "Showing " + label + ". " + (near ? near + (near === 1 ? " walk" : " walks") + " nearby." : "No walks nearby yet.");
     $("search-results").innerHTML = "";
     showAd($("find-sponsor"), [lat, lng]);
+    showReviewCard($("find-review"), [lat, lng]);
   }
   $("city-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -826,7 +823,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment."; }
   });
   $("show-us").addEventListener("click", () => {
-    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null); $("find-sponsor").hidden = true;
+    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null); $("find-sponsor").hidden = true; $("find-review").hidden = true;
     $("search-status").textContent = "Showing all of the US."; $("search-results").innerHTML = "";
   });
 
@@ -877,7 +874,6 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
     $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";
     $("w-leader-sample").hidden = !(w.leader && w.leader.sample);
-    renderReviews("w", w.leader);
     $("w-leader-bg").textContent = w.leader ? w.leader.background : "Interested in leading this walk? Apply on the Lead a walk page.";
     $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true; $("w-message-leader").setAttribute("aria-expanded", "false"); $("w-link-done").textContent = "";
     showAd($("w-sponsor"), [w.lat, w.lng]);
@@ -1021,6 +1017,27 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (!rs.length) return;
     $(prefix + "-reviews-summary").textContent = "Average " + l.rating + " out of 5 from " + rs.length + (rs.length === 1 ? " review" : " reviews") + " of walks with " + String(l.name).split(",")[0] + ".";
     $(prefix + "-reviews-list").innerHTML = rs.map(reviewHTML).join("");
+  }
+
+  // One review card after a city search, like the sponsor card: the nearest walk leader with reviews (within 100 miles).
+  function showReviewCard(el, origin) {
+    const seen = {}, cands = [];
+    WALKS.forEach(w => {
+      const l = w.leader;
+      if (!l || !l.reviews || !l.reviews.length || seen[l.id]) return;
+      seen[l.id] = 1;
+      cands.push({ l, w, d: miles(origin, [w.lat, w.lng]) });
+    });
+    const pick = cands.filter(c => c.d <= 100).sort((a, b) => a.d - b.d)[0];
+    el.hidden = !pick;
+    if (!pick) { el.innerHTML = ""; return; }
+    const r = pick.l.reviews[Math.floor(Math.random() * pick.l.reviews.length)];
+    el.innerHTML = '<span class="sponsor-label">What walkers say</span>' +
+      '<div class="review-head"><span class="stars" role="img" aria-label="' + r.rating + ' out of 5 stars">' + starText(r.rating) + '</span>' + (r.sample ? '<span class="chip chip-sample">Sample review</span>' : '') + '</div>' +
+      '<p class="review-text">“' + esc(r.text) + '”</p>' +
+      '<span class="muted">' + esc(r.name) + (r.role ? ', ' + esc(r.role) : '') + ', on a walk with ' + esc(pick.l.name) + '</span>' +
+      (r.sample ? '<span class="hint">Example content for this demo. Not written by a real walker.</span>' : '') +
+      '<a href="?walk=' + encodeURIComponent(pick.w.id) + '#leader">More about ' + esc(String(pick.l.name).split(",")[0]) + ' and their walks</a>';
   }
 
   /* ---------- public walk leader profile ---------- */
