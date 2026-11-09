@@ -27,9 +27,11 @@
 const TABS = {
   'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],
   'Messages': ['Received', 'Name', 'Email', 'Message'],
-  'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated'],
+  'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Sample'],
   'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Photo', 'Photo credit', 'Photo source', 'Sample', 'City', 'Takes over'],
-  'Reviews': ['Review code', 'Type', 'Leader ID', 'Walk ID', 'Status', 'Created', 'Decided', 'Staff note']
+  'Reviews': ['Review code', 'Type', 'Leader ID', 'Walk ID', 'Status', 'Created', 'Decided', 'Staff note'],
+  // What walkers say about a walk leader. Only "Published" rows show on the site; "Sample" marks demo content.
+  'Walker reviews': ['Review ID', 'Leader ID', 'Walk ID', 'Name', 'Role', 'Rating', 'Text', 'Date', 'Status', 'Sample']
 };
 
 const SEED_LEADER = {
@@ -81,10 +83,10 @@ function setup() {
   }
   getPhotoFolder_();
   if (!props_().getProperty('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v5', '1', 21600);
+  CacheService.getScriptCache().put('setup-v6', '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v5')) return;
+  if (CacheService.getScriptCache().get('setup-v6')) return;
   setup();
 }
 
@@ -155,7 +157,17 @@ function walkOut_(w, extra) {
   return Object.assign(out, extra || {});
 }
 function leaderPublic_(l) {
-  return { id: String(l['Leader ID']), name: l['Name'], city: l['City'], background: l['Background'], bio: l['Bio'], photo: l['Photo'] };
+  return { id: String(l['Leader ID']), name: l['Name'], city: l['City'], background: l['Background'], bio: l['Bio'], photo: l['Photo'], sample: !!l['Sample'] };
+}
+// Published walker reviews, grouped by walk leader.
+function reviewsByLeader_() {
+  const out = {};
+  readTab_('Walker reviews').filter(r => r['Status'] === 'Published').forEach(r => {
+    const d = r['Date'] instanceof Date ? Utilities.formatDate(r['Date'], 'America/Los_Angeles', 'yyyy-MM') : String(r['Date'] || '');
+    (out[String(r['Leader ID'])] = out[String(r['Leader ID'])] || []).push({
+      name: String(r['Name']), role: String(r['Role']), rating: Number(r['Rating']) || 0, text: String(r['Text']), date: d, sample: !!r['Sample'] });
+  });
+  return out;
 }
 
 /* ===================== GET ===================== */
@@ -185,6 +197,12 @@ function listWalks_() {
   const leaders = {};
   readTab_('Leaders').filter(l => l['Status'] === 'Approved' || l['Status'] === 'Changes requested' || l['Status'] === 'Pending review')
     .forEach(l => { leaders[String(l['Leader ID'])] = leaderPublic_(l); });
+  const reviews = reviewsByLeader_();
+  Object.keys(leaders).forEach(id => {
+    const rs = reviews[id] || [];
+    leaders[id].reviews = rs;
+    leaders[id].rating = rs.length ? Math.round(rs.reduce((a, r) => a + r.rating, 0) / rs.length * 10) / 10 : null;
+  });
   const signups = readTab_('Sign-ups');
   const walks = readTab_('Walks').filter(w => w['Status'] === 'Live').map(w => {
     const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']));
@@ -692,13 +710,22 @@ function deleteRows_(tab, match) {
 function loadSamples() {
   setup();
   deleteRows_('Walks', r => String(r['Sample']) === 'Sample');
+  deleteRows_('Leaders', r => String(r['Sample']) === 'Sample');
+  deleteRows_('Walker reviews', r => String(r['Sample']) === 'Sample');
   const now = new Date();
+  (SAMPLE_DATA.leaders || []).forEach(l => appendObj_('Leaders', {
+    'Leader ID': l.id, 'Status': 'Approved', 'Name': safeCell_(l.name), 'Email': '', 'Phone': '', 'City': safeCell_(l.city),
+    'Background': safeCell_(l.background), 'Bio': safeCell_(l.bio), 'Photo': '', 'Private link code': newCode_(), 'Created': now, 'Updated': now, 'Sample': 'Sample' }));
+  (SAMPLE_DATA.reviews || []).forEach(r => appendObj_('Walker reviews', {
+    'Review ID': r.id, 'Leader ID': r.leaderId, 'Walk ID': r.walkId, 'Name': safeCell_(r.name), 'Role': safeCell_(r.role), 'Rating': r.rating,
+    'Text': safeCell_(r.text), 'Date': "'" + r.date, 'Status': 'Published', 'Sample': 'Sample' }));
   const rows = SAMPLE_DATA.walks.map(s => {
     const row = walkRow_(s.id, s.leaderId || '', 'Live', {
       title: s.title, date: s.date || '', start: s.start || '', end: s.end || '', repeats: s.repeats || '', place: s.place, address: s.address || '',
       lat: s.lat, lng: s.lng, find: s.find || '', parking: s.parking || '', spots: s.spots || 20, shorter: s.shorter || '', description: s.description
     });
     if (!s.date) { row['Date'] = ''; row['Start'] = ''; row['End'] = ''; }
+    if (!s.repeats) row['Repeats'] = s.date ? 'One time' : '';
     row['Photo'] = s.photo || ''; row['Photo credit'] = safeCell_(s.photoCredit || ''); row['Photo source'] = s.photoSource || '';
     row['Sample'] = 'Sample'; row['City'] = s.city || ''; row['Created'] = now; row['Updated'] = now;
     return TABS['Walks'].map(h => (row[h] === undefined ? '' : row[h]));
@@ -717,6 +744,8 @@ function loadSamples() {
 /** Removes every sample walk. */
 function removeSamples() {
   deleteRows_('Walks', r => String(r['Sample']) === 'Sample');
+  deleteRows_('Leaders', r => String(r['Sample']) === 'Sample');
+  deleteRows_('Walker reviews', r => String(r['Sample']) === 'Sample');
 }
 
 /* ===================== walkers: sign-up, cancel, contact ===================== */

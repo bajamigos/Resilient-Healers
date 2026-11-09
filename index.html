@@ -191,6 +191,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 .report-form { display: flex; flex-direction: column; gap: .5rem; border-top: 1px solid var(--line); padding-top: .5rem; }
 .chip-reported { background: var(--warn-bg); color: var(--warn); }
 .walk-photo-preview { width: 100%; max-width: 28rem; height: auto; aspect-ratio: 16 / 9; border: 0; object-fit: cover; border-radius: var(--radius); }
+.chip-sample { background: var(--lavender); color: var(--rust); font-size: .8rem; vertical-align: middle; }
+.reviews { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .8rem; }
+.review { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .45rem; }
+.review-head { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
+.stars { color: var(--copper); letter-spacing: .1em; font-size: 1.05rem; }
+.review-text { font-size: 1.05rem; }
 .thread-box { display: flex; flex-direction: column; gap: .8rem; padding-top: .6rem; }
 </style>
 </head>
@@ -335,7 +341,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <div class="coach-mini">
           <div class="avatar" id="w-leader-avatar" aria-hidden="true"></div>
           <div>
-            <span class="row-name" id="w-leader-name"></span>
+            <span class="row-name"><span id="w-leader-name"></span> <span class="chip chip-sample" id="w-leader-sample" hidden>Sample walk leader</span></span>
             <span class="muted" id="w-leader-bg"></span>
             <a href="#leader" id="w-leader-link">Read their profile</a>
             <span><button class="btn btn-small btn-ghost" type="button" id="w-message-leader" aria-expanded="false" aria-controls="w-message-note">Message your walk leader</button></span>
@@ -349,6 +355,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="block" id="w-reviews" aria-labelledby="w-reviews-h" hidden>
+        <h2 id="w-reviews-h">What walkers say</h2>
+        <p class="muted" id="w-reviews-summary"></p>
+        <ul class="reviews" id="w-reviews-list"></ul>
       </section>
 
       <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden></aside>
@@ -389,6 +401,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <div class="stack">
         <p class="eyebrow">Meet your walk leader</p>
         <h1 id="lp-name"></h1>
+        <p><span class="chip chip-sample" id="lp-sample" hidden>Sample walk leader</span></p>
+        <p class="hint" id="lp-sample-note" hidden>This walk leader is made up for this demo. They aren't a real person.</p>
       </div>
       <div class="coach-mini" id="lp-photo-row"></div>
       <section class="block"><p id="lp-bio"></p></section>
@@ -396,6 +410,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <li><span>Background</span><span id="lp-bg"></span></li>
         <li><span>Based in</span><span id="lp-city"></span></li>
       </ul>
+      <section class="block" id="lp-reviews" aria-labelledby="lp-reviews-h" hidden>
+        <h2 id="lp-reviews-h">What walkers say</h2>
+        <p class="muted" id="lp-reviews-summary"></p>
+        <ul class="reviews" id="lp-reviews-list"></ul>
+      </section>
       <section class="block" aria-labelledby="lp-walks-h">
         <h2 id="lp-walks-h">Walks they lead</h2>
         <ul class="walk-list" id="lp-walks"></ul>
@@ -720,7 +739,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
       (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span>' + (interestText(w) ? ' · ' + interestText(w) : '') + '</span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
       '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.max(1, Math.round(d)) + (Math.round(d) <= 1 ? ' mile away' : ' miles away') : '') + '</span>' +
-      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + '</span></div>' +
+      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + (w.leader && w.leader.rating ? ' · <span class="stars" aria-hidden="true">★</span> ' + w.leader.rating + ' (' + w.leader.reviews.length + (w.leader.reviews.length === 1 ? ' review' : ' reviews') + ')' + (w.leader.sample ? ', sample' : '') : (w.leader && w.leader.sample ? ' (sample)' : '')) + '</span></div>' +
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
   }
   let lastOrigin = null, lastLabel = "";
@@ -817,6 +836,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
     $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
     $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";
+    $("w-leader-sample").hidden = !(w.leader && w.leader.sample);
+    renderReviews("w", w.leader);
     $("w-leader-bg").textContent = w.leader ? w.leader.background : "Interested in leading this walk? Apply on the Lead a walk page.";
     $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true; $("w-message-leader").setAttribute("aria-expanded", "false"); $("w-link-done").textContent = "";
     showAd($("w-sponsor"), [w.lat, w.lng]);
@@ -943,6 +964,25 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     });
   }
 
+  /* ---------- walker reviews ---------- */
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function starText(n) { const r = Math.round(n); return "★".repeat(r) + "☆".repeat(5 - r); }
+  function reviewHTML(r) {
+    const m = /^(\d{4})-(\d{2})/.exec(r.date || "");
+    return '<li class="review"><div class="review-head"><span class="stars" role="img" aria-label="' + r.rating + ' out of 5 stars">' + starText(r.rating) + '</span>' +
+      (r.sample ? '<span class="chip chip-sample">Sample review</span>' : '') + '</div>' +
+      '<p class="review-text">“' + esc(r.text) + '”</p>' +
+      '<span class="muted">' + esc(r.name) + (r.role ? ', ' + esc(r.role) : '') + (m ? ' · ' + MONTHS[+m[2] - 1] + ' ' + m[1] : '') + '</span>' +
+      (r.sample ? '<span class="hint">Example content for this demo. Not written by a real walker.</span>' : '') + '</li>';
+  }
+  function renderReviews(prefix, l) {
+    const rs = (l && l.reviews) || [];
+    $(prefix + "-reviews").hidden = !rs.length;
+    if (!rs.length) return;
+    $(prefix + "-reviews-summary").textContent = "Average " + l.rating + " out of 5 from " + rs.length + (rs.length === 1 ? " review" : " reviews") + " of walks with " + String(l.name).split(",")[0] + ".";
+    $(prefix + "-reviews-list").innerHTML = rs.map(reviewHTML).join("");
+  }
+
   /* ---------- public walk leader profile ---------- */
   function renderLeaderProfile() {
     const w = current(); const l = w && w.leader;
@@ -952,6 +992,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("lp-bio").textContent = l.bio || "";
     $("lp-bg").textContent = l.background || "";
     $("lp-city").textContent = l.city || "";
+    $("lp-sample").hidden = !l.sample; $("lp-sample-note").hidden = !l.sample;
+    renderReviews("lp", l);
     const theirs = WALKS.filter(x => x.leader && x.leader.id === l.id);
     $("lp-walks").innerHTML = theirs.map(x => walkCard(x, null)).join("") || '<li class="empty">No live walks right now.</li>';
   }
