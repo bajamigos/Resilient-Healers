@@ -289,10 +289,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <div class="btn-row"><a class="btn" target="_blank" rel="noopener" id="w-directions" href="#">Get directions</a></div>
         <p class="hint">Opens directions in Google Maps.</p>
         <ul class="facts">
-          <li><span>Repeats</span><span id="w-repeats"></span></li>
+          <li id="w-repeats-row"><span>Repeats</span><span id="w-repeats"></span></li>
           <li><span>Parking</span><span id="w-parking"></span></li>
-          <li><span>Shorter route</span><span id="w-shorter"></span></li>
-          <li><span>Bring</span><span>A water bottle. Bring a healthcare-worker friend or colleague, and ask them to sign up too.</span></li>
+          <li id="w-shorter-row"><span>Shorter route</span><span id="w-shorter"></span></li>
+          <li id="w-bring-row"><span>Bring</span><span>A water bottle. Bring a healthcare-worker friend or colleague, and ask them to sign up too.</span></li>
           <li><span>Cost</span><span>Free</span></li>
         </ul>
       </section>
@@ -634,7 +634,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     return '<li class="walk-card">' + (w.photo ? '<img class="walk-thumb" src="' + esc(w.photo) + '" alt="" loading="lazy">' : '') +
       '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
       (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span></span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
-      '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span>' +
+      '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.max(1, Math.round(d)) + (Math.round(d) <= 1 ? ' mile away' : ' miles away') : '') + '</span>' +
       '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + '</span></div>' +
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
   }
@@ -712,7 +712,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     }
     const soon = !!w.comingSoon;
     $("w-soon").hidden = !soon;
-    ["w-spots", "signup", "w-signup-rule"].forEach(id => { $(id).hidden = soon; });
+    ["w-spots", "signup", "w-signup-rule", "w-repeats-row", "w-shorter-row", "w-bring-row"].forEach(id => { $(id).hidden = soon; });
     $("w-date").textContent = soon ? "Date coming soon" : w.dateText;
     $("w-description").textContent = w.description;
     $("w-place").textContent = w.place;
