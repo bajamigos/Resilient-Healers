@@ -150,6 +150,13 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
 .site-footer { border-top: 1px solid var(--line); }
 .site-footer .wrap { padding-block: 1.5rem 2rem; font-size: .95rem; color: var(--muted); display: flex; flex-direction: column; gap: .5rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.walk-thumb { width: 112px; height: 80px; object-fit: cover; border-radius: 10px; flex: none; background: var(--lavender); }
+.walk-card .info { flex: 1 1 14rem; }
+.hero-photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); background: var(--lavender); display: block; }
+.credit { font-size: .8rem; color: var(--muted); }
+.credit a { color: var(--muted); }
+.pin-soon { background: var(--taupe); }
+.popup-photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 8px; margin-bottom: .4rem; }
 .pin-map { height: 300px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
 .steps { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
 .ticks { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
@@ -235,6 +242,16 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <div class="when"><strong id="w-date"></strong><span id="w-time"></span></div>
         <p class="muted" id="w-led"></p>
       </div>
+      <figure class="stack" id="w-photo-wrap" style="margin:0;gap:.3rem" hidden>
+        <img class="hero-photo" id="w-photo" alt="">
+        <figcaption class="credit" id="w-photo-credit"></figcaption>
+      </figure>
+
+      <div class="status status-pending" id="w-soon" hidden>
+        <strong>Coming soon</strong>
+        <span>We're looking for a walk leader here. Date, time and sign-ups will open once the walk is set.</span>
+        <div class="btn-row"><a class="btn" href="#apply">Lead this walk</a></div>
+      </div>
 
       <div id="cancel-panel" class="notice notice-ok" hidden>
         <h3>Cancel your spot?</h3>
@@ -243,7 +260,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <p class="error" id="cancel-msg" role="alert"></p>
       </div>
 
-      <div class="spots" aria-live="polite">
+      <div class="spots" id="w-spots" aria-live="polite">
         <div class="spots-top">
           <p class="spots-count" id="spots-count">– <span>spots taken</span></p>
           <span class="chip chip-open" id="spots-chip">Open</span>
@@ -288,13 +305,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             <span class="row-name" id="w-leader-name"></span>
             <span class="muted" id="w-leader-bg"></span>
             <a href="#leader" id="w-leader-link">Read their profile</a>
+            <span><button class="btn btn-small btn-ghost" type="button" id="w-message-leader" aria-describedby="w-message-note">Message your walk leader</button></span>
+            <span class="hint" id="w-message-note" hidden>Messaging walk leaders is coming soon. For now, use the Contact page and we'll pass it on.</span>
           </div>
         </div>
       </section>
 
       <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden></aside>
 
-      <hr class="rule">
+      <hr class="rule" id="w-signup-rule">
 
       <section class="block" id="signup" aria-labelledby="signup-h">
         <h2 id="signup-h">Sign up</h2>
@@ -499,7 +518,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <div class="stack">
         <p class="eyebrow">Questions, ideas or problems</p>
         <h1>Contact Resilient Healers</h1>
-        <p>Your message goes to the Resilient Healers staff, not to a walk leader. If it's about a specific walk, tell us which one and we'll take it from there.</p>
+        <p>Your message goes to the Resilient Healers staff, not to a walk leader.</p>
+        <p>Have a question about a specific walk? Contact your walk leader directly with the "Message your walk leader" link on that walk's page.</p>
         <p class="muted">We reply by email.</p>
       </div>
       <div id="contact-done" class="notice notice-ok" tabindex="-1" hidden></div>
@@ -507,7 +527,6 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <form id="contact-form" novalidate>
           <div class="field"><label for="c-name">Your name</label><input type="text" id="c-name" autocomplete="name"></div>
           <div class="field"><label for="c-email">Your email</label><input type="email" id="c-email" autocomplete="email"></div>
-          <div class="field"><label for="c-walk">Which walk is this about? (optional)</label><select id="c-walk"><option value="">Not about a specific walk</option></select></div>
           <div class="field"><label for="c-msg">Message</label><textarea id="c-msg"></textarea></div>
           <div class="sr-only" aria-hidden="true"><label for="c-website">Leave this empty</label><input type="text" id="c-website" tabindex="-1" autocomplete="off"></div>
           <p class="error" id="contact-error" role="alert" hidden></p>
@@ -565,6 +584,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
   /* ---------- maps ---------- */
   const pinIcon = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
+  const pinIconSoon = L.divIcon({ className: "", html: '<div class="pin pin-soon"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
   const tiles = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
   function wheelOnFocus(map) { map.on("focus click", () => map.scrollWheelZoom.enable()); map.on("blur mouseout", () => map.scrollWheelZoom.disable()); }
 
@@ -574,9 +594,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   function drawPins() {
     pinLayer.clearLayers();
     WALKS.forEach(w => {
-      L.marker([w.lat, w.lng], { icon: pinIcon, title: w.title, alt: w.title }).addTo(pinLayer)
-        .bindPopup('<strong>' + esc(w.title) + '</strong><br>' + esc(w.dateText) + '<br>' + esc(w.timeText) + '<br>' + esc(w.place) +
-          '<br><a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a>');
+      L.marker([w.lat, w.lng], { icon: w.comingSoon ? pinIconSoon : pinIcon, title: w.title, alt: w.title }).addTo(pinLayer)
+        .bindPopup((w.photo ? '<img class="popup-photo" src="' + esc(w.photo) + '" alt="">' : '') + '<strong>' + esc(w.title) + '</strong><br>' +
+          (w.comingSoon ? 'Coming soon' : esc(w.dateText) + '<br>' + esc(w.timeText)) + '<br>' + esc(w.place) +
+          '<br><a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a>', { maxWidth: 240 });
     });
   }
 
@@ -610,17 +631,19 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     el.innerHTML = ad ? '<span class="sponsor-label">Sponsored</span><h3>' + esc(ad.name) + '</h3><p>' + esc(ad.text) + '</p><a href="' + esc(ad.url) + '" target="_blank" rel="noopener">' + esc(ad.linkText) + '</a>' : "";
   }
   function walkCard(w, d) {
-    return '<li class="walk-card"><div class="info"><span class="name">' + esc(w.title) + '</span><span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span><span class="muted">' +
-      esc(w.place) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span>' +
-      (w.leader ? '<span class="muted">Walk leader: ' + esc(w.leader.name) + '</span>' : '') + '</div>' +
+    return '<li class="walk-card">' + (w.photo ? '<img class="walk-thumb" src="' + esc(w.photo) + '" alt="" loading="lazy">' : '') +
+      '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
+      (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span></span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
+      '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span>' +
+      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + '</span></div>' +
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
   }
   let lastOrigin = null, lastLabel = "";
   function renderList(origin, label) {
     lastOrigin = origin; lastLabel = label || "";
     let items = WALKS.map(w => ({ w, d: origin ? miles(origin, [w.lat, w.lng]) : null }));
-    if (origin) items = items.filter(i => i.d <= 100).sort((a, b) => a.d - b.d);
-    else items.sort((a, b) => (a.w.date + a.w.start).localeCompare(b.w.date + b.w.start));
+    if (origin) items = items.filter(i => i.d <= 100).sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || a.d - b.d);
+    else items.sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || (a.w.date + a.w.start).localeCompare(b.w.date + b.w.start) || a.w.title.localeCompare(b.w.title));
     $("list-h").textContent = origin ? "Walks near " + label : "Upcoming walks";
     $("walk-list").innerHTML = items.length ? items.map(({ w, d }) => walkCard(w, d)).join("")
       : '<li class="empty">' + (origin ? "No walks within 100 miles of " + esc(label) + " yet. Try another city, or show all of the US." : "No walks yet.") + '</li>';
@@ -682,6 +705,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-date").textContent = w.dateText;
     $("w-time").textContent = w.timeText;
     $("w-led").textContent = w.leader ? "Walk. Connect. Recharge. Led by " + w.leader.name + "." : "Walk. Connect. Recharge.";
+    $("w-photo-wrap").hidden = !w.photo;
+    if (w.photo) {
+      $("w-photo").src = w.photo; $("w-photo").alt = "Photo of " + w.place;
+      $("w-photo-credit").innerHTML = 'Photo: ' + esc(w.photoCredit || "Wikimedia Commons") + (w.photoSource ? ' · <a href="' + esc(w.photoSource) + '" target="_blank" rel="noopener">source</a>' : '');
+    }
+    const soon = !!w.comingSoon;
+    $("w-soon").hidden = !soon;
+    ["w-spots", "signup", "w-signup-rule"].forEach(id => { $(id).hidden = soon; });
+    $("w-date").textContent = soon ? "Date coming soon" : w.dateText;
     $("w-description").textContent = w.description;
     $("w-place").textContent = w.place;
     $("w-find").textContent = w.find;
@@ -690,11 +722,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-repeats").textContent = w.repeats || "One time";
     $("w-parking").textContent = w.parking || "No parking details yet.";
     $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
-    $("w-leader-avatar").innerHTML = avatarHTML(w.leader);
-    $("w-leader-name").textContent = w.leader ? w.leader.name : "";
-    $("w-leader-bg").textContent = w.leader ? w.leader.background : "";
+    $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
+    $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";
+    $("w-leader-bg").textContent = w.leader ? w.leader.background : "Interested in leading this walk? Apply on the Lead a walk page.";
+    $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true;
     showAd($("w-sponsor"), [w.lat, w.lng]);
-    renderSpots(w);
+    if (!soon) renderSpots(w);
     renderMine();
   }
   function renderSpots(w) {
@@ -719,7 +752,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       (s.status === "going" ? '<span class="chip chip-open">Signed up</span>' : '<span class="chip chip-full">Waitlist</span>') + '</li>').join("");
   }
   async function refreshCount() {
-    const w = current(); if (!w) return;
+    const w = current(); if (!w || w.comingSoon) return;
     try { const r = await apiGet({ action: "count", walk: w.id }); if (r && r.ok) { w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity; renderSpots(w); } } catch (e) {}
   }
   $("signup-form").addEventListener("submit", async (e) => {
@@ -749,6 +782,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { err.textContent = "Your sign-up didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
     finally { btn.disabled = false; renderSpots(w); }
   });
+
+  $("w-message-leader").addEventListener("click", () => { $("w-message-note").hidden = false; });
 
   /* ---------- cancel from the email link ---------- */
   const cancelCode = params.get("cancel");
@@ -1115,9 +1150,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (!name || !/^\S+@\S+\.\S+$/.test(email) || !msg) { err.textContent = "Please add your name, a valid email and a message."; err.hidden = false; return; }
     const btn = $("contact-submit"); btn.disabled = true; btn.textContent = "Sending…";
     try {
-      const walkSel = $("c-walk").value, aboutWalk = WALKS.find(w => w.id === walkSel);
-      const fullMsg = (aboutWalk ? "[About: " + aboutWalk.title + ", " + aboutWalk.dateText + "]\n\n" : "") + msg;
-      const r = await apiPost({ action: "message", name, email, message: fullMsg, website: $("c-website").value });
+      const r = await apiPost({ action: "message", name, email, message: msg, website: $("c-website").value });
       if (!r || !r.ok) throw new Error("failed");
       const done = $("contact-done");
       done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + ".</p>";
@@ -1152,7 +1185,6 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       if (!r || !r.ok) throw new Error("bad");
       WALKS = r.walks || [];
       drawPins();
-      $("c-walk").innerHTML = '<option value="">Not about a specific walk</option>' + WALKS.map(w => '<option value="' + esc(w.id) + '">' + esc(w.title + " · " + w.dateText) + '</option>').join("");
       if (lastOrigin) renderList(lastOrigin, lastLabel); else renderList(null);
       const v = VIEWS.find(n => !$("view-" + n).hidden);
       if (v === "walk") { renderWalk(); showSmallMap(current()); }

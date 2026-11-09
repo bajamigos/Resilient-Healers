@@ -27,7 +27,7 @@ const TABS = {
   'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],
   'Messages': ['Received', 'Name', 'Email', 'Message'],
   'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated'],
-  'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated'],
+  'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Photo', 'Photo credit', 'Photo source', 'Sample', 'City'],
   'Reviews': ['Review code', 'Type', 'Leader ID', 'Walk ID', 'Status', 'Created', 'Decided', 'Staff note']
 };
 
@@ -65,6 +65,9 @@ function setup() {
       sh.appendRow(TABS[name]);
       sh.setFrozenRows(1);
       sh.getRange(1, 1, 1, TABS[name].length).setFontWeight('bold');
+    } else if (sh.getLastColumn() < TABS[name].length) {
+      // New columns added in a later version: add their headers.
+      sh.getRange(1, 1, 1, TABS[name].length).setValues([TABS[name]]).setFontWeight('bold');
     }
   });
   if (sheet_('Leaders').getLastRow() < 2) {
@@ -76,10 +79,10 @@ function setup() {
     appendObj_('Walks', walkRow_(SEED_WALK.id, SEED_WALK.leaderId, SEED_WALK.status, SEED_WALK));
   }
   getPhotoFolder_();
-  CacheService.getScriptCache().put('setup-v2', '1', 21600);
+  CacheService.getScriptCache().put('setup-v3', '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v2')) return;
+  if (CacheService.getScriptCache().get('setup-v3')) return;
   setup();
 }
 
@@ -142,8 +145,11 @@ function walkOut_(w, extra) {
     find: w['How to find the spot'], parking: w['Parking'], spots: Number(w['Spots']) || 0,
     shorter: w['Shorter route'], description: w['Description']
   };
-  out.dateText = niceDate_(out.date);
-  out.timeText = niceTime_(out.start) + (out.end ? ' to ' + niceTime_(out.end) : '');
+  out.photo = w['Photo'] || ''; out.photoCredit = w['Photo credit'] || ''; out.photoSource = w['Photo source'] || '';
+  out.city = w['City'] || ''; out.sample = !!w['Sample'];
+  out.comingSoon = !out.date;
+  out.dateText = out.comingSoon ? 'Coming soon' : niceDate_(out.date);
+  out.timeText = out.comingSoon ? '' : niceTime_(out.start) + (out.end ? ' to ' + niceTime_(out.end) : '');
   return Object.assign(out, extra || {});
 }
 function leaderPublic_(l) {
@@ -620,6 +626,55 @@ function decideApi_(b) {
   catch (e) { return { ok: false, error: String(e.message || e) }; }
 }
 
+/* ===================== demo data (run from the editor) ===================== */
+
+/** Removes the "Test Leader" test data: their leader row, walks, reviews and any sign-ups for those walks. */
+function removeTestData() {
+  const leaders = readTab_('Leaders').filter(l => l['Name'] === 'Test Leader');
+  const ids = leaders.map(l => String(l['Leader ID']));
+  const walkIds = readTab_('Walks').filter(w => ids.indexOf(String(w['Leader ID'])) >= 0).map(w => String(w['Walk ID']));
+  deleteRows_('Sign-ups', r => walkIds.indexOf(String(r['Walk'])) >= 0);
+  deleteRows_('Reviews', r => ids.indexOf(String(r['Leader ID'])) >= 0);
+  deleteRows_('Walks', r => walkIds.indexOf(String(r['Walk ID'])) >= 0);
+  deleteRows_('Leaders', r => ids.indexOf(String(r['Leader ID'])) >= 0);
+  Logger.log('Removed ' + ids.length + ' test leader(s) and ' + walkIds.length + ' walk(s).');
+}
+function deleteRows_(tab, match) {
+  const rows = readTab_(tab).filter(match).map(r => r._row).sort((a, b) => b - a);
+  rows.forEach(n => sheet_(tab).deleteRow(n));
+}
+
+/** Loads the sample walks in SAMPLE_DATA (replacing earlier samples) and sets photos on existing walks. */
+function loadSamples() {
+  setup();
+  deleteRows_('Walks', r => String(r['Sample']) === 'Sample');
+  const now = new Date();
+  const rows = SAMPLE_DATA.walks.map(s => {
+    const row = walkRow_(s.id, s.leaderId || '', 'Live', {
+      title: s.title, date: s.date || '', start: s.start || '', end: s.end || '', repeats: s.repeats || '', place: s.place, address: s.address || '',
+      lat: s.lat, lng: s.lng, find: s.find || '', parking: s.parking || '', spots: s.spots || 20, shorter: s.shorter || '', description: s.description
+    });
+    if (!s.date) { row['Date'] = ''; row['Start'] = ''; row['End'] = ''; }
+    row['Photo'] = s.photo || ''; row['Photo credit'] = safeCell_(s.photoCredit || ''); row['Photo source'] = s.photoSource || '';
+    row['Sample'] = 'Sample'; row['City'] = s.city || ''; row['Created'] = now; row['Updated'] = now;
+    return TABS['Walks'].map(h => (row[h] === undefined ? '' : row[h]));
+  });
+  if (rows.length) {
+    const sh = sheet_('Walks');
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, TABS['Walks'].length).setValues(rows);
+  }
+  (SAMPLE_DATA.photos || []).forEach(p => {
+    const w = readTab_('Walks').find(x => String(x['Walk ID']) === p.walkId);
+    if (w) writeCells_('Walks', w._row, { 'Photo': p.photo, 'Photo credit': safeCell_(p.photoCredit), 'Photo source': p.photoSource, 'City': p.city || '' });
+  });
+  Logger.log('Loaded ' + SAMPLE_DATA.walks.length + ' sample walks.');
+}
+
+/** Removes every sample walk. */
+function removeSamples() {
+  deleteRows_('Walks', r => String(r['Sample']) === 'Sample');
+}
+
 /* ===================== walkers: sign-up, cancel, contact ===================== */
 
 function liveWalk_(walkId) {
@@ -631,6 +686,7 @@ function walkWhere_(w) { return w['Place'] + (w['How to find the spot'] ? '. ' +
 function signup_(b) {
   const walk = liveWalk_(b.walk);
   if (!walk) return { ok: false, error: 'unknown_walk' };
+  if (!dateText_(walk['Date'])) return { ok: false, error: 'coming_soon' };
   const capacity = Number(walk['Spots']) || 0;
   const d = {
     name: cleanLine_(b.name, 120), email: cleanLine_(b.email, 200).toLowerCase(), phone: cleanLine_(b.phone, 40),
