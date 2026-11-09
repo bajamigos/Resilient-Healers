@@ -150,6 +150,28 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
 .site-footer { border-top: 1px solid var(--line); }
 .site-footer .wrap { padding-block: 1.5rem 2rem; font-size: .95rem; color: var(--muted); display: flex; flex-direction: column; gap: .5rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pin-map { height: 300px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+.steps { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+.ticks { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
+.tabular { font-variant-numeric: tabular-nums; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+legend { font-family: var(--font-display); font-weight: 700; font-size: var(--step-2); padding: 0; margin-bottom: .4rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem; }
+select { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .6rem .8rem; width: 100%; }
+input[type="date"], input[type="time"], input[type="number"] { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .6rem .8rem; width: 100%; box-sizing: border-box; }
+.photo-preview { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.leader-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; flex: none; }
+.status { border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .4rem; }
+.status-pending { background: var(--lavender); }
+.status-changes { background: var(--warn-bg); }
+.status-live { background: var(--ok-bg); }
+.note { border-left: 4px solid var(--rust); padding: .2rem 0 .2rem .9rem; white-space: pre-wrap; }
+.walk-admin { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; }
+.roster { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .45rem; }
+.roster li { border-top: 1px solid var(--line); padding-top: .45rem; display: flex; flex-direction: column; gap: .1rem; }
+details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
+.accom { color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: .15rem .5rem; font-size: .95rem; align-self: flex-start; }
 </style>
 </head>
 <body>
@@ -174,7 +196,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     </nav>
   </div>
 </header>
-<div class="demo-note" role="note"><div class="wrap">Draft site. Details marked "Draft" may still change.</div></div>
+<div class="demo-note" role="note"><div class="wrap">Test site. Walks, walk leaders and sign-ups here are for testing.</div></div>
 
 <main>
   <div class="wrap">
@@ -186,7 +208,6 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
         <h1>Find a walk near you</h1>
         <p class="muted">Walk, connect with colleagues, and recharge, with a walk leader showing the way.</p>
       </div>
-
       <div class="stack">
         <form class="search" id="city-form" role="search">
           <label for="city" class="sr-only">City or ZIP code</label>
@@ -198,21 +219,20 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
         <ul class="results" id="search-results"></ul>
         <div id="big-map" role="region" aria-label="Map of walks. Use the list below the map for the same information."></div>
       </div>
-
       <section class="block" aria-labelledby="list-h">
         <h2 id="list-h">Upcoming walks</h2>
-        <ul class="walk-list" id="walk-list"></ul>
+        <ul class="walk-list" id="walk-list"><li class="empty">Loading walks…</li></ul>
       </section>
     </div>
 
-    <!-- WALK PAGE -->
+    <!-- WALK PAGE (filled from the Sheet) -->
     <div id="view-walk" class="stack-lg narrow" hidden>
       <div class="stack">
         <a href="#find">Back to the map</a>
-        <p class="eyebrow">Free monthly walking group for healthcare workers</p>
-        <h1>December walk at Lake Murray</h1>
-        <div class="when"><strong>Sunday, December 13, 2026</strong><span>9:00 to 10:30 AM</span></div>
-        <p class="muted">Walk. Connect. Recharge. Led by Priya Reddy, PMHNP-BC, FNP-C.</p>
+        <p class="eyebrow">Free walking group for healthcare workers</p>
+        <h1 id="w-title">Loading walk…</h1>
+        <div class="when"><strong id="w-date"></strong><span id="w-time"></span></div>
+        <p class="muted" id="w-led"></p>
       </div>
 
       <div id="cancel-panel" class="notice notice-ok" hidden>
@@ -224,11 +244,11 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
 
       <div class="spots" aria-live="polite">
         <div class="spots-top">
-          <p class="spots-count" id="spots-count">0 <span>of 20 spots taken</span></p>
+          <p class="spots-count" id="spots-count">– <span>spots taken</span></p>
           <span class="chip chip-open" id="spots-chip">Open</span>
         </div>
-        <div class="bar" role="img" id="spots-bar-label" aria-label="0 of 20 spots taken"><div id="spots-bar" style="width:0%"></div></div>
-        <p class="muted" id="spots-sub">20 spots left.</p>
+        <div class="bar" role="img" id="spots-bar-label" aria-label="Checking spots"><div id="spots-bar" style="width:0%"></div></div>
+        <p class="muted" id="spots-sub">Checking spots…</p>
         <div class="btn-row">
           <a class="btn" href="#signup" id="cta">Sign up</a>
           <a class="btn btn-ghost" href="#where">How to find us</a>
@@ -236,27 +256,24 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       </div>
 
       <section class="block" aria-labelledby="about-h">
-        <div class="title-row"><h2 id="about-h">About this walk</h2><span class="chip chip-draft">Draft copy</span></div>
-        <p>Healthcare work can be deeply meaningful, but it can also take a toll on our physical and emotional well-being. Join us for a free monthly walking group created especially for healthcare workers to connect with colleagues, share experiences, and nurture their own resilience.</p>
+        <h2 id="about-h">About this walk</h2>
+        <p id="w-description"></p>
       </section>
 
       <section class="block" id="where" aria-labelledby="where-h">
         <h2 id="where-h">Where to meet</h2>
-        <div id="small-map" role="region" aria-label="Map of the meeting spot at Lake Murray"></div>
+        <div id="small-map" role="region" aria-label="Map of the meeting spot"></div>
         <div class="place">
-          <span class="place-name">Lake Murray, by the ranger station</span>
-          <span>Meet at the side of the main parking lot at the park entrance, in front of the ranger station. Enter from Kiowa Drive.</span>
-          <span class="muted">Lake Murray Recreation Area, 5650 Kiowa Dr, La Mesa, CA 91942</span>
+          <span class="place-name" id="w-place"></span>
+          <span id="w-find"></span>
+          <span class="muted" id="w-address"></span>
         </div>
-        <div class="btn-row">
-          <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&amp;destination=32.78509,-117.04161">Get directions</a>
-        </div>
-        <p class="hint">Opens directions in Google Maps. <span class="chip chip-draft">Pin is approximate</span></p>
-        <div class="photo-slot">Photo of the meeting spot, as you'd see it walking from the parking lot, coming soon.</div>
+        <div class="btn-row"><a class="btn" target="_blank" rel="noopener" id="w-directions" href="#">Get directions</a></div>
+        <p class="hint">Opens directions in Google Maps.</p>
         <ul class="facts">
-          <li><span>Parking</span><span>Details coming soon.</span></li>
-          <li><span>Route</span><span>Out and back on the paved Lake Murray path. The full path runs about 3.2 miles to the dam gate. Turnaround point to be confirmed.</span></li>
-          <li><span>Shorter route</span><span>Available. Tell us when you sign up.</span></li>
+          <li><span>Repeats</span><span id="w-repeats"></span></li>
+          <li><span>Parking</span><span id="w-parking"></span></li>
+          <li><span>Shorter route</span><span id="w-shorter"></span></li>
           <li><span>Bring</span><span>A water bottle. Bring a healthcare-worker friend or colleague, and ask them to sign up too.</span></li>
           <li><span>Cost</span><span>Free</span></li>
         </ul>
@@ -265,19 +282,19 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       <section class="block" aria-labelledby="leader-mini-h">
         <h2 id="leader-mini-h">Your walk leader</h2>
         <div class="coach-mini">
-          <div class="avatar" aria-hidden="true">PR</div>
+          <div class="avatar" id="w-leader-avatar" aria-hidden="true"></div>
           <div>
-            <span class="row-name">Priya Reddy, PMHNP-BC, FNP-C</span>
-            <span class="muted">Psychiatric mental health and family nurse practitioner.</span>
-            <a href="#leader">Read Priya's profile</a>
+            <span class="row-name" id="w-leader-name"></span>
+            <span class="muted" id="w-leader-bg"></span>
+            <a href="#leader" id="w-leader-link">Read their profile</a>
           </div>
         </div>
       </section>
 
-      <aside class="sponsor" aria-label="Sponsored">
+      <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden>
         <span class="sponsor-label">Sponsored</span>
         <h3>Metamorphosis Coaching with Priya</h3>
-        <p>One-on-one coaching for stress, burnout, career change and life transitions. Free one-hour discovery call. <span class="chip chip-draft">Draft copy</span></p>
+        <p>One-on-one coaching for stress, burnout, career change and life transitions. Free one-hour discovery call.</p>
         <a href="https://www.metamorphosis-health-coaching.com/" target="_blank" rel="noopener">Visit Metamorphosis Coaching</a>
       </aside>
 
@@ -296,7 +313,7 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
             <div class="field">
               <label for="f-accom">Mobility accommodations (optional)</label>
               <textarea id="f-accom" aria-describedby="f-accom-hint"></textarea>
-              <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only Priya sees this.</span>
+              <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only your walk leader sees this.</span>
             </div>
             <div class="sr-only" aria-hidden="true"><label for="f-website">Leave this empty</label><input type="text" id="f-website" tabindex="-1" autocomplete="off"></div>
             <label class="check" for="f-hcw"><input type="checkbox" id="f-hcw"><span>I work in healthcare.</span></label>
@@ -312,41 +329,39 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       </section>
     </div>
 
-    <!-- COACH -->
+    <!-- WALK LEADER PROFILE (public) -->
     <div id="view-leader" class="stack-lg narrow" hidden>
       <div class="stack">
         <p class="eyebrow">Meet your walk leader</p>
-        <h1>Priya Reddy, PMHNP-BC, FNP-C</h1>
-        <span class="chip chip-draft" style="align-self:flex-start">Draft for Priya to review</span>
+        <h1 id="lp-name"></h1>
       </div>
-      <div class="coach-mini"><div class="avatar" aria-hidden="true">PR</div><div><span class="muted">Photo coming soon</span></div></div>
-      <section class="block">
-        <p>Priya is a dual board-certified psychiatric mental health and family nurse practitioner. After years in a busy community clinic, she experienced burnout firsthand and found her way back through coaching, meditation and yoga.</p>
-        <p>Today she's a transformative coach who helps people reconnect with their inner wisdom and move through stress, burnout and life transitions. She started Resilient Healers so healthcare workers have a place to walk, connect with colleagues and recharge together.</p>
-      </section>
+      <div class="coach-mini" id="lp-photo-row"></div>
+      <section class="block"><p id="lp-bio"></p></section>
       <ul class="facts">
-        <li><span>Credentials</span><span>PMHNP-BC (psychiatric mental health nurse practitioner), FNP-C (family nurse practitioner)</span></li>
-        <li><span>Leads</span><span>Resilient Healers walks at Lake Murray, San Diego, on the second Sunday of each month</span></li>
-        <li><span>Coaching</span><span><a href="https://www.metamorphosis-health-coaching.com/" target="_blank" rel="noopener">Metamorphosis Coaching with Priya</a></span></li>
+        <li><span>Background</span><span id="lp-bg"></span></li>
+        <li><span>Based in</span><span id="lp-city"></span></li>
       </ul>
-      <div class="btn-row"><a class="btn" href="#walk">See the next walk</a></div>
+      <section class="block" aria-labelledby="lp-walks-h">
+        <h2 id="lp-walks-h">Walks they lead</h2>
+        <ul class="walk-list" id="lp-walks"></ul>
+      </section>
     </div>
 
-    <!-- LEAD A WALK (for walk leaders) -->
+    <!-- LEAD A WALK -->
     <div id="view-lead" class="stack-lg narrow" hidden>
       <div class="stack">
         <p class="eyebrow">For walk leaders</p>
         <h1>Lead a walk</h1>
-        <p>Walk leaders host a free, monthly small-group walk where healthcare workers can step away from work, talk with colleagues who understand, and recharge. You pick the place, lead the walk, and guide the conversation. We handle the walk page, sign-ups, confirmations and the waitlist.</p>
-        <div class="btn-row"><a class="btn" href="#lead-interest">I'm interested in leading a walk</a></div>
+        <p>Walk leaders host a free, small-group walk where healthcare workers can step away from work, talk with colleagues who understand, and recharge. You pick the place, lead the walk, and guide the conversation. We handle the walk page, sign-ups, confirmations and the waitlist.</p>
+        <div class="btn-row"><a class="btn" href="#apply">Apply to lead a walk</a><a class="btn btn-ghost" href="#have-link">I'm already a walk leader</a></div>
       </div>
 
       <section class="block" aria-labelledby="lead-what-h">
         <h2 id="lead-what-h">What a walk looks like</h2>
         <ul class="facts">
           <li><span>Who comes</span><span>Healthcare workers, and the healthcare-worker friends they bring</span></li>
-          <li><span>Group size</span><span>Up to 20 people. When it's full, new sign-ups join a waitlist.</span></li>
-          <li><span>How often</span><span>Once a month, on a set day, so people can plan around it</span></li>
+          <li><span>Group size</span><span>You choose, usually up to 20. When it's full, new sign-ups join a waitlist.</span></li>
+          <li><span>How often</span><span>One time, or once a month on a set day</span></li>
           <li><span>How long</span><span>About 90 minutes, including gathering at the start</span></li>
           <li><span>Cost</span><span>Free for everyone who walks</span></li>
           <li><span>Pace</span><span>Conversational. Offer a shorter turnaround for anyone who needs it.</span></li>
@@ -354,12 +369,12 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       </section>
 
       <section class="block" aria-labelledby="lead-how-h">
-        <h2 id="lead-how-h">How it works for you</h2>
+        <h2 id="lead-how-h">How it works</h2>
         <ol class="steps">
-          <li><strong>Set up your walk.</strong> Send us the date, time, place and meeting spot. We create your public walk page with a map, directions and the live count of spots.</li>
-          <li><strong>People sign up online.</strong> Each sign-up gets a confirmation email with a cancel link. If someone cancels, the first person on the waitlist moves up and gets an email.</li>
-          <li><strong>See who's coming.</strong> You get access to a sign-up sheet with each person's name, email, phone, profession and any accommodation they need.</li>
-          <li><strong>Lead the walk.</strong> Meet the group at the pin, walk, and guide the conversation.</li>
+          <li><strong>Apply once.</strong> Tell us about yourself and propose your first walk, all in one form.</li>
+          <li><strong>We review it.</strong> Resilient Healers staff approve it, or ask for changes with a note. You can fix and resubmit.</li>
+          <li><strong>Your walk goes live.</strong> It appears on the map with its own page, live spot count and sign-ups.</li>
+          <li><strong>Use your walk leader page.</strong> A private link we email you shows who's coming and their accommodation needs. From there you can propose more walks without filling in your profile again.</li>
         </ol>
       </section>
 
@@ -370,59 +385,83 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
           <li><strong>An exact pin,</strong> not just the park's address</li>
           <li><strong>A landmark</strong> people can't miss, like a ranger station, a sign or a park entrance</li>
           <li><strong>A short description</strong> of how to find you after parking</li>
-          <li><strong>A photo</strong> of the spot, taken from where people will walk in</li>
           <li><strong>Parking details,</strong> including any fee</li>
         </ul>
-        <h3>Drop your pin</h3>
-        <p class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. Copy the details below and send them to us with the contact form.</p>
-        <form class="search" id="pin-form" role="search">
-          <label for="pin-q" class="sr-only">Park or address</label>
-          <input type="search" id="pin-q" placeholder="Search a park or address" autocomplete="off">
-          <button class="btn" type="submit">Find</button>
-        </form>
-        <p class="hint" id="pin-status" aria-live="polite"></p>
-        <div id="pin-map" role="region" aria-label="Map for placing your meeting-spot pin. Drag the pin, or use the search above."></div>
-        <div class="form-card stack">
-          <p><strong>Your pin:</strong> <span id="pin-coords" class="tabular">32.78509, -117.04161</span></p>
-          <p><a id="pin-link" href="https://www.google.com/maps/search/?api=1&amp;query=32.78509,-117.04161" target="_blank" rel="noopener">Check this spot in Google Maps</a></p>
-          <div class="btn-row"><button class="btn btn-small btn-ghost" type="button" id="pin-copy">Copy pin details</button></div>
-        </div>
       </section>
 
       <section class="block" aria-labelledby="lead-before-h">
         <h2 id="lead-before-h">Before each walk</h2>
         <ul class="ticks">
-          <li>Open the sign-up sheet and read the accommodation notes</li>
+          <li>Check your walk leader page for sign-ups and accommodation notes</li>
           <li>Decide where people who need a shorter route can turn back</li>
-          <li>Check the meeting spot still matches the pin, photo and description</li>
+          <li>Check the meeting spot still matches the pin and description</li>
           <li>Arrive a little early so first-timers can find you</li>
         </ul>
       </section>
 
-      <section class="block" aria-labelledby="lead-soon-h">
-        <div class="title-row"><h2 id="lead-soon-h">Coming soon for walk leaders</h2></div>
-        <ul class="ticks">
-          <li>Create and edit your own walks, and set the number of spots</li>
-          <li>Drag the meeting-spot pin right on your walk page</li>
-          <li>A walk leader view to manage sign-ups without the sheet</li>
-          <li>Reminder emails for walkers before each walk</li>
-        </ul>
+      <section class="block" id="apply" aria-labelledby="apply-h">
+        <h2 id="apply-h">Apply to lead a walk</h2>
+        <p class="muted">Your profile and your first walk, in one form. Everything is required unless it says optional.</p>
+        <div id="apply-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div class="form-card">
+          <form id="apply-form" novalidate>
+            <div id="apply-profile"></div>
+            <hr class="rule">
+            <div id="apply-walk"></div>
+            <div class="sr-only" aria-hidden="true"><label for="apply-website">Leave this empty</label><input type="text" id="apply-website" tabindex="-1" autocomplete="off"></div>
+            <p class="error" id="apply-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="apply-submit">Send my application</button></div>
+          </form>
+        </div>
       </section>
 
-      <section class="block" id="lead-interest" aria-labelledby="lead-int-h">
-        <h2 id="lead-int-h">Interested in leading a walk?</h2>
-        <p class="muted">Tell us where you'd like to lead one, and we'll be in touch.</p>
-        <div id="lead-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <section class="block" id="have-link" aria-labelledby="have-link-h">
+        <h2 id="have-link-h">Already a walk leader?</h2>
+        <p class="muted">Use the private link in your email to open your walk leader page. Lost it? We'll email it again.</p>
+        <div id="link-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <form class="search" id="link-form">
+          <label for="link-email" class="sr-only">Your email</label>
+          <input type="search" id="link-email" placeholder="Your email" autocomplete="email" inputmode="email">
+          <button class="btn" type="submit">Email my link</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- MY WALKS (private walk leader page) -->
+    <div id="view-my-walks" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Your walk leader page</p>
+        <h1 id="me-title">Loading…</h1>
+        <p class="hint">This page is private to you. Don't share its link.</p>
+      </div>
+      <div id="me-status"></div>
+      <section class="block" aria-labelledby="me-profile-h" id="me-profile-wrap" hidden>
+        <h2 id="me-profile-h">Your profile</h2>
+        <div class="coach-mini" id="me-profile"></div>
+        <details id="me-edit-profile">
+          <summary>Edit your profile</summary>
+          <div class="form-card" style="margin-top:.8rem">
+            <form id="me-profile-form" novalidate>
+              <div id="me-profile-fields"></div>
+              <p class="error" id="me-profile-error" role="alert" hidden></p>
+              <div class="btn-row"><button class="btn" type="submit" id="me-profile-submit">Send for review</button></div>
+            </form>
+          </div>
+        </details>
+      </section>
+      <section class="block" aria-labelledby="me-walks-h" id="me-walks-wrap" hidden>
+        <div class="title-row"><h2 id="me-walks-h">Your walks</h2></div>
+        <div id="me-walks" class="stack"></div>
+      </section>
+      <section class="block" aria-labelledby="me-new-h" id="me-new-wrap" hidden>
+        <h2 id="me-new-h">Propose a new walk</h2>
+        <p class="muted">Your profile is attached automatically. Staff review each new walk before it goes live.</p>
+        <div id="me-new-done" class="notice notice-ok" tabindex="-1" hidden></div>
         <div class="form-card">
-          <form id="lead-form" novalidate>
-            <div class="field"><label for="l-name">Your name</label><input type="text" id="l-name" autocomplete="name"></div>
-            <div class="field"><label for="l-email">Your email</label><input type="email" id="l-email" autocomplete="email"></div>
-            <div class="field"><label for="l-city">City and state where you'd lead a walk</label><input type="text" id="l-city" autocomplete="address-level2"></div>
-            <div class="field"><label for="l-bg">Your background</label><input type="text" id="l-bg" placeholder="For example: ER nurse, physical therapist, social worker"></div>
-            <div class="field"><label for="l-msg">Anything else? (optional)</label><textarea id="l-msg" placeholder="A park you have in mind, the day that would work, or questions for us"></textarea></div>
-            <div class="sr-only" aria-hidden="true"><label for="l-website">Leave this empty</label><input type="text" id="l-website" tabindex="-1" autocomplete="off"></div>
-            <p class="error" id="lead-error" role="alert" hidden></p>
-            <div class="btn-row"><button class="btn" type="submit" id="lead-submit">Send</button></div>
+          <form id="me-new-form" novalidate>
+            <div id="me-new-fields"></div>
+            <p class="error" id="me-new-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="me-new-submit">Send for review</button></div>
           </form>
         </div>
       </section>
@@ -432,8 +471,8 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     <div id="view-contact" class="stack-lg narrow" hidden>
       <div class="stack">
         <p class="eyebrow">Questions about a walk</p>
-        <h1>Contact the organizer</h1>
-        <p class="muted">Your message goes to Priya. She'll reply by email.</p>
+        <h1>Contact us</h1>
+        <p class="muted">Your message goes to the Resilient Healers team. We'll reply by email.</p>
       </div>
       <div id="contact-done" class="notice notice-ok" tabindex="-1" hidden></div>
       <div class="form-card">
@@ -453,100 +492,98 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Resilient Healers · Draft site.</p>
-    <p>Map data © OpenStreetMap contributors. City search by OpenStreetMap Nominatim.</p>
+    <p>Resilient Healers · Test site.</p>
+    <p>Map data © OpenStreetMap contributors. Place search by OpenStreetMap Nominatim.</p>
   </div>
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (() => {
-  const CAPACITY = 20;
-  const WALKS = [
-    {
-      id: "lake-murray-2026-12-13",
-      title: "December walk at Lake Murray",
-      city: "San Diego, CA",
-      date: "Sunday, December 13, 2026",
-      time: "9:00 to 10:30 AM",
-      leader: "Priya Reddy, PMHNP-BC, FNP-C",
-      place: "Lake Murray, by the ranger station",
-      lat: 32.78509, lng: -117.04161,
-      href: "#walk"
-    }
-  ];
+  const API_URL = "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec";
   const US_VIEW = { center: [39.5, -98.35], zoom: 4 };
-  const KEY = "rh-demo-signups";
+  const SPONSOR_LEADER = "L-priya";
+  const KEY = "rh-signups";
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const params = new URLSearchParams(location.search);
 
-  /* ---------- sign-up backend (Google Sheets + Apps Script) ---------- */
-  const API_URL = "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec";
-  const WALK_ID = "lake-murray-2026-12-13";
-  async function apiGet(params) {
-    const res = await fetch(API_URL + "?" + new URLSearchParams(params));
-    return res.json();
-  }
+  /* ---------- backend ---------- */
+  async function apiGet(p) { const r = await fetch(API_URL + "?" + new URLSearchParams(p)); return r.json(); }
   async function apiPost(body) {
     // text/plain keeps this a "simple" request, so browsers skip the CORS preflight Apps Script can't answer
-    const res = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
-    return res.json();
+    const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    return r.json();
   }
-  // This device remembers its own sign-ups (name + cancel code) so people can cancel from here too.
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
-  function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
-  let signups = load().filter(s => s.walk === WALK_ID);
-  let counts = null; // {going, waitlist, capacity} from the Sheet
+
+  /* ---------- state ---------- */
+  let WALKS = [];
+  let currentWalkId = params.get("walk") || null;
+  const current = () => WALKS.find(w => w.id === currentWalkId) || WALKS[0] || null;
+  function loadMine() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
+  function saveMine(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+  let mine = loadMine();
+  const initials = (name) => String(name || "").split(/[\s,]+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join("");
+  function avatarHTML(leader, cls) {
+    if (leader && leader.photo) return '<img class="' + (cls || "") + '" src="' + esc(leader.photo) + '" alt="">';
+    return esc(initials(leader && leader.name));
+  }
 
   /* ---------- maps ---------- */
   const pinIcon = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
-  const tiles = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  });
+  const tiles = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
+  function wheelOnFocus(map) { map.on("focus click", () => map.scrollWheelZoom.enable()); map.on("blur mouseout", () => map.scrollWheelZoom.disable()); }
 
   const bigMap = L.map("big-map", { scrollWheelZoom: false }).setView(US_VIEW.center, US_VIEW.zoom);
-  tiles().addTo(bigMap);
-  bigMap.on("focus click", () => bigMap.scrollWheelZoom.enable());
-  bigMap.on("blur mouseout", () => bigMap.scrollWheelZoom.disable());
-
-  WALKS.forEach(w => {
-    L.marker([w.lat, w.lng], { icon: pinIcon, title: w.title, alt: w.title }).addTo(bigMap)
-      .bindPopup('<strong>' + esc(w.title) + '</strong><br>' + esc(w.date) + '<br>' + esc(w.time) + '<br>' + esc(w.city) +
-        '<br><a class="btn btn-small" href="' + w.href + '">See this walk</a>');
-  });
-
-  let smallMap = null;
-  function ensureSmallMap() {
-    if (smallMap) { smallMap.invalidateSize(); return; }
-    const w = WALKS[0];
-    smallMap = L.map("small-map", { scrollWheelZoom: false }).setView([w.lat, w.lng], 16);
-    tiles().addTo(smallMap);
-    L.marker([w.lat, w.lng], { icon: pinIcon, title: "Meeting spot", alt: "Meeting spot" }).addTo(smallMap)
-      .bindPopup("<strong>Meet here</strong><br>In front of the ranger station").openPopup();
+  tiles().addTo(bigMap); wheelOnFocus(bigMap);
+  const pinLayer = L.layerGroup().addTo(bigMap);
+  function drawPins() {
+    pinLayer.clearLayers();
+    WALKS.forEach(w => {
+      L.marker([w.lat, w.lng], { icon: pinIcon, title: w.title, alt: w.title }).addTo(pinLayer)
+        .bindPopup('<strong>' + esc(w.title) + '</strong><br>' + esc(w.dateText) + '<br>' + esc(w.timeText) + '<br>' + esc(w.place) +
+          '<br><a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a>');
+    });
   }
 
-  /* ---------- distance + list ---------- */
+  let smallMap = null, smallMarker = null;
+  function showSmallMap(w) {
+    if (!w) return;
+    if (!smallMap) {
+      smallMap = L.map("small-map", { scrollWheelZoom: false }).setView([w.lat, w.lng], 16);
+      tiles().addTo(smallMap); wheelOnFocus(smallMap);
+      smallMarker = L.marker([w.lat, w.lng], { icon: pinIcon, title: "Meeting spot", alt: "Meeting spot" }).addTo(smallMap);
+    } else {
+      smallMap.invalidateSize(); smallMap.setView([w.lat, w.lng], 16); smallMarker.setLatLng([w.lat, w.lng]);
+    }
+    smallMarker.bindPopup("<strong>Meet here</strong><br>" + esc(w.place)).openPopup();
+  }
+
+  /* ---------- find a walk ---------- */
   function miles(a, b) {
-    const R = 3958.8, toRad = d => d * Math.PI / 180;
-    const dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1]);
-    const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2;
+    const R = 3958.8, rad = d => d * Math.PI / 180;
+    const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(h));
   }
+  function walkCard(w, d) {
+    return '<li class="walk-card"><div class="info"><span class="name">' + esc(w.title) + '</span><span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span><span class="muted">' +
+      esc(w.place) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span>' +
+      (w.leader ? '<span class="muted">Walk leader: ' + esc(w.leader.name) + '</span>' : '') + '</div>' +
+      '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
+  }
+  let lastOrigin = null, lastLabel = "";
   function renderList(origin, label) {
+    lastOrigin = origin; lastLabel = label || "";
     let items = WALKS.map(w => ({ w, d: origin ? miles(origin, [w.lat, w.lng]) : null }));
     if (origin) items = items.filter(i => i.d <= 100).sort((a, b) => a.d - b.d);
+    else items.sort((a, b) => (a.w.date + a.w.start).localeCompare(b.w.date + b.w.start));
     $("list-h").textContent = origin ? "Walks near " + label : "Upcoming walks";
-    $("walk-list").innerHTML = items.length ? items.map(({ w, d }) =>
-      '<li class="walk-card"><div class="info"><span class="name">' + esc(w.title) + '</span><span>' + esc(w.date) + ', ' + esc(w.time) + '</span><span class="muted">' +
-      esc(w.place) + ', ' + esc(w.city) + (d != null ? ' · about ' + Math.round(d) + ' miles away' : '') + '</span><span class="muted">Walk leader: ' + esc(w.leader) + '</span></div>' +
-      '<a class="btn btn-small" href="' + w.href + '">See this walk</a></li>'
-    ).join("") : '<li class="empty">No walks within 100 miles of ' + esc(label) + ' yet. Try another city, or show all of the US.</li>';
+    $("walk-list").innerHTML = items.length ? items.map(({ w, d }) => walkCard(w, d)).join("")
+      : '<li class="empty">' + (origin ? "No walks within 100 miles of " + esc(label) + " yet. Try another city, or show all of the US." : "No walks yet.") + '</li>';
   }
-
-  /* ---------- city search (OpenStreetMap Nominatim) ---------- */
-  async function searchCity(q) {
-    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=5&addressdetails=0&q=" + encodeURIComponent(q);
+  async function searchPlace(q) {
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=5&q=" + encodeURIComponent(q);
     const res = await fetch(url, { headers: { "Accept": "application/json" } });
     if (!res.ok) throw new Error("search failed");
     return res.json();
@@ -554,12 +591,8 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
   function goTo(place) {
     const lat = parseFloat(place.lat), lng = parseFloat(place.lon);
     const label = place.display_name.split(",").slice(0, 2).join(",").trim();
-    if (place.boundingbox) {
-      const [s, n, w, e] = place.boundingbox.map(parseFloat);
-      bigMap.fitBounds([[s, w], [n, e]], { maxZoom: 11 });
-    } else {
-      bigMap.setView([lat, lng], 11);
-    }
+    if (place.boundingbox) { const [s, n, w, e] = place.boundingbox.map(parseFloat); bigMap.fitBounds([[s, w], [n, e]], { maxZoom: 11 }); }
+    else bigMap.setView([lat, lng], 11);
     renderList([lat, lng], label);
     const near = WALKS.filter(w => miles([lat, lng], [w.lat, w.lng]) <= 100).length;
     $("search-status").textContent = "Showing " + label + ". " + (near ? near + (near === 1 ? " walk" : " walks") + " nearby." : "No walks nearby yet.");
@@ -569,62 +602,86 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     e.preventDefault();
     const q = $("city").value.trim();
     if (!q) { $("search-status").textContent = "Type a city or ZIP code to search."; return; }
-    $("search-status").textContent = "Searching…";
-    $("search-results").innerHTML = "";
+    $("search-status").textContent = "Searching…"; $("search-results").innerHTML = "";
     try {
-      const found = await searchCity(q);
+      const found = await searchPlace(q);
       if (!found.length) { $("search-status").textContent = "No places found for " + q + ". Check the spelling or try a nearby city."; return; }
-      if (found.length === 1) { goTo(found[0]); return; }
       goTo(found[0]);
-      $("search-status").textContent += " Not the right place? Choose another below.";
-      $("search-results").innerHTML = found.slice(1).map((p, i) => '<li><button type="button" data-i="' + (i + 1) + '">' + esc(p.display_name.split(",").slice(0, 3).join(",")) + '</button></li>').join("");
-      $("search-results").querySelectorAll("button").forEach(b => b.addEventListener("click", () => goTo(found[+b.dataset.i])));
-    } catch (ex) {
-      $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment.";
-    }
+      if (found.length > 1) {
+        $("search-status").textContent += " Not the right place? Choose another below.";
+        $("search-results").innerHTML = found.slice(1).map((p, i) => '<li><button type="button" data-i="' + (i + 1) + '">' + esc(p.display_name.split(",").slice(0, 3).join(",")) + '</button></li>').join("");
+        $("search-results").querySelectorAll("button").forEach(b => b.addEventListener("click", () => goTo(found[+b.dataset.i])));
+      }
+    } catch (ex) { $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment."; }
   });
   $("show-us").addEventListener("click", () => {
-    bigMap.setView(US_VIEW.center, US_VIEW.zoom);
-    renderList(null);
-    $("search-status").textContent = "Showing all of the US.";
-    $("search-results").innerHTML = "";
+    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null);
+    $("search-status").textContent = "Showing all of the US."; $("search-results").innerHTML = "";
   });
 
-  /* ---------- walk page: spots + sign-up (live, via the Sheet) ---------- */
-  function renderSpots() {
-    const known = counts !== null;
-    const cap = known ? counts.capacity : CAPACITY;
-    const going = known ? counts.going : 0;
-    const wait = known ? counts.waitlist : 0;
-    const full = known && going >= cap;
-    $("spots-count").innerHTML = (known ? going : "–") + " <span>of " + cap + " spots taken</span>";
+  // Any "See this walk" link picks which walk the walk page shows.
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-walk]");
+    if (!a) return;
+    currentWalkId = a.dataset.walk;
+    const u = new URL(location.href); u.searchParams.set("walk", currentWalkId); u.searchParams.delete("cancel");
+    history.replaceState(null, "", u.pathname + u.search + "#walk");
+    route();
+  });
+
+  /* ---------- walk page ---------- */
+  function renderWalk() {
+    const w = current();
+    if (!w) { $("w-title").textContent = WALKS.length ? "Walk not found" : "Loading walk…"; return; }
+    currentWalkId = w.id;
+    $("w-title").textContent = w.title;
+    $("w-date").textContent = w.dateText;
+    $("w-time").textContent = w.timeText;
+    $("w-led").textContent = w.leader ? "Walk. Connect. Recharge. Led by " + w.leader.name + "." : "Walk. Connect. Recharge.";
+    $("w-description").textContent = w.description;
+    $("w-place").textContent = w.place;
+    $("w-find").textContent = w.find;
+    $("w-address").textContent = w.address || "";
+    $("w-directions").href = "https://www.google.com/maps/dir/?api=1&destination=" + w.lat + "," + w.lng;
+    $("w-repeats").textContent = w.repeats || "One time";
+    $("w-parking").textContent = w.parking || "No parking details yet.";
+    $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
+    $("w-leader-avatar").innerHTML = avatarHTML(w.leader);
+    $("w-leader-name").textContent = w.leader ? w.leader.name : "";
+    $("w-leader-bg").textContent = w.leader ? w.leader.background : "";
+    $("w-sponsor").hidden = !(w.leader && w.leader.id === SPONSOR_LEADER);
+    renderSpots(w);
+    renderMine();
+  }
+  function renderSpots(w) {
+    const cap = w.spots, going = w.going || 0, wait = w.waitlist || 0, full = going >= cap;
+    $("spots-count").innerHTML = going + " <span>of " + cap + " spots taken</span>";
     $("spots-bar").style.width = Math.min(100, going / cap * 100) + "%";
-    $("spots-bar-label").setAttribute("aria-label", known ? going + " of " + cap + " spots taken" : "Checking spots");
+    $("spots-bar-label").setAttribute("aria-label", going + " of " + cap + " spots taken");
     $("spots-chip").textContent = full ? "Full" : "Open";
     $("spots-chip").className = "chip " + (full ? "chip-full" : "chip-open");
-    $("spots-sub").textContent = !known ? "Checking spots…"
-      : full ? "This walk is full. Join the waitlist" + (wait ? " (" + wait + " waiting)" : "") + " and you'll move up if someone cancels."
+    $("spots-sub").textContent = full ? "This walk is full. Join the waitlist" + (wait ? " (" + wait + " waiting)" : "") + " and you'll move up if someone cancels."
       : (cap - going) + (cap - going === 1 ? " spot" : " spots") + " left.";
     $("cta").textContent = full ? "Join the waitlist" : "Sign up";
     $("signup-submit").textContent = full ? "Join the waitlist" : "Reserve my spot";
-    $("mine").hidden = signups.length === 0;
-    $("mine-list").innerHTML = signups.map(s =>
-      '<li class="row"><div class="row-main"><span class="row-name">' + esc(s.name) + '</span><span class="muted">Sunday, December 13, 9:00 AM · Lake Murray</span>' +
+  }
+  function renderMine() {
+    const w = current();
+    const list = w ? mine.filter(s => s.walk === w.id) : [];
+    $("mine").hidden = list.length === 0;
+    $("mine-list").innerHTML = list.map(s =>
+      '<li class="row"><div class="row-main"><span class="row-name">' + esc(s.name) + '</span><span class="muted">' + esc(w.dateText) + ' · ' + esc(w.place) + '</span>' +
       '<span class="hint">To cancel, use the link in your confirmation email.</span></div>' +
       (s.status === "going" ? '<span class="chip chip-open">Signed up</span>' : '<span class="chip chip-full">Waitlist</span>') + '</li>').join("");
   }
-  async function refreshCounts() {
-    try {
-      const r = await apiGet({ action: "count", walk: WALK_ID });
-      if (r && r.ok) { counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity }; renderSpots(); return; }
-      throw new Error("bad");
-    } catch (e) {
-      $("spots-sub").textContent = "We can't load the spot count right now. You can still sign up below.";
-    }
+  async function refreshCount() {
+    const w = current(); if (!w) return;
+    try { const r = await apiGet({ action: "count", walk: w.id }); if (r && r.ok) { w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity; renderSpots(w); } } catch (e) {}
   }
   $("signup-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const err = $("signup-error"); err.hidden = true;
+    const w = current(); const err = $("signup-error"); err.hidden = true;
+    if (!w) { err.textContent = "This walk is still loading. Try again in a moment."; err.hidden = false; return; }
     const d = { name: $("f-name").value.trim(), email: $("f-email").value.trim(), phone: $("f-phone").value.trim(), profession: $("f-prof").value.trim(), accommodation: $("f-accom").value.trim() };
     const missing = [];
     if (!d.name) missing.push("your name");
@@ -633,36 +690,24 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
     if (!d.profession) missing.push("your profession");
     if (!$("f-hcw").checked) missing.push("confirmation that you work in healthcare");
     if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
-    const btn = $("signup-submit"); const label = btn.textContent;
-    btn.disabled = true; btn.textContent = "Saving your spot…";
+    const btn = $("signup-submit"); btn.disabled = true; btn.textContent = "Saving your spot…";
     try {
-      const r = await apiPost({ action: "signup", walk: WALK_ID, ...d, hcw: true, website: $("f-website").value });
-      if (!r || !r.ok) throw new Error(r && r.error || "failed");
-      counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity };
-      signups = signups.filter(s => !(s.name === d.name && s.walk === WALK_ID));
-      signups.push({ name: d.name, walk: WALK_ID, status: r.status, ts: Date.now() });
-      save(signups);
-      const first = esc(d.name.split(" ")[0]);
-      const done = $("signup-done");
-      done.innerHTML = r.duplicate
-        ? "<h3>You're already on the list, " + first + ".</h3><p>We found an earlier sign-up with this email, so nothing changed.</p>"
-        : r.status === "going"
-        ? "<h3>You're signed up, " + first + ".</h3><p>Sunday, December 13, 2026, 9:00 AM at Lake Murray, in front of the ranger station. A confirmation email is on its way to " + esc(d.email) + ". It has a link to cancel if your plans change.</p>"
+      const r = await apiPost({ action: "signup", walk: w.id, ...d, hcw: true, website: $("f-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity;
+      mine = mine.filter(s => !(s.walk === w.id && s.name === d.name));
+      mine.push({ walk: w.id, name: d.name, status: r.status, ts: Date.now() }); saveMine(mine);
+      const first = esc(d.name.split(" ")[0]); const done = $("signup-done");
+      done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We found an earlier sign-up with this email for this walk, so nothing changed.</p>"
+        : r.status === "going" ? "<h3>You're signed up, " + first + ".</h3><p>" + esc(w.dateText) + ", " + esc(w.timeText) + " at " + esc(w.place) + ". A confirmation email is on its way to " + esc(d.email) + ", with a link to cancel if your plans change.</p>"
         : "<h3>You're on the waitlist, " + first + ".</h3><p>The walk is full right now. If a spot opens, you'll move up automatically and we'll email you at " + esc(d.email) + ".</p>";
-      done.hidden = false;
-      $("signup-form").reset();
-      renderSpots();
-      done.focus();
-    } catch (ex) {
-      err.textContent = "Your sign-up didn't go through. Check your connection and try again, or use the contact form.";
-      err.hidden = false;
-    } finally {
-      btn.disabled = false; btn.textContent = label; renderSpots();
-    }
+      done.hidden = false; $("signup-form").reset(); renderWalk(); done.focus();
+    } catch (ex) { err.textContent = "Your sign-up didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
+    finally { btn.disabled = false; renderSpots(w); }
   });
 
-  /* ---------- cancel from the email link (?cancel=<code>) ---------- */
-  const cancelCode = new URLSearchParams(location.search).get("cancel");
+  /* ---------- cancel from the email link ---------- */
+  const cancelCode = params.get("cancel");
   if (cancelCode) {
     $("cancel-panel").hidden = false;
     $("cancel-yes").addEventListener("click", async () => {
@@ -670,21 +715,300 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       try {
         const r = await apiPost({ action: "cancel", code: cancelCode });
         if (r && r.ok) {
-          if (r.going != null) counts = { going: r.going, waitlist: r.waitlist, capacity: r.capacity };
+          const w = current(); if (w && r.going != null) { w.going = r.going; w.waitlist = r.waitlist; renderSpots(w); }
           $("cancel-panel").innerHTML = "<h3>Your spot is cancelled.</h3><p>Thanks for letting us know. Someone on the waitlist can take your place.</p>";
-          history.replaceState(null, "", location.pathname + "#walk");
-          renderSpots();
+          const u = new URL(location.href); u.searchParams.delete("cancel"); history.replaceState(null, "", u.pathname + u.search + "#walk");
         } else {
           $("cancel-panel").innerHTML = "<h3>We couldn't find that sign-up.</h3><p>It may already be cancelled. If you still need help, use the contact form.</p>";
         }
-      } catch (e) {
-        b.disabled = false; b.textContent = "Cancel my spot";
-        $("cancel-msg").textContent = "That didn't go through. Check your connection and try again.";
-      }
+      } catch (e) { b.disabled = false; b.textContent = "Cancel my spot"; $("cancel-msg").textContent = "That didn't go through. Check your connection and try again."; }
     });
   }
 
-  /* ---------- contact (live, via the Sheet) ---------- */
+  /* ---------- public walk leader profile ---------- */
+  function renderLeaderProfile() {
+    const w = current(); const l = w && w.leader;
+    if (!l) { $("lp-name").textContent = "Walk leader"; return; }
+    $("lp-name").textContent = l.name;
+    $("lp-photo-row").innerHTML = l.photo ? '<img class="leader-photo" src="' + esc(l.photo) + '" alt="Photo of ' + esc(l.name) + '">' : '<div class="avatar" aria-hidden="true">' + esc(initials(l.name)) + '</div>';
+    $("lp-bio").textContent = l.bio || "";
+    $("lp-bg").textContent = l.background || "";
+    $("lp-city").textContent = l.city || "";
+    const theirs = WALKS.filter(x => x.leader && x.leader.id === l.id);
+    $("lp-walks").innerHTML = theirs.map(x => walkCard(x, null)).join("") || '<li class="empty">No live walks right now.</li>';
+  }
+
+  /* ---------- shared form pieces: profile + walk ---------- */
+  function profileFieldsHTML(p, opts) {
+    return '<fieldset><legend>' + esc(opts.legend) + '</legend>' +
+      '<div class="field"><label for="' + p + '-name">Name as you\'d like it shown, with credentials if you like</label><input type="text" id="' + p + '-name" autocomplete="name"></div>' +
+      (opts.email ? '<div class="field"><label for="' + p + '-email">Email</label><input type="email" id="' + p + '-email" autocomplete="email"></div>' : '') +
+      '<div class="two"><div class="field"><label for="' + p + '-phone">Phone</label><input type="tel" id="' + p + '-phone" autocomplete="tel"></div>' +
+      '<div class="field"><label for="' + p + '-city">City and state</label><input type="text" id="' + p + '-city" autocomplete="address-level2"></div></div>' +
+      '<div class="field"><label for="' + p + '-bg">Your background</label><input type="text" id="' + p + '-bg" placeholder="For example: ER nurse, physical therapist, social worker"></div>' +
+      '<div class="field"><label for="' + p + '-bio">Short bio for your walk leader profile</label><textarea id="' + p + '-bio" aria-describedby="' + p + '-bio-hint"></textarea><span class="hint" id="' + p + '-bio-hint">A few sentences walkers will read. Why you lead walks, and what you bring.</span></div>' +
+      '<div class="field"><label for="' + p + '-photo">Photo (optional)</label><input type="file" id="' + p + '-photo" accept="image/jpeg,image/png"><img class="photo-preview" id="' + p + '-photo-preview" alt="" hidden></div>' +
+      '</fieldset>';
+  }
+  function walkFieldsHTML(p, legend) {
+    return '<fieldset><legend>' + esc(legend) + '</legend>' +
+      '<div class="field"><label for="' + p + '-title">Walk name</label><input type="text" id="' + p + '-title" placeholder="For example: Morning walk at Balboa Park"></div>' +
+      '<div class="two"><div class="field"><label for="' + p + '-date">Date</label><input type="date" id="' + p + '-date"></div>' +
+      '<div class="field"><label for="' + p + '-start">Start time</label><input type="time" id="' + p + '-start"></div>' +
+      '<div class="field"><label for="' + p + '-end">End time</label><input type="time" id="' + p + '-end"></div></div>' +
+      '<div class="field"><label for="' + p + '-repeats">How often</label><select id="' + p + '-repeats"><option value="One time">One time</option><option value="Monthly, same week and day">Monthly, same week and day</option></select></div>' +
+      '<div class="field"><label for="' + p + '-place">Place name</label><input type="text" id="' + p + '-place" placeholder="For example: Lake Murray, by the ranger station"></div>' +
+      '<div class="field"><span class="row-name" id="' + p + '-pin-label">Meeting spot pin</span><span class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. You can also tap the map to move it.</span>' +
+      '<div class="search"><label for="' + p + '-q" class="sr-only">Search a park or address</label><input type="search" id="' + p + '-q" placeholder="Search a park or address" autocomplete="off"><button class="btn" type="button" id="' + p + '-find">Find</button></div>' +
+      '<p class="hint" id="' + p + '-pin-status" aria-live="polite">No pin yet. Search for your park to place it.</p>' +
+      '<div class="pin-map" id="' + p + '-map" role="region" aria-labelledby="' + p + '-pin-label"></div>' +
+      '<p class="hint tabular">Pin: <span id="' + p + '-coords">none yet</span></p></div>' +
+      '<div class="field"><label for="' + p + '-address">Address (optional)</label><input type="text" id="' + p + '-address"></div>' +
+      '<div class="field"><label for="' + p + '-find-text">How to find the group after parking</label><textarea id="' + p + '-find-text" placeholder="For example: Meet at the side of the main parking lot, in front of the ranger station."></textarea></div>' +
+      '<div class="field"><label for="' + p + '-parking">Parking (optional)</label><input type="text" id="' + p + '-parking" placeholder="For example: Free lot off Kiowa Drive"></div>' +
+      '<div class="two"><div class="field"><label for="' + p + '-spots">Number of spots</label><input type="number" id="' + p + '-spots" min="2" max="50" value="20"></div></div>' +
+      '<div class="field"><label for="' + p + '-shorter">Shorter route option (optional)</label><input type="text" id="' + p + '-shorter" placeholder="For example: Turn back at the first picnic area"></div>' +
+      '<div class="field"><label for="' + p + '-desc">Walk description</label><textarea id="' + p + '-desc" placeholder="What walkers can expect, in a few sentences."></textarea></div>' +
+      '</fieldset>';
+  }
+
+  const pinForms = {};
+  function initWalkForm(p, start) {
+    const st = { lat: null, lng: null, map: null, marker: null };
+    pinForms[p] = st;
+    const center = start && isFinite(start.lat) ? [start.lat, start.lng] : US_VIEW.center;
+    st.map = L.map(p + "-map", { scrollWheelZoom: false }).setView(center, start ? 16 : 4);
+    tiles().addTo(st.map); wheelOnFocus(st.map);
+    function place(lat, lng, msg) {
+      st.lat = lat; st.lng = lng;
+      if (!st.marker) {
+        st.marker = L.marker([lat, lng], { icon: pinIcon, draggable: true, title: "Meeting spot pin. Drag to move.", alt: "Meeting spot pin" }).addTo(st.map);
+        st.marker.on("dragend", () => { const q = st.marker.getLatLng(); place(q.lat, q.lng, "Pin moved."); });
+      } else st.marker.setLatLng([lat, lng]);
+      $(p + "-coords").textContent = lat.toFixed(5) + ", " + lng.toFixed(5);
+      if (msg) $(p + "-pin-status").textContent = msg;
+    }
+    st.place = place;
+    if (start && isFinite(start.lat)) place(start.lat, start.lng, "Drag the pin to change the meeting spot.");
+    st.map.on("click", (e) => place(e.latlng.lat, e.latlng.lng, "Pin moved."));
+    const doFind = async () => {
+      const q = $(p + "-q").value.trim();
+      if (!q) { $(p + "-pin-status").textContent = "Type a park or address to search."; return; }
+      $(p + "-pin-status").textContent = "Searching…";
+      try {
+        const found = await searchPlace(q);
+        if (!found.length) { $(p + "-pin-status").textContent = "No places found for " + q + "."; return; }
+        const lat = parseFloat(found[0].lat), lng = parseFloat(found[0].lon);
+        st.map.setView([lat, lng], 17);
+        place(lat, lng, "Found " + found[0].display_name.split(",").slice(0, 3).join(",") + ". Now drag the pin to the exact meeting spot.");
+        if (!$(p + "-address").value) $(p + "-address").value = found[0].display_name.split(",").slice(0, 5).join(",");
+      } catch (ex) { $(p + "-pin-status").textContent = "Search isn't responding right now. You can still tap the map to place the pin."; }
+    };
+    $(p + "-find").addEventListener("click", doFind);
+    $(p + "-q").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doFind(); } });
+    return st;
+  }
+  function fillWalk(p, w) {
+    $(p + "-title").value = w.title || ""; $(p + "-date").value = w.date || ""; $(p + "-start").value = w.start || ""; $(p + "-end").value = w.end || "";
+    $(p + "-repeats").value = w.repeats && w.repeats.startsWith("Monthly") ? "Monthly, same week and day" : "One time";
+    $(p + "-place").value = w.place || ""; $(p + "-address").value = w.address || ""; $(p + "-find-text").value = w.find || "";
+    $(p + "-parking").value = w.parking || ""; $(p + "-spots").value = w.spots || 20; $(p + "-shorter").value = w.shorter || ""; $(p + "-desc").value = w.description || "";
+  }
+  function readWalk(p) {
+    const st = pinForms[p] || {};
+    return {
+      title: $(p + "-title").value.trim(), date: $(p + "-date").value, start: $(p + "-start").value, end: $(p + "-end").value,
+      repeats: $(p + "-repeats").value, place: $(p + "-place").value.trim(), address: $(p + "-address").value.trim(),
+      lat: st.lat, lng: st.lng, find: $(p + "-find-text").value.trim(), parking: $(p + "-parking").value.trim(),
+      spots: Number($(p + "-spots").value), shorter: $(p + "-shorter").value.trim(), description: $(p + "-desc").value.trim()
+    };
+  }
+  function walkProblems(w) {
+    const m = [];
+    if (!w.title) m.push("a walk name"); if (!w.date) m.push("a date"); if (!w.start) m.push("a start time");
+    if (!w.place) m.push("a place name"); if (w.lat == null) m.push("a meeting spot pin on the map");
+    if (!w.find) m.push("how to find the group"); if (!(w.spots >= 2 && w.spots <= 50)) m.push("a number of spots from 2 to 50");
+    if (w.description.length < 20) m.push("a walk description (a sentence or two)");
+    return m;
+  }
+  function fillProfile(p, l) {
+    $(p + "-name").value = l.name || ""; $(p + "-phone").value = l.phone || ""; $(p + "-city").value = l.city || "";
+    $(p + "-bg").value = l.background || ""; $(p + "-bio").value = l.bio || "";
+  }
+  const photoData = {};
+  function initPhoto(p) {
+    $(p + "-photo").addEventListener("change", () => {
+      const f = $(p + "-photo").files[0]; photoData[p] = null;
+      if (!f) { $(p + "-photo-preview").hidden = true; return; }
+      const img = new Image(); const url = URL.createObjectURL(f);
+      img.onload = () => {
+        const max = 600, s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        photoData[p] = c.toDataURL("image/jpeg", 0.85);
+        $(p + "-photo-preview").src = photoData[p]; $(p + "-photo-preview").hidden = false; URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+  }
+  function readProfile(p, withEmail) {
+    const o = { name: $(p + "-name").value.trim(), phone: $(p + "-phone").value.trim(), city: $(p + "-city").value.trim(), background: $(p + "-bg").value.trim(), bio: $(p + "-bio").value.trim() };
+    if (withEmail) o.email = $(p + "-email").value.trim();
+    if (photoData[p]) o.photo = photoData[p];
+    return o;
+  }
+  function profileProblems(o, withEmail) {
+    const m = [];
+    if (!o.name) m.push("your name"); if (withEmail && !/^\S+@\S+\.\S+$/.test(o.email)) m.push("a valid email");
+    if (o.phone.replace(/\D/g, "").length < 7) m.push("a phone number"); if (!o.city) m.push("your city");
+    if (!o.background) m.push("your background"); if (o.bio.length < 20) m.push("a short bio (a sentence or two)");
+    return m;
+  }
+  function showProblems(errEl, list) { errEl.textContent = "Please add " + list.join(", ") + "."; errEl.hidden = false; }
+
+  /* ---------- apply: profile + first walk ---------- */
+  $("apply-profile").innerHTML = profileFieldsHTML("ap", { legend: "About you", email: true });
+  $("apply-walk").innerHTML = walkFieldsHTML("aw", "Your first walk");
+  initPhoto("ap");
+  let applyReady = false;
+  $("apply-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("apply-error"); err.hidden = true;
+    const profile = readProfile("ap", true), walk = readWalk("aw");
+    const problems = profileProblems(profile, true).concat(walkProblems(walk));
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("apply-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "apply", profile, walk, website: $("apply-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      const done = $("apply-done");
+      done.innerHTML = r.existing
+        ? "<h3>You already have a walk leader page.</h3><p>We emailed your private link to " + esc(profile.email) + ". Use it to propose this walk.</p>"
+        : "<h3>Application sent. Thank you, " + esc(profile.name.split(" ")[0]) + ".</h3><p>Our team will review your profile and your first walk. We emailed " + esc(profile.email) + " a private link to your walk leader page, where you can check its status.</p>";
+      done.hidden = false; $("apply-form").hidden = true; done.focus();
+    } catch (ex) { err.textContent = "Your application didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send my application"; }
+  });
+  $("link-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("link-email").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { $("link-done").innerHTML = "<p>Please enter a valid email.</p>"; $("link-done").hidden = false; return; }
+    try { await apiPost({ action: "sendLink", email }); } catch (ex) {}
+    $("link-done").innerHTML = "<p>If " + esc(email) + " belongs to a walk leader, we've emailed the link.</p>"; $("link-done").hidden = false; $("link-done").focus();
+  });
+
+  /* ---------- my walks (private walk leader page) ---------- */
+  const leaderCode = params.get("leader");
+  let me = null;
+  const STATUS_TEXT = {
+    "Pending review": ["status-pending", "Waiting for review", "Our team is reviewing this. We'll email you."],
+    "Changes requested": ["status-changes", "Changes requested", "Please make the changes below and resubmit."],
+    "Approved": ["status-live", "Approved walk leader", "You can propose new walks below."],
+    "Live": ["status-live", "Live", "It's on the map and people can sign up."]
+  };
+  function statusBox(status, note, extra) {
+    const s = STATUS_TEXT[status] || ["status-pending", status, ""];
+    return '<div class="status ' + s[0] + '"><strong>' + esc(s[1]) + '</strong><span>' + esc(s[2]) + '</span>' +
+      (note ? '<p class="note"><strong>Note from Resilient Healers:</strong> ' + esc(note) + '</p>' : '') + (extra || "") + '</div>';
+  }
+  async function loadMe() {
+    if (!leaderCode) { $("me-title").textContent = "Open your walk leader page from the link in your email."; return; }
+    try {
+      const r = await apiGet({ action: "leader", code: leaderCode });
+      if (!r || !r.ok) { $("me-title").textContent = "We couldn't find this walk leader page."; $("me-status").innerHTML = '<p>Check the link in your email, or <a href="#have-link">ask for it again</a>.</p>'; return; }
+      me = r; renderMe();
+    } catch (e) { $("me-title").textContent = "Your walk leader page couldn't load. Try again in a moment."; }
+  }
+  function renderMe() {
+    const l = me.leader;
+    $("me-title").textContent = "Hi, " + String(l.name).split(" ")[0];
+    const pendingProfile = l.pendingEdit ? "<span>Your profile changes are waiting for review. Your current profile stays up until they're approved.</span>" : "";
+    $("me-status").innerHTML = statusBox(l.status, l.staffNote, pendingProfile);
+    $("me-profile-wrap").hidden = false;
+    $("me-profile").innerHTML = '<div class="avatar" aria-hidden="true">' + avatarHTML(l) + '</div><div><span class="row-name">' + esc(l.name) + '</span><span class="muted">' + esc(l.background) + ' · ' + esc(l.city) + '</span><span>' + esc(l.bio) + '</span></div>';
+    if (!$("mp-name")) {
+      $("me-profile-fields").innerHTML = profileFieldsHTML("mp", { legend: "Profile", email: false });
+      initPhoto("mp");
+    }
+    fillProfile("mp", l);
+    $("me-profile-submit").textContent = l.status === "Changes requested" ? "Resubmit for review" : "Send for review";
+    if (l.status === "Changes requested") $("me-edit-profile").open = true;
+
+    $("me-walks-wrap").hidden = false;
+    $("me-walks").innerHTML = me.walks.map(w => {
+      const going = w.roster.filter(x => x.status === "Going"), waiting = w.roster.filter(x => x.status === "Waitlist");
+      const person = (x) => '<li><span class="row-name">' + esc(x.name) + '</span><span class="muted">' + esc(x.profession) + ' · ' + esc(x.email) + ' · ' + esc(x.phone) + '</span>' +
+        (x.accommodation ? '<span class="accom">Accommodation: ' + esc(x.accommodation) + '</span>' : '') + '</li>';
+      const pend = w.pendingEdit ? "<span>Your changes are waiting for review. The live page keeps its current details until they're approved.</span>" : "";
+      return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.title) + '</span>' +
+        '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + ' · ' + esc(w.place) + '</span>' +
+        statusBox(w.status, w.staffNote, pend) +
+        (w.status === "Live" ? '<p><a href="?walk=' + encodeURIComponent(w.id) + '#walk">See the public walk page</a> · ' + going.length + ' of ' + w.spots + ' spots taken' + (waiting.length ? ', ' + waiting.length + ' on the waitlist' : '') + '</p>' : '') +
+        (w.status === "Live" ? '<details><summary>Who\'s coming (' + going.length + ')</summary><ul class="roster">' + (going.map(person).join("") || '<li class="muted">No sign-ups yet.</li>') + '</ul>' +
+          (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') + '</details>' : '') +
+        '<details data-edit="' + esc(w.id) + '"' + (w.status === "Changes requested" ? " open" : "") + '><summary>' + (w.status === "Changes requested" ? "Fix and resubmit this walk" : "Edit this walk") + '</summary>' +
+        '<div class="form-card" style="margin-top:.8rem"><form data-walkform="' + esc(w.id) + '" novalidate><div id="ew-' + esc(w.id) + '-wrap"></div>' +
+        '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn" type="submit">' + (w.status === "Changes requested" ? "Resubmit for review" : "Send changes for review") + '</button></div></form></div></details></div>';
+    }).join("") || '<p class="muted">No walks yet.</p>';
+    // Build each edit form when it's opened, so its map sizes correctly.
+    document.querySelectorAll("#me-walks details[data-edit]").forEach(d => {
+      const build = () => {
+        const id = d.dataset.edit, p = "ew" + id.replace(/[^A-Za-z0-9]/g, "");
+        const wrap = $("ew-" + id + "-wrap");
+        if (!wrap || wrap.dataset.built) { if (pinForms[p]) pinForms[p].map.invalidateSize(); return; }
+        const w = me.walks.find(x => x.id === id);
+        wrap.innerHTML = walkFieldsHTML(p, "Walk details"); wrap.dataset.built = "1"; wrap.dataset.prefix = p;
+        initWalkForm(p, w); fillWalk(p, w);
+      };
+      if (d.open) setTimeout(build, 0);
+      d.addEventListener("toggle", () => { if (d.open) setTimeout(build, 0); });
+    });
+    $("me-new-wrap").hidden = l.status !== "Approved";
+    if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => initWalkForm("nw", null), 0); }
+  }
+  $("me-walks").addEventListener("submit", async (e) => {
+    const form = e.target.closest("form[data-walkform]"); if (!form) return;
+    e.preventDefault();
+    const id = form.dataset.walkform, wrap = $("ew-" + id + "-wrap"), p = wrap && wrap.dataset.prefix, err = form.querySelector(".error");
+    err.hidden = true; if (!p) return;
+    const walk = readWalk(p), problems = walkProblems(walk);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "editWalk", code: leaderCode, walkId: id, walk });
+      if (!r || !r.ok) throw new Error("failed");
+      await loadMe();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Try again"; }
+  });
+  $("me-profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("me-profile-error"); err.hidden = true;
+    const profile = readProfile("mp", false), problems = profileProblems(profile, false);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("me-profile-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "editProfile", code: leaderCode, profile });
+      if (!r || !r.ok) throw new Error("failed");
+      $("me-edit-profile").open = false; await loadMe();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; }
+  });
+  $("me-new-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("me-new-error"); err.hidden = true;
+    const walk = readWalk("nw"), problems = walkProblems(walk);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("me-new-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "propose", code: leaderCode, walk });
+      if (!r || !r.ok) throw new Error("failed");
+      $("me-new-done").innerHTML = "<h3>Walk sent for review.</h3><p>We'll email you when it's approved, or if we need changes.</p>";
+      $("me-new-done").hidden = false; $("me-new-form").reset(); await loadMe(); $("me-new-done").focus();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send for review"; }
+  });
+
+  /* ---------- contact ---------- */
   $("contact-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = $("contact-error"); err.hidden = true;
@@ -695,101 +1019,50 @@ form { display: flex; flex-direction: column; gap: 1.1rem; }
       const r = await apiPost({ action: "message", name, email, message: msg, website: $("c-website").value });
       if (!r || !r.ok) throw new Error("failed");
       const done = $("contact-done");
-      done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>Priya will reply to " + esc(email) + ".</p>";
-      done.hidden = false;
-      $("contact-form").reset();
-      done.focus();
-    } catch (ex) {
-      err.textContent = "Your message didn't send. Check your connection and try again.";
-      err.hidden = false;
-    } finally {
-      btn.disabled = false; btn.textContent = "Send message";
-    }
-  });
-
-
-  /* ---------- lead a walk: pin dropper + interest form ---------- */
-  let pinMap = null, pinMarker = null;
-  function showPin(lat, lng) {
-    const c = lat.toFixed(5) + ", " + lng.toFixed(5);
-    $("pin-coords").textContent = c;
-    $("pin-link").href = "https://www.google.com/maps/search/?api=1&query=" + lat.toFixed(5) + "," + lng.toFixed(5);
-  }
-  function ensurePinMap() {
-    if (pinMap) { pinMap.invalidateSize(); return; }
-    const start = [WALKS[0].lat, WALKS[0].lng];
-    pinMap = L.map("pin-map", { scrollWheelZoom: false }).setView(start, 15);
-    tiles().addTo(pinMap);
-    pinMarker = L.marker(start, { icon: pinIcon, draggable: true, title: "Meeting spot pin. Drag to move.", alt: "Meeting spot pin" }).addTo(pinMap);
-    pinMarker.on("dragend", () => { const p = pinMarker.getLatLng(); showPin(p.lat, p.lng); $("pin-status").textContent = "Pin moved."; });
-    pinMap.on("click", (e) => { pinMarker.setLatLng(e.latlng); showPin(e.latlng.lat, e.latlng.lng); $("pin-status").textContent = "Pin moved."; });
-    pinMap.on("focus click", () => pinMap.scrollWheelZoom.enable());
-    pinMap.on("blur mouseout", () => pinMap.scrollWheelZoom.disable());
-  }
-  $("pin-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const q = $("pin-q").value.trim();
-    if (!q) { $("pin-status").textContent = "Type a park or address to search."; return; }
-    $("pin-status").textContent = "Searching…";
-    try {
-      const found = await searchCity(q);
-      if (!found.length) { $("pin-status").textContent = "No places found for " + q + "."; return; }
-      const lat = parseFloat(found[0].lat), lng = parseFloat(found[0].lon);
-      ensurePinMap();
-      pinMap.setView([lat, lng], 17);
-      pinMarker.setLatLng([lat, lng]);
-      showPin(lat, lng);
-      $("pin-status").textContent = "Showing " + found[0].display_name.split(",").slice(0, 3).join(",") + ". Now drag the pin to the exact meeting spot.";
-    } catch (ex) {
-      $("pin-status").textContent = "Search isn't responding right now. You can still drag the pin on the map.";
-    }
-  });
-  $("pin-copy").addEventListener("click", async () => {
-    const text = "Meeting spot pin: " + $("pin-coords").textContent + "\n" + $("pin-link").href;
-    try { await navigator.clipboard.writeText(text); $("pin-status").textContent = "Pin details copied. Paste them into the contact form."; }
-    catch (e) { $("pin-status").textContent = "Copy didn't work here. Select the pin numbers above and copy them."; }
-  });
-  $("lead-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const err = $("lead-error"); err.hidden = true;
-    const name = $("l-name").value.trim(), email = $("l-email").value.trim(), city = $("l-city").value.trim(), bg = $("l-bg").value.trim(), more = $("l-msg").value.trim();
-    if (!name || !/^\S+@\S+\.\S+$/.test(email) || !city) { err.textContent = "Please add your name, a valid email and the city where you'd lead a walk."; err.hidden = false; return; }
-    const btn = $("lead-submit"); btn.disabled = true; btn.textContent = "Sending…";
-    try {
-      const message = "[Walk leader interest]\nCity: " + city + "\nBackground: " + (bg || "(not given)") + (more ? "\n\n" + more : "");
-      const r = await apiPost({ action: "message", name, email, message, website: $("l-website").value });
-      if (!r || !r.ok) throw new Error("failed");
-      const done = $("lead-done");
-      done.innerHTML = "<h3>Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + " about leading a walk in " + esc(city) + ".</p>";
-      done.hidden = false; $("lead-form").reset(); done.focus();
-    } catch (ex) {
-      err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false;
-    } finally { btn.disabled = false; btn.textContent = "Send"; }
+      done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + ".</p>";
+      done.hidden = false; $("contact-form").reset(); done.focus();
+    } catch (ex) { err.textContent = "Your message didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send message"; }
   });
 
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "contact"];
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "contact"];
+  const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead" };
   function route() {
     const h = (location.hash || "").slice(1);
-    let v = VIEWS.includes(h) ? h : (["signup", "where", "mine"].includes(h) ? "walk" : (h === "lead-interest" ? "lead" : "find"));
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (leaderCode ? "my-walks" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
-      const active = a.dataset.nav === v || (v === "walk" && a.dataset.nav === "find");
-      if (active) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
+      if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
     if (v === "find") setTimeout(() => bigMap.invalidateSize(), 0);
-    if (v === "walk") setTimeout(ensureSmallMap, 0);
-    if (v === "lead") setTimeout(ensurePinMap, 0);
+    if (v === "walk") { renderWalk(); setTimeout(() => showSmallMap(current()), 0); refreshCount(); }
+    if (v === "leader") renderLeaderProfile();
+    if (v === "lead" && !applyReady) { applyReady = true; setTimeout(() => initWalkForm("aw", null), 0); }
     const target = !VIEWS.includes(h) && h ? document.getElementById(h) : null;
-    if (target) setTimeout(() => target.scrollIntoView(), 30); else window.scrollTo(0, 0);
+    if (target) setTimeout(() => target.scrollIntoView(), 40); else window.scrollTo(0, 0);
   }
   window.addEventListener("hashchange", route);
 
-  renderList(null);
-  renderSpots();
+  async function loadWalks() {
+    try {
+      const r = await apiGet({ action: "walks" });
+      if (!r || !r.ok) throw new Error("bad");
+      WALKS = r.walks || [];
+      drawPins();
+      if (lastOrigin) renderList(lastOrigin, lastLabel); else renderList(null);
+      const v = VIEWS.find(n => !$("view-" + n).hidden);
+      if (v === "walk") { renderWalk(); showSmallMap(current()); }
+      if (v === "leader") renderLeaderProfile();
+    } catch (e) {
+      $("walk-list").innerHTML = '<li class="empty">Walks couldn\'t load right now. Try again in a moment.</li>';
+    }
+  }
+
   route();
-  refreshCounts();
-  if (cancelCode) setTimeout(() => $("cancel-panel").scrollIntoView(), 60);
+  loadWalks();
+  if (leaderCode) loadMe();
 })();
 </script>
 </body>
