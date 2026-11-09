@@ -5,7 +5,8 @@
  *  - The day after a walk, people who were signed up ("Going") get one email asking how it went,
  *    with a private link to leave a review (?rate=<their sign-up code>#rate).
  *  - Every review waits for staff approval (a "walker-review" item on the staff review page).
- *    Approved reviews are Published and show on the walk page and the walk leader's profile.
+ *    Approved reviews are Published: they show on the walk leader's profile, and one shows as a card
+ *    (like the sponsor card) when someone searches a city nearby. Not on walk pages, which are busy enough.
  *  - Walk leaders don't reply to reviews publicly.
  *  - Reviews show only the first name and role the walker chooses, never their email.
  */
@@ -71,7 +72,7 @@ function decideWalkerReview_(r, approve, note) {
   const wr = readTab_('Walker reviews').find(x => String(x['Review ID']) === String(r['Item ID']));
   if (wr) writeCells_('Walker reviews', wr._row, { 'Status': approve ? 'Published' : 'Declined' });
   writeCells_('Reviews', r._row, { 'Status': approve ? 'Approved' : 'Declined', 'Decided': new Date(), 'Staff note': note });
-  return approve ? 'Published. It now shows on the walk page and the walk leader\'s profile.' : 'Not published. Nothing was sent to the walker or the walk leader.';
+  return approve ? 'Published. It now shows on the walk leader\'s profile and can appear as a review card when people search nearby.' : 'Not published. Nothing was sent to the walker or the walk leader.';
 }
 function walkerReviewData_(r) {
   const wr = readTab_('Walker reviews').find(x => String(x['Review ID']) === String(r['Item ID']));

@@ -86,10 +86,12 @@ Emails only say "You have a new message," with a link. They never contain the me
 Every message has **"Report this message."** Staff get an email, and the staff messages page lists reported messages at the top with who reported it and their note. Only staff and the person who reported can see that a message was reported.
 
 ### Walker reviews
-- Reviews live in the Sheet's **Walker reviews** tab (one row per review: walk leader, walk, name, role, rating out of 5, text, month). Only rows with Status **Published** show on the site.
-- They appear under "What walkers say" on the walk page and the walk leader's profile, and the walk list shows the leader's average rating.
-- There's no way yet for walkers to submit a review; for now rows are added in the Sheet.
-- **Sample content:** ten "model cities" (Boston, New York, Chicago, Atlanta, Nashville, Austin, Denver, Seattle, San Francisco, Portland) have a made-up sample walk leader, a scheduled sample walk and one made-up sample review. Each is labeled "Sample" on the site, with a note that it isn't a real person or a real walker. `removeSamples` deletes them; `loadSamples` puts them back. Priya has no sample reviews.
+- **Collecting them:** the day after a walk (from 10 AM Pacific), everyone who was Going gets one "How was your walk?" email with a private review link. They pick 1 to 5 stars, write a few sentences, and choose the first name and role to show. Their email is never shown. (This runs on the same hourly schedule as reminders.)
+- **Approval:** every review waits for staff. The staff email links to the review page, which has **Publish review** and **Don't publish**. Nobody is emailed either way. Walk leaders can't reply to reviews.
+- **Where they show:** on the walk leader's profile page, and as one review card (like the sponsor card) after someone searches a city: the nearest walk leader with reviews, within 100 miles. Not on walk pages, which are busy enough.
+- Reviews live in the Sheet's **Walker reviews** tab. Only rows with Status **Published** show on the site.
+- **Sample content:** ten "model cities" (Boston, New York, Chicago, Atlanta, Nashville, Austin, Denver, Seattle, San Francisco, Portland) have a made-up sample walk leader, a sample walk in November or December 2026, and one made-up sample review. Each is labeled "Sample" on the site, with a note that it isn't a real person or a real walker. `removeSamples` deletes them; `loadSamples` puts them back. Priya has no sample reviews.
+- **Past walks:** a walk disappears from the site the day after its date. Monthly walks don't roll forward on their own yet; each month's walk is added as its own walk.
 
 ### Walk photos
 - **Sample walks** use photos from Wikimedia Commons, credited under each photo with a link to the source. They were checked on November 9, 2026 to make sure each one shows the actual walking area at its best; 14 were replaced. The list lives in `data/photos.json`; after changing it, run `python3 data/make_samples.py` and reload the samples.
@@ -128,7 +130,7 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 
 **The backend** (`apps-script/Code.gs`, `apps-script/Messaging.gs`, `apps-script/SampleData.gs` in the repository): the copy that actually runs lives in Apps Script, so after changing the files:
 1. Open the Apps Script project as resilienthealers@gmail.com.
-2. Replace the code in the editor with the three files, one after the other, in that order. Save.
+2. Replace the code in the editor with the four files (Code.gs, Messaging.gs, Reviews.gs, SampleData.gs), one after the other, in that order. Save.
 3. **Deploy → Manage deployments → pencil (Edit) → Version: New version → Deploy.** This keeps the same web address, so the site keeps working. (Never choose "New deployment"; that makes a new address.)
 4. If a "You're currently signed in as" box pops up and closes the dialog, click OK and start step 3 again.
 
