@@ -668,7 +668,7 @@ function decideApi_(b) {
 
 /* ===================== demo data (run from the editor) ===================== */
 
-/** Removes the "Test Leader" test data: their leader row, walks, reviews and any sign-ups for those walks. */
+/** Removes the "Test Leader" test data: their leader row, walks, reviews, test sign-ups and test chat messages. */
 function removeTestData() {
   const leaders = readTab_('Leaders').filter(l => l['Name'] === 'Test Leader');
   const ids = leaders.map(l => String(l['Leader ID']));
@@ -678,6 +678,7 @@ function removeTestData() {
   readTab_('Walks').filter(w => w['Status'] === 'Replaced' && walkIds.some(id => String(w['Staff note']) === 'Replaced by ' + id))
     .forEach(w => writeCells_('Walks', w._row, { 'Status': 'Live', 'Staff note': '', 'Updated': new Date() }));
   deleteRows_('Reviews', r => ids.indexOf(String(r['Leader ID'])) >= 0);
+  deleteRows_('Chat', r => walkIds.indexOf(String(r['Walk'])) >= 0 || /^Test /.test(String(r['From name'])));
   deleteRows_('Walks', r => walkIds.indexOf(String(r['Walk ID'])) >= 0);
   deleteRows_('Leaders', r => ids.indexOf(String(r['Leader ID'])) >= 0);
   Logger.log('Removed ' + ids.length + ' test leader(s) and ' + walkIds.length + ' walk(s).');
