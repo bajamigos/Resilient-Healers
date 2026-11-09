@@ -100,6 +100,12 @@ Emails only say "You have a new message," with a link. They never contain the me
 
 Every message has **"Report this message."** Staff get an email, and the staff messages page lists reported messages at the top with who reported it and their note. Only staff and the person who reported can see that a message was reported.
 
+### Walk agreement, photo opt-in and privacy policy (added November 9, 2026; wording is a DRAFT for a lawyer to review)
+- Signing up (and "Save my spot" for the next date) requires checking "I've read and agree to the walk agreement." The wording is `AGREEMENT_HTML` in index.html. If you change it, also change `AGREEMENT_VERSION` there and `AGREEMENT_VERSION_` in Code.gs, so each sign-up records which version the walker agreed to.
+- Sign-ups tab columns: "Photo OK" (Yes/No; unchecked by default), "Agreed" (date and time) and "Agreement version". These columns are added in Recurring.gs, because new columns must go at the end.
+- Walk leaders see "OK with group photos" or "Please keep out of photos" next to each walker.
+- The privacy policy is the `view-privacy` section of index.html (#privacy), linked from the footer and the sign-up form. Update it whenever the site starts collecting something new or uses a new service.
+
 ### Repeating walks
 - In the walk form, "How often" offers: One time, every week, every 2 weeks, or every month on the same week and day. The site saves it spelled out from the walk's date, for example "Monthly, second Sunday" or "Weekly, Saturdays".
 - Once a repeating walk's date has passed, the hourly job adds the next date as a **new walk** with an empty sign-up list, copying the details, pin, photo and walk leader. (Each date is its own walk, so December's sign-ups don't carry into January.) The old walk keeps its sign-ups, messages and reviews; its "Next walk" column in the Sheet points to the new one.
