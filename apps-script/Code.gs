@@ -234,7 +234,8 @@ function doPost(e) {
   if (body.action === 'inbox') {
     try { return json_(inbox_(body)); } catch (err) { return json_({ ok: false, error: 'server_error', detail: String(err && err.message || err) }); }
   }
-  const lock = LockService.getScriptLock();
+  // The web app runs as its owner, so the owner's user lock lets one change happen at a time.
+  const lock = LockService.getUserLock();
   if (!lock.tryLock(20000)) return json_({ ok: false, error: 'busy' });
   try {
     switch (body.action) {
@@ -560,7 +561,7 @@ function reviewPage_(code) {
 
 /** Called from the review page. */
 function decide(code, decision, note) {
-  const lock = LockService.getScriptLock();
+  const lock = LockService.getUserLock();
   lock.waitLock(25000);
   try { return decideLocked_(code, decision, note); } finally { lock.releaseLock(); }
 }
