@@ -247,6 +247,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
           <label for="city" class="sr-only">City or ZIP code</label>
           <input type="search" id="city" placeholder="Search a city or ZIP code, for example San Diego" autocomplete="off">
           <button class="btn" type="submit">Search</button>
+          <button class="btn btn-ghost" type="button" id="near-me">Use my location</button>
           <button class="btn btn-ghost" type="button" id="show-us">Show all of the US</button>
         </form>
         <p class="hint" id="search-status" aria-live="polite"></p>
@@ -257,6 +258,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <section class="block" aria-labelledby="list-h">
         <h2 id="list-h">Upcoming walks</h2>
         <ul class="walk-list" id="walk-list"><li class="empty">Loading walks…</li></ul>
+        <div class="btn-row"><button class="btn btn-ghost" type="button" id="show-all-walks" hidden></button></div>
       </section>
       <aside class="sponsor" aria-label="Sponsored" id="find-sponsor" hidden></aside>
     </div>
@@ -779,15 +781,46 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
   }
   let lastOrigin = null, lastLabel = "";
+  let nearMe = null;      // the visitor's location, if they shared it
+  let showAll = false;    // the opening list shows 3 walks until "Show all walks"
+  const OPENING_LIMIT = 3;
   function renderList(origin, label) {
     lastOrigin = origin; lastLabel = label || "";
-    let items = WALKS.map(w => ({ w, d: origin ? miles(origin, [w.lat, w.lng]) : null }));
+    const from = origin || nearMe;
+    let items = WALKS.map(w => ({ w, d: from ? miles(from, [w.lat, w.lng]) : null }));
     if (origin) items = items.filter(i => i.d <= 100).sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || a.d - b.d);
+    else if (nearMe) items.sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || a.d - b.d);
     else items.sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || (a.w.date + a.w.start).localeCompare(b.w.date + b.w.start) || a.w.title.localeCompare(b.w.title));
-    $("list-h").textContent = origin ? "Walks near " + label : "Upcoming walks";
-    $("walk-list").innerHTML = items.length ? items.map(({ w, d }) => walkCard(w, d)).join("")
+    $("list-h").textContent = origin ? "Walks near " + label : nearMe && !showAll ? "Walks nearest you" : showAll ? "All walks" : "Upcoming walks";
+    // The opening list (no city searched) shows only a few walks, nearest first if we know where the visitor is.
+    const capped = !origin && !showAll && items.length > OPENING_LIMIT;
+    const shown = capped ? items.slice(0, OPENING_LIMIT) : items;
+    $("walk-list").innerHTML = shown.length ? shown.map(({ w, d }) => walkCard(w, d)).join("")
       : '<li class="empty">' + (origin ? "No walks within 100 miles of " + esc(label) + " yet. Try another city, or show all of the US." : "No walks yet.") + '</li>';
+    $("show-all-walks").hidden = !capped;
+    if (capped) $("show-all-walks").textContent = "Show all " + items.length + " walks";
   }
+  $("show-all-walks").addEventListener("click", () => {
+    showAll = true; renderList(null);
+    const first = $("walk-list").querySelectorAll(".walk-card")[OPENING_LIMIT]; if (first) first.querySelector("a").focus();
+  });
+  function useLocation(fromClick) {
+    if (!navigator.geolocation) { if (fromClick) $("search-status").textContent = "This browser can't share your location. Search a city instead."; return; }
+    if (fromClick) $("search-status").textContent = "Finding walks near you…";
+    navigator.geolocation.getCurrentPosition(pos => {
+      nearMe = [pos.coords.latitude, pos.coords.longitude]; showAll = false;
+      bigMap.setView(nearMe, 9);
+      renderList(null);
+      const near = WALKS.filter(w => miles(nearMe, [w.lat, w.lng]) <= 100).length;
+      $("search-status").textContent = near ? "Showing walks nearest you. " + near + (near === 1 ? " walk is" : " walks are") + " within 100 miles." : "No walks within 100 miles of you yet. Here are the nearest ones.";
+      showAd($("find-sponsor"), nearMe); showReviewCard($("find-review"), nearMe);
+    }, () => {
+      if (fromClick) $("search-status").textContent = "We couldn't get your location. You can search a city or ZIP code instead.";
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+  }
+  $("near-me").addEventListener("click", () => useLocation(true));
+  // If the visitor already allowed location for this site, use it without asking again.
+  try { if (navigator.permissions) navigator.permissions.query({ name: "geolocation" }).then(p => { if (p.state === "granted") useLocation(false); }).catch(() => {}); } catch (e) {}
   async function searchPlace(q) {
     const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=5&q=" + encodeURIComponent(q);
     const res = await fetch(url, { headers: { "Accept": "application/json" } });
@@ -823,7 +856,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     } catch (ex) { $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment."; }
   });
   $("show-us").addEventListener("click", () => {
-    bigMap.setView(US_VIEW.center, US_VIEW.zoom); renderList(null); $("find-sponsor").hidden = true; $("find-review").hidden = true;
+    bigMap.setView(US_VIEW.center, US_VIEW.zoom); showAll = true; renderList(null); $("find-sponsor").hidden = true; $("find-review").hidden = true;
     $("search-status").textContent = "Showing all of the US."; $("search-results").innerHTML = "";
   });
 
@@ -1645,6 +1678,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       WALKS = r.walks || [];
       drawPins();
       if (lastOrigin) renderList(lastOrigin, lastLabel); else renderList(null);
+      if (!lastOrigin && nearMe) { showReviewCard($("find-review"), nearMe); showAd($("find-sponsor"), nearMe); }
       const v = VIEWS.find(n => !$("view-" + n).hidden);
       if (v === "walk") { renderWalk(); showSmallMap(current()); }
       if (v === "leader") renderLeaderProfile();
