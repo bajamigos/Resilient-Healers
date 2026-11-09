@@ -117,7 +117,9 @@ function inbox_(b) {
   const chat = readTab_('Chat');
   const byThread = {};
   chat.forEach(r => { (byThread[String(r['Thread'])] = byThread[String(r['Thread'])] || []).push(r); });
-  const msgs = (thread) => (byThread[thread] || []).map(msgOut_).map(m => (me.role === 'staff' ? m : Object.assign(m, { reportedBy: '', reportNote: '' })));
+  // Only staff, and the person who reported it, can see that a message was reported.
+  const msgs = (thread) => (byThread[thread] || []).map(msgOut_).map(m => (me.role === 'staff' ? m :
+    Object.assign(m, { reported: m.reported && m.reportedBy === me.role + ': ' + me.name, reportedBy: '', reportNote: '' })));
   const walks = readTab_('Walks'), signups = readTab_('Sign-ups'), leaders = readTab_('Leaders');
   const walkShort = (w) => w ? { id: String(w['Walk ID']), title: w['Title'], dateText: walkOut_(w).dateText, timeText: walkOut_(w).timeText, place: w['Place'] } : null;
 
