@@ -265,6 +265,7 @@ function sendReminders() {
 }
 function sendRemindersForSite_() {
   ensureSetup_();
+  rollRecurringWalks_();   // add next dates of repeating walks first (Recurring.gs)
   const now = new Date();
   const hour = +Utilities.formatDate(now, 'America/Los_Angeles', 'H');
   const walks = readTab_('Walks').filter(w => w['Status'] === 'Live' && dateText_(w['Date']));

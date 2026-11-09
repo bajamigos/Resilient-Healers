@@ -9,7 +9,7 @@ Free small-group walks for healthcare workers, with a walk leader showing the wa
 ## What's here
 
 - `index.html`: the whole website in one file (map and search, walk pages, sign-up, walk leader pages, staff review and messages pages, contact form).
-- `apps-script/`: the backend that runs in Google Apps Script (`Code.gs`, `Messaging.gs`, `Reviews.gs`, `SampleData.gs`). The running copy lives in Apps Script; see the guide for how to deploy changes.
+- `apps-script/`: the backend that runs in Google Apps Script (`Code.gs`, `Messaging.gs`, `Reviews.gs`, `Recurring.gs`, `SampleData.gs`). The running copy lives in Apps Script; see the guide for how to deploy changes.
 - `data/`: the sample-walk photos (Wikimedia Commons) and the script that builds the sample walks.
 
 ## Style

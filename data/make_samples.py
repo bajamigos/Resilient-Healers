@@ -8,6 +8,10 @@ import json, pathlib
 here = pathlib.Path(__file__).parent
 photos = {p["id"]: p for p in json.loads((here / "photos.json").read_text())}
 
+# Sample San Diego walks repeat monthly on the same week and day as their first date.
+SD_REPEATS = {"sd-balboa": "Monthly, fourth Sunday", "sd-missionbay": "Monthly, last Sunday", "sd-miramar": "Monthly, first Sunday",
+              "sd-coronado": "Monthly, third Sunday", "sd-liberty": "Monthly, fourth Sunday"}
+
 SD = [
   dict(id="sd-balboa", title="Balboa Park garden walk", date="2026-11-22", place="Balboa Park, at the Lily Pond", city="San Diego, CA",
        address="1549 El Prado, San Diego, CA 92101",
@@ -149,7 +153,8 @@ walks = []
 for s in SD:
     key = s["id"]
     w = dict(s)
-    w.update(id="S-" + key, leaderId="L-priya", start="09:00", end="10:30", repeats="One time", spots=20)
+    w.update(id="S-" + key, leaderId="L-priya", start="09:00", end="10:30", spots=20)
+    w.setdefault("repeats", SD_REPEATS[key])
     w.update(photo_fields(key))
     walks.append(w)
 leaders, reviews = [], []

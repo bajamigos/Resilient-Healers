@@ -100,6 +100,12 @@ Emails only say "You have a new message," with a link. They never contain the me
 
 Every message has **"Report this message."** Staff get an email, and the staff messages page lists reported messages at the top with who reported it and their note. Only staff and the person who reported can see that a message was reported.
 
+### Repeating walks
+- In the walk form, "How often" offers: One time, every week, every 2 weeks, or every month on the same week and day. The site saves it spelled out from the walk's date, for example "Monthly, second Sunday" or "Weekly, Saturdays".
+- Once a repeating walk's date has passed, the hourly job adds the next date as a **new walk** with an empty sign-up list, copying the details, pin, photo and walk leader. (Each date is its own walk, so December's sign-ups don't carry into January.) The old walk keeps its sign-ups, messages and reviews; its "Next walk" column in the Sheet points to the new one.
+- Priya's Lake Murray walk is "Monthly, second Sunday", so after December 13 the January 10, 2027 walk appears on its own. The demo's sample walks repeat monthly too.
+- To stop a repeating walk, change its "Repeats" to "One time" in the Sheet (or have the walk leader edit it), before its date passes.
+
 ### Walker reviews
 - **Collecting them:** the day after a walk (from 10 AM Pacific), everyone who was Going gets one "How was your walk?" email with a private review link. They pick 1 to 5 stars, write a few sentences, and choose the first name and role to show. Their email is never shown. (This runs on the same hourly schedule as reminders.)
 - **Approval:** every review waits for staff. The staff email links to the review page, which has **Publish review** and **Don't publish**. Nobody is emailed either way. Walk leaders can't reply to reviews.
@@ -145,7 +151,7 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 
 **The backend** (`apps-script/Code.gs`, `apps-script/Messaging.gs`, `apps-script/SampleData.gs` in the repository): the copy that actually runs lives in Apps Script, so after changing the files:
 1. Open the Apps Script project as resilienthealers@gmail.com.
-2. Replace the code in the editor with the four files (Code.gs, Messaging.gs, Reviews.gs, SampleData.gs), one after the other, in that order. Save.
+2. Replace the code in the editor with the five files (Code.gs, Messaging.gs, Reviews.gs, Recurring.gs, SampleData.gs), one after the other, in that order. Save.
 3. **Deploy → Manage deployments → pencil (Edit) → Version: New version → Deploy.** This keeps the same web address, so the site keeps working. (Never choose "New deployment"; that makes a new address.)
 4. If a "You're currently signed in as" box pops up and closes the dialog, click OK and start step 3 again.
 

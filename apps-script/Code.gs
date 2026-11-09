@@ -103,10 +103,10 @@ function setup() {
   }
   getPhotoFolder_();
   if (!siteProp_('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v8-' + SITE_, '1', 21600);
+  CacheService.getScriptCache().put('setup-v9-' + SITE_, '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v8-' + SITE_)) return;
+  if (CacheService.getScriptCache().get('setup-v9-' + SITE_)) return;
   setup();
 }
 
@@ -312,6 +312,7 @@ function doPost(e) {
         if (cleanLine_(body.code, 80) !== staffCode_()) return json_({ ok: false, error: 'not_allowed' });
         if (body.op === 'loadSamples') { loadSamples(); return json_({ ok: true }); }
         if (body.op === 'removeSamples') { removeSamples(); return json_({ ok: true }); }
+        if (body.op === 'rollRecurring') return json_({ ok: true, added: rollRecurringWalks_() });
         if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
         return json_({ ok: false, error: 'unknown_op' });
       default: return json_({ ok: false, error: 'unknown_action' });
@@ -345,7 +346,7 @@ function readWalk_(w) {
   w = w || {};
   const out = {
     title: cleanLine_(w.title, 120), date: cleanLine_(w.date, 10), start: cleanLine_(w.start, 5), end: cleanLine_(w.end, 5),
-    repeats: cleanLine_(w.repeats, 80), place: cleanLine_(w.place, 160), address: cleanLine_(w.address, 200),
+    repeats: normalizeRepeats_(cleanLine_(w.repeats, 80), cleanLine_(w.date, 10)), place: cleanLine_(w.place, 160), address: cleanLine_(w.address, 200),
     lat: Number(w.lat), lng: Number(w.lng), find: clean_(w.find, 600), parking: clean_(w.parking, 400),
     spots: Math.round(Number(w.spots)), shorter: clean_(w.shorter, 400), description: clean_(w.description, 1500)
   };

@@ -1111,7 +1111,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<div class="two"><div class="field"><label for="' + p + '-date">Date</label><input type="date" id="' + p + '-date"></div>' +
       '<div class="field"><label for="' + p + '-start">Start time</label><input type="time" id="' + p + '-start"></div>' +
       '<div class="field"><label for="' + p + '-end">End time</label><input type="time" id="' + p + '-end"></div></div>' +
-      '<div class="field"><label for="' + p + '-repeats">How often</label><select id="' + p + '-repeats"><option value="One time">One time</option><option value="Monthly, same week and day">Monthly, same week and day</option></select></div>' +
+      '<div class="field"><label for="' + p + '-repeats">How often</label><select id="' + p + '-repeats" aria-describedby="' + p + '-repeats-hint"><option value="One time">One time</option><option value="Weekly">Every week, same day</option><option value="Every 2 weeks">Every 2 weeks, same day</option><option value="Monthly">Every month, same week and day (for example, the second Sunday)</option></select>' +
+      '<span class="hint" id="' + p + '-repeats-hint">Repeating walks add their next date automatically once a walk has passed, with a fresh sign-up list.</span></div>' +
       '<div class="field"><label for="' + p + '-place">Place name</label><input type="text" id="' + p + '-place" placeholder="For example: Lake Murray, by the ranger station"></div>' +
       '<div class="field"><span class="row-name" id="' + p + '-pin-label">Meeting spot pin</span><span class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. You can also tap the map to move it.</span>' +
       '<div class="search"><label for="' + p + '-q" class="sr-only">Search a park or address</label><input type="search" id="' + p + '-q" placeholder="Search a park or address" autocomplete="off"><button class="btn" type="button" id="' + p + '-find">Find</button></div>' +
@@ -1170,7 +1171,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   }
   function fillWalk(p, w) {
     $(p + "-title").value = w.title || ""; $(p + "-date").value = w.date || ""; $(p + "-start").value = w.start || ""; $(p + "-end").value = w.end || "";
-    $(p + "-repeats").value = w.repeats && w.repeats.startsWith("Monthly") ? "Monthly, same week and day" : "One time";
+    $(p + "-repeats").value = /^weekly/i.test(w.repeats || "") ? "Weekly" : /^every 2 weeks/i.test(w.repeats || "") ? "Every 2 weeks" : /^monthly/i.test(w.repeats || "") ? "Monthly" : "One time";
     $(p + "-place").value = w.place || ""; $(p + "-address").value = w.address || ""; $(p + "-find-text").value = w.find || "";
     $(p + "-parking").value = w.parking || ""; $(p + "-spots").value = w.spots || 20; $(p + "-shorter").value = w.shorter || ""; $(p + "-desc").value = w.description || "";
     if (w.photo && !photoData[p]) { $(p + "-photo-preview").src = w.photo; $(p + "-photo-preview").alt = "Current walk photo"; $(p + "-photo-preview").hidden = false; $(p + "-photo-current").hidden = false; }
