@@ -41,7 +41,7 @@ function staffUrl_() { return siteUrl_() + '?staff=' + encodeURIComponent(staffC
 function sendStaffLink() {
   const to = staffEmail_();
   if (!to) throw new Error('Set STAFF_EMAIL or ORGANIZER_EMAIL first.');
-  MailApp.sendEmail({ to: to, name: 'Resilient Healers', subject: 'Your Resilient Healers staff messages link',
+  MailApp.sendEmail({ to: to, name: senderName_(), subject: 'Your Resilient Healers staff messages link',
     body: ['This private link opens the staff messages page, where you can read every conversation, see reported messages and reply:', '', staffUrl_(), '', "Don't share it."].join('\n') });
   Logger.log('Sent the staff link to ' + to);
 }
@@ -193,7 +193,7 @@ function report_(b) {
   const note = clean_(b.note, 1000);
   writeCells_('Chat', r._row, { 'Reported': new Date(), 'Reported by': safeCell_(me.role + ': ' + me.name), 'Report note': safeCell_(note) });
   const to = staffEmail_();
-  if (to) MailApp.sendEmail({ to: to, name: 'Resilient Healers', subject: 'A message was reported',
+  if (to) MailApp.sendEmail({ to: to, name: senderName_(), subject: 'A message was reported',
     body: [me.name + ' (' + me.role + ') reported a message from ' + r['From name'] + '.', note ? 'Their note: ' + note : '', '',
       'Read it, and the whole conversation, on the staff messages page:', staffUrl_()].join('\n') });
   return { ok: true };
@@ -208,7 +208,7 @@ function notify_(me, t) {
     if (cache.get(key)) return;
     cache.put(key, '1', 900);
     try {
-      MailApp.sendEmail({ to: String(email), name: 'Resilient Healers', subject: 'New message: ' + about,
+      MailApp.sendEmail({ to: String(email), name: senderName_(), subject: 'New message: ' + about,
         body: ['Hi ' + String(name || '').split(' ')[0] + ',', '', 'You have a new message from ' + (me.role === 'staff' ? 'Resilient Healers staff' : me.name) + ' about ' + about + '.', '',
           'Read it and reply here:', link, '', 'For everyone\'s privacy, messages stay on the Resilient Healers site, and replying to this email does not reach them.', '', 'Resilient Healers'].join('\n') });
     } catch (e) { /* daily email limit: the message is still on the site */ }
@@ -237,7 +237,7 @@ function walkerLink_(b) {
   const s = readTab_('Sign-ups').find(r => String(r['Walk']) === String(b.walk) && String(r['Email']).toLowerCase() === email && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
   if (s) {
     const w = liveWalk_(b.walk);
-    MailApp.sendEmail({ to: email, name: 'Resilient Healers', subject: 'Your messages link: ' + (w ? w['Title'] : 'your walk'),
+    MailApp.sendEmail({ to: email, name: senderName_(), subject: 'Your messages link: ' + (w ? w['Title'] : 'your walk'),
       body: ['Hi ' + String(s['Name']).split(' ')[0] + ',', '', 'Here is your private link to message your walk leader and read their updates:', inboxUrl_(s['Cancel code']), '', "Don't share it.", '', 'Resilient Healers'].join('\n') });
   }
   return { ok: true };
@@ -274,7 +274,7 @@ function sendReminders() {
     if (!which) return;
     signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && r['Status'] === 'Going' && !r[which]).forEach(r => {
       try {
-        MailApp.sendEmail({ to: String(r['Email']), name: 'Resilient Healers',
+        MailApp.sendEmail({ to: String(r['Email']), name: senderName_(),
           subject: (which === 'Reminder day of' ? 'Today: ' : 'Coming up ' + out.dateText.split(',')[0] + ': ') + w['Title'],
           body: reminderBody_(w, out, r, which).join('\n') });
         writeCells_('Sign-ups', r._row, { [which]: new Date() });

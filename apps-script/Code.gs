@@ -14,6 +14,7 @@
  *   SITE_URL         https://resilienthealers.github.io/
  *   ORGANIZER_EMAIL  where contact-form messages go
  *   STAFF_EMAIL      where approval requests go (falls back to ORGANIZER_EMAIL)
+ *   SITE_LABEL       optional; "demo" on the demo backend, so its emails come from "Resilient Healers (demo)"
  *
  * Deploy as a web app: Execute as Me, access Anyone. The site sends POST bodies as
  * text/plain JSON so browsers don't need a CORS preflight.
@@ -56,6 +57,8 @@ function ss_() { return SpreadsheetApp.openById(props_().getProperty('SHEET_ID')
 function sheet_(name) { return ss_().getSheetByName(name); }
 function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function siteUrl_() { return props_().getProperty('SITE_URL') || ''; }
+// Sender name on every email. The demo backend sets the SITE_LABEL property to "demo".
+function senderName_() { const l = props_().getProperty('SITE_LABEL'); return l ? 'Resilient Healers (' + l + ')' : 'Resilient Healers'; }
 function staffEmail_() { return props_().getProperty('STAFF_EMAIL') || props_().getProperty('ORGANIZER_EMAIL'); }
 
 /** Run once from the editor (also runs automatically on first request). */
@@ -389,7 +392,7 @@ function openReview_(type, leaderId, walkId) {
   const to = staffEmail_();
   if (to) {
     MailApp.sendEmail({
-      to: to, name: 'Resilient Healers',
+      to: to, name: senderName_(),
       subject: (labels[type] || 'Review needed') + ': ' + (leader ? leader['Name'] : '') + (walk ? ' · ' + walk['Title'] : ''),
       body: [labels[type] || 'Something needs review.', '', 'Walk leader: ' + (leader ? leader['Name'] + ' (' + leader['Email'] + ')' : ''),
         walk ? 'Walk: ' + walk['Title'] + ', ' + niceDate_(dateText_(walk['Date'])) : '', '',
@@ -429,7 +432,7 @@ function apply_(b) {
   appendObj_('Walks', Object.assign(walkRow_(walkId, leaderId, 'Pending review', w.data), takeoverCells_(b.forWalk), walkPhotoCells_(w.photoData, walkId)));
   openReview_('application', leaderId, walkId);
   MailApp.sendEmail({
-    to: p.data.email, name: 'Resilient Healers',
+    to: p.data.email, name: senderName_(),
     subject: 'We got your application to lead a walk',
     body: ['Hi ' + p.data.name.split(' ')[0] + ',', '', 'Thanks for applying to lead a Resilient Healers walk. Our team will review your profile and your first walk, "' + w.data.title + '", and email you.', '',
       'You can check its status, or make changes, from your walk leader page:', leaderLink_(code), '', 'Keep this email: that link is your private way back to your walk leader page.', '', 'Resilient Healers'].join('\n')
@@ -534,7 +537,7 @@ function sendLinkEmail_(l, leadWalkId) {
   if (!l['Email']) return;
   const link = leaderLink_(l['Private link code']).replace('#my-walks', (leadWalkId ? '&lead=' + encodeURIComponent(leadWalkId) : '') + '#my-walks');
   MailApp.sendEmail({
-    to: String(l['Email']), name: 'Resilient Healers', subject: 'Your Resilient Healers walk leader link',
+    to: String(l['Email']), name: senderName_(), subject: 'Your Resilient Healers walk leader link',
     body: ['Hi ' + String(l['Name']).split(' ')[0] + ',', '', (leadWalkId ? 'Here is your private link to your walk leader page. It opens with the walk you asked to lead filled in, ready to propose:' : 'Here is your private link to your walk leader page:'), link, '', 'Resilient Healers'].join('\n')
   });
 }
@@ -652,7 +655,7 @@ function decideLocked_(code, decision, note) {
          'Your walk leader page, where you can see sign-ups and propose new walks:', leaderLink_(l['Private link code']), '', 'Resilient Healers']
       : ['Hi ' + first + ',', '', 'Thanks for ' + what.replace(/^your /, 'your ') + '. Before it goes live, we have a request:', '', note, '',
          'Make the changes and resubmit from your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'];
-    if (l['Email']) MailApp.sendEmail({ to: String(l['Email']), name: 'Resilient Healers', subject: approve ? 'Approved: ' + what.replace(/^your /, '') : 'Changes requested: ' + what.replace(/^your /, ''), body: lines.join('\n') });
+    if (l['Email']) MailApp.sendEmail({ to: String(l['Email']), name: senderName_(), subject: approve ? 'Approved: ' + what.replace(/^your /, '') : 'Changes requested: ' + what.replace(/^your /, ''), body: lines.join('\n') });
     return approve ? 'Approved. We emailed the walk leader.' + takeoverMsg : 'Changes requested. We emailed the walk leader your note.';
   }
 }
@@ -796,7 +799,7 @@ function signup_(b) {
        'Message your walk leader, and read their updates, here:', inboxUrl_(code), '', "Can't make it? Cancel here so someone on the waitlist can take your spot:", cancelUrl, '', 'Keep this email: its links are private to you.', '', 'See you there,', 'Resilient Healers']
     : ['Hi ' + first + ',', '', 'The walk is full right now, so you are on the waitlist. If a spot opens, you will move up automatically and we will email you.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '',
        'Message your walk leader, and read their updates, here:', inboxUrl_(code), '', 'To leave the waitlist:', cancelUrl, '', 'Resilient Healers'];
-  MailApp.sendEmail({ to: d.email, subject: subject, body: lines.join('\n'), name: 'Resilient Healers' });
+  MailApp.sendEmail({ to: d.email, subject: subject, body: lines.join('\n'), name: senderName_() });
 
   // The code goes back only to the browser that just signed up, so its walk page can open their messages.
   return Object.assign({ ok: true, status: status === 'Going' ? 'going' : 'waitlist', capacity: capacity, code: code }, counts_(b.walk));
@@ -824,7 +827,7 @@ function interest_(b) {
   const leaveUrl = siteUrl_() + '?walk=' + encodeURIComponent(b.walk) + '&cancel=' + encodeURIComponent(code) + '#walk';
   const place = walk['Place'] + (walk['City'] ? ', ' + walk['City'] : '');
   MailApp.sendEmail({
-    to: d.email, name: 'Resilient Healers', subject: "You're on the interest list: " + walk['Title'],
+    to: d.email, name: senderName_(), subject: "You're on the interest list: " + walk['Title'],
     body: ['Hi ' + d.name.split(' ')[0] + ',', '', 'Thanks for your interest in a Resilient Healers walk at ' + place + '.', '',
       "This walk doesn't have a walk leader or a date yet. When it does, we'll email you so you can sign up. Joining this list doesn't reserve a spot.", '',
       'Know someone who might lead it? Send them to ' + siteUrl_() + '#lead', '',
@@ -860,7 +863,7 @@ function takeOver_(newWalk, leader) {
   people.forEach(p => {
     try {
       MailApp.sendEmail({
-        to: String(p['Email']), name: 'Resilient Healers', subject: 'The walk you were waiting for has a date: ' + newWalk['Title'],
+        to: String(p['Email']), name: senderName_(), subject: 'The walk you were waiting for has a date: ' + newWalk['Title'],
         body: ['Hi ' + String(p['Name']).split(' ')[0] + ',', '', 'Good news. The Resilient Healers walk at ' + t['Place'] + ' now has a walk leader and a date:', '',
           newWalk['Title'], w.dateText + ', ' + w.timeText, newWalk['Place'], 'Walk leader: ' + (leader ? leader['Name'] : ''), '',
           'Spots are first come, first served. Sign up here:', url, '', "You're getting this because you joined the interest list. This was the only email about it.", '', 'Resilient Healers'].join('\n')
@@ -893,7 +896,7 @@ function cancel_(b) {
       writeCells_('Sign-ups', next._row, { 'Status': 'Going', 'Updated': new Date() });
       const cancelUrl = siteUrl_() + '?walk=' + encodeURIComponent(walkId) + '&cancel=' + encodeURIComponent(next['Cancel code']) + '#walk';
       MailApp.sendEmail({
-        to: String(next['Email']), name: 'Resilient Healers',
+        to: String(next['Email']), name: senderName_(),
         subject: "A spot opened up: you're in for " + walk['Title'],
         body: ['Hi ' + String(next['Name']).split(' ')[0] + ',', '', 'Good news: a spot opened up and you are now signed up.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'Messages from your walk leader:', inboxUrl_(next['Cancel code']), '', "Can't make it? Cancel here:", cancelUrl, '', 'Resilient Healers'].join('\n')
       });

@@ -229,7 +229,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     </nav>
   </div>
 </header>
-<div class="demo-note" role="note"><div class="wrap">Test site. Walks, walk leaders and sign-ups here are for testing.</div></div>
+<div class="demo-note" role="note" id="demo-note" hidden><div class="wrap">Demo site. Sample walks, walk leaders and reviews here are made up to show how Resilient Healers works. <a href="https://resilienthealers.github.io/">See the real site</a>.</div></div>
 
 <main>
   <p id="sr-announce" class="sr-only" role="status" aria-live="polite"></p>
@@ -681,7 +681,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (() => {
-  const API_URL = "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec";
+  // Which site this is. tools/build_demo.py rewrites this one line for the demo copy in /demo.
+  const SITE = { mode: "real", api: "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec" };
+  const API_URL = SITE.api;
+  if (SITE.mode === "demo") document.getElementById("demo-note").hidden = false;
   const US_VIEW = { center: [39.5, -98.35], zoom: 4 };
   // Local sponsored ads. Each ad covers an area (center + radius). How ads are chosen when several
   // overlap is tabled for now: this simply shows the nearest ad whose area includes the location.

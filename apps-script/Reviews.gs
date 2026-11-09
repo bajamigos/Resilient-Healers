@@ -93,7 +93,7 @@ function sendReviewRequests_() {
     const l = leaders.find(x => String(x['Leader ID']) === String(w['Leader ID']));
     signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && r['Status'] === 'Going' && !r['Review request']).forEach(r => {
       try {
-        MailApp.sendEmail({ to: String(r['Email']), name: 'Resilient Healers', subject: 'How was your walk?',
+        MailApp.sendEmail({ to: String(r['Email']), name: senderName_(), subject: 'How was your walk?',
           body: ['Hi ' + String(r['Name']).split(' ')[0] + ',', '', 'Thanks for joining "' + w['Title'] + '"' + (l ? ' with ' + l['Name'] : '') + ' yesterday.', '',
             'Would you share how it went? A few sentences help other healthcare workers decide to come, and help your walk leader.', '',
             'Leave a review here (it takes a minute):', rateUrl_(r['Cancel code']), '',
