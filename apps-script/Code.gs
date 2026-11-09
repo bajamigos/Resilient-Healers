@@ -83,10 +83,10 @@ function setup() {
   }
   getPhotoFolder_();
   if (!props_().getProperty('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v6', '1', 21600);
+  CacheService.getScriptCache().put('setup-v7', '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v6')) return;
+  if (CacheService.getScriptCache().get('setup-v7')) return;
   setup();
 }
 
@@ -204,7 +204,9 @@ function listWalks_() {
     leaders[id].rating = rs.length ? Math.round(rs.reduce((a, r) => a + r.rating, 0) / rs.length * 10) / 10 : null;
   });
   const signups = readTab_('Sign-ups');
-  const walks = readTab_('Walks').filter(w => w['Status'] === 'Live').map(w => {
+  // Walks whose date has passed drop off the site (coming-soon walks have no date and stay).
+  const today = Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd');
+  const walks = readTab_('Walks').filter(w => w['Status'] === 'Live' && (!dateText_(w['Date']) || dateText_(w['Date']) >= today)).map(w => {
     const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']));
     return walkOut_(w, {
       going: rs.filter(r => r['Status'] === 'Going').length,
@@ -271,6 +273,8 @@ function doPost(e) {
       case 'send': return json_(send_(body));
       case 'report': return json_(report_(body));
       case 'walkerLink': return json_(walkerLink_(body));
+      case 'rateInfo': return json_(rateInfo_(body));
+      case 'submitReview': return json_(submitReview_(body));
       // Staff-only maintenance through the website (needs the staff code), for when the editor can't run functions.
       case 'admin':
         if (cleanLine_(body.code, 80) !== staffCode_()) return json_({ ok: false, error: 'not_allowed' });
@@ -379,7 +383,7 @@ function openReview_(type, leaderId, walkId) {
   const code = newCode_();
   appendObj_('Reviews', { 'Review code': code, 'Type': type, 'Leader ID': leaderId, 'Walk ID': walkId || '', 'Status': 'Open', 'Created': new Date() });
   const reviewUrl = siteUrl_() + '?review=' + code + '#review';
-  const labels = { application: 'New walk leader application', walk: 'New walk proposal', 'walk-edit': 'Changes to a live walk', 'profile-edit': 'Walk leader profile changes' };
+  const labels = { application: 'New walk leader application', walk: 'New walk proposal', 'walk-edit': 'Changes to a live walk', 'profile-edit': 'Walk leader profile changes', 'walker-review': 'New review from a walker' };
   const leader = readTab_('Leaders').find(l => String(l['Leader ID']) === String(leaderId));
   const walk = walkId ? readTab_('Walks').find(w => String(w['Walk ID']) === String(walkId)) : null;
   const to = staffEmail_();
@@ -612,6 +616,7 @@ function decideLocked_(code, decision, note) {
     const w = r['Walk ID'] ? readTab_('Walks').find(x => String(x['Walk ID']) === String(r['Walk ID'])) : null;
     const approve = decision === 'approve';
     const t = r['Type'];
+    if (t === 'walker-review') return decideWalkerReview_(r, approve, note);
 
     if (t === 'application') {
       writeCells_('Leaders', l._row, { 'Status': approve ? 'Approved' : 'Changes requested', 'Staff note': approve ? '' : note, 'Updated': new Date() });
@@ -673,7 +678,8 @@ function reviewData_(code) {
   let takesOver = null;
   const target = w && w['Takes over'] ? takeoverTarget_(w['Takes over']) : null;
   if (target) takesOver = { title: target['Title'], city: target['City'], interested: counts_(target['Walk ID']).interested };
-  return { ok: true, type: r['Type'], status: r['Status'], note: r['Staff note'], profile: profile, walk: walk, takesOver: takesOver };
+  const walkerReview = r['Type'] === 'walker-review' ? walkerReviewData_(r) : null;
+  return { ok: true, type: r['Type'], status: r['Status'], note: r['Staff note'], profile: profile, walk: walk, takesOver: takesOver, walkerReview: walkerReview };
 }
 
 function decideApi_(b) {

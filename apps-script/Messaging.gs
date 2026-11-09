@@ -282,7 +282,8 @@ function sendReminders() {
       } catch (e) { /* daily email limit: try again next hour */ }
     });
   });
-  Logger.log('Sent ' + sent + ' reminder(s).');
+  const asked = sendReviewRequests_();
+  Logger.log('Sent ' + sent + ' reminder(s) and ' + asked + ' review request(s).');
 }
 
 function reminderBody_(w, out, r, which) {

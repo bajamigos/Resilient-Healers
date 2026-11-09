@@ -197,6 +197,12 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 .review-head { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
 .stars { color: var(--copper); letter-spacing: .1em; font-size: 1.05rem; }
 .review-text { font-size: 1.05rem; }
+.stars-field { border: 0; padding: 0; margin: 0; }
+.stars-field legend { font-weight: 700; margin-bottom: .4rem; }
+.star-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.star-choices label { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: .3rem .8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; }
+.star-choices input:checked + span { color: var(--rust); font-weight: 800; }
+.star-choices label:has(input:checked) { border-color: var(--copper); background: var(--lavender); }
 .thread-box { display: flex; flex-direction: column; gap: .8rem; padding-top: .6rem; }
 </style>
 </head>
@@ -559,6 +565,35 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <div id="ib-threads" class="stack-lg"></div>
     </div>
 
+    <!-- LEAVE A REVIEW (private link from the after-walk email) -->
+    <div id="view-rate" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">How was your walk?</p>
+        <h1 id="rt-title">Loading…</h1>
+        <p id="rt-walk"></p>
+      </div>
+      <div id="rt-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <p id="rt-msg" hidden></p>
+      <div class="form-card" id="rt-card" hidden>
+        <form id="rt-form" class="stack" novalidate>
+          <fieldset class="stars-field">
+            <legend>Your rating</legend>
+            <div class="star-choices" id="rt-stars"></div>
+          </fieldset>
+          <div class="field"><label for="rt-text">Your review</label><textarea id="rt-text" aria-describedby="rt-text-hint"></textarea>
+            <span class="hint" id="rt-text-hint">What was it like? What would you tell a colleague thinking about coming?</span></div>
+          <div class="two">
+            <div class="field"><label for="rt-name">First name to show</label><input type="text" id="rt-name" autocomplete="given-name"></div>
+            <div class="field"><label for="rt-role">Role to show (optional)</label><input type="text" id="rt-role" placeholder="For example: ICU nurse"></div>
+          </div>
+          <label class="check" for="rt-consent"><input type="checkbox" id="rt-consent"><span>OK to show my review with this first name and role. My email is never shown.</span></label>
+          <p class="hint">Our team reads every review before it's published.</p>
+          <p class="error" id="rt-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn" type="submit" id="rt-submit">Send my review</button></div>
+        </form>
+      </div>
+    </div>
+
     <!-- STAFF MESSAGES (private link from the staff email) -->
     <div id="view-staff" class="stack-lg narrow" data-as="staff" hidden>
       <div class="stack">
@@ -588,6 +623,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <h2 id="rv-profile-h">Walk leader profile</h2>
         <div class="coach-mini" id="rv-photo"></div>
         <ul class="facts" id="rv-profile"></ul>
+      </section>
+      <section class="block" id="rv-wreview-wrap" aria-labelledby="rv-wreview-h" hidden>
+        <h2 id="rv-wreview-h">The review</h2>
+        <ul class="reviews" id="rv-wreview"></ul>
+        <p class="hint">Published reviews show on the walk page and the walk leader's profile, with only this first name and role.</p>
       </section>
       <section class="block" id="rv-walk-wrap" aria-labelledby="rv-walk-h" hidden>
         <h2 id="rv-walk-h">Walk</h2>
@@ -1305,7 +1345,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
   /* ---------- staff review (?review=<code>#review) ---------- */
   const reviewCode = params.get("review");
-  const REVIEW_LABELS = { application: "New walk leader application", walk: "New walk proposal", "walk-edit": "Changes to a live walk", "profile-edit": "Walk leader profile changes" };
+  const REVIEW_LABELS = { application: "New walk leader application", walk: "New walk proposal", "walk-edit": "Changes to a live walk", "profile-edit": "Walk leader profile changes", "walker-review": "New review from a walker" };
+  let reviewType = "";
   let rvMap = null;
   function factsHTML(pairs) { return pairs.filter(p => p[1] !== undefined && p[1] !== null && p[1] !== "").map(p => '<li><span>' + esc(p[0]) + '</span><span>' + esc(p[1]) + '</span></li>').join(""); }
   async function loadReview() {
@@ -1314,6 +1355,14 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       const r = await apiGet({ action: "reviewData", code: reviewCode });
       if (!r || !r.ok) { $("rv-title").textContent = "Review not found."; return; }
       $("rv-type").textContent = REVIEW_LABELS[r.type] || "Review";
+      reviewType = r.type;
+      const isWR = r.type === "walker-review";
+      $("rv-wreview-wrap").hidden = !isWR;
+      if (isWR && r.walkerReview) $("rv-wreview").innerHTML = reviewHTML(Object.assign({ date: "" }, r.walkerReview));
+      if (isWR) {
+        $("rv-approve").textContent = "Publish review"; $("rv-changes").textContent = "Don't publish";
+        document.querySelector('label[for="rv-note"]').textContent = "Why not publish it? (optional, for our records; nobody is emailed)";
+      }
       $("rv-title").textContent = r.profile ? r.profile.name : "Review";
       const showProfile = r.type === "application" || r.type === "profile-edit";
       $("rv-profile-wrap").hidden = !showProfile;
@@ -1346,13 +1395,13 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   async function decide(decision) {
     const err = $("rv-error"); err.hidden = true;
     const note = $("rv-note").value.trim();
-    if (decision === "changes" && !note) { err.textContent = "Add a note so the walk leader knows what to change."; err.hidden = false; return; }
+    if (decision === "changes" && !note && reviewType !== "walker-review") { err.textContent = "Add a note so the walk leader knows what to change."; err.hidden = false; return; }
     $("rv-approve").disabled = $("rv-changes").disabled = true;
     try {
-      const r = await apiPost({ action: "decide", code: reviewCode, decision, note });
+      const r = await apiPost({ action: "decide", code: reviewCode, decision, note: note || (reviewType === "walker-review" ? "Not published." : note) });
       if (!r || !r.ok) throw new Error((r && r.error) || "failed");
       $("rv-form").hidden = true;
-      $("rv-done").innerHTML = "<h3>" + (decision === "approve" ? "Approved" : "Changes requested") + "</h3><p>" + esc(r.message) + "</p>";
+      $("rv-done").innerHTML = "<h3>" + (reviewType === "walker-review" ? (decision === "approve" ? "Published" : "Not published") : decision === "approve" ? "Approved" : "Changes requested") + "</h3><p>" + esc(r.message) + "</p>";
       $("rv-done").hidden = false; $("rv-done").focus();
     } catch (e) { err.textContent = "That didn't save. Check your connection and try again."; err.hidden = false; $("rv-approve").disabled = $("rv-changes").disabled = false; }
   }
@@ -1509,12 +1558,54 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   });
   function announce(text) { const el = $("sr-announce"); el.textContent = ""; setTimeout(() => { el.textContent = text; }, 50); }
 
+  /* ---------- leave a review (?rate=<sign-up code>#rate) ---------- */
+  const rateCode = params.get("rate");
+  async function loadRate() {
+    if (!rateCode) { $("rt-title").textContent = "Open this page from the link in your email."; return; }
+    try {
+      const r = await apiPost({ action: "rateInfo", code: rateCode });
+      if (!r || !r.ok) { $("rt-title").textContent = "We couldn't find this walk."; $("rt-walk").textContent = "Check the link in your email."; return; }
+      $("rt-title").textContent = r.walk.title;
+      $("rt-walk").textContent = r.walk.dateText + " · " + r.walk.place + (r.leaderName ? " · Walk leader: " + r.leaderName : "");
+      const msg = $("rt-msg");
+      if (r.existing && r.existing.status !== "Pending") { msg.textContent = r.existing.status === "Published" ? "Thank you. Your review is published." : "Thank you. We've already received your review."; msg.hidden = false; return; }
+      if (!r.canReview) { msg.textContent = r.notYet ? "You can leave a review after the walk." : "Reviews are for people who were signed up for this walk."; msg.hidden = false; return; }
+      const labels = ["", "1 star, poor", "2 stars, fair", "3 stars, good", "4 stars, very good", "5 stars, excellent"];
+      $("rt-stars").innerHTML = [5, 4, 3, 2, 1].map(n => '<label><input type="radio" name="rt-rating" value="' + n + '"><span>' + "★".repeat(n) + ' <span class="sr-only">' + labels[n] + '</span><span aria-hidden="true">' + labels[n].split(", ")[1] + '</span></span></label>').join("");
+      $("rt-name").value = r.firstName || ""; $("rt-role").value = r.role || "";
+      if (r.existing) {
+        $("rt-text").value = r.existing.text;
+        const radio = document.querySelector('input[name="rt-rating"][value="' + r.existing.rating + '"]'); if (radio) radio.checked = true;
+        msg.textContent = "Your review is waiting for our team. You can still change it."; msg.hidden = false;
+      }
+      $("rt-card").hidden = false;
+    } catch (e) { $("rt-title").textContent = "This page couldn't load. Try again in a moment."; }
+  }
+  $("rt-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("rt-error"); err.hidden = true;
+    const picked = document.querySelector('input[name="rt-rating"]:checked');
+    const d = { rating: picked ? Number(picked.value) : 0, text: $("rt-text").value.trim(), name: $("rt-name").value.trim(), role: $("rt-role").value.trim(), consent: $("rt-consent").checked };
+    const m = [];
+    if (!d.rating) m.push("a star rating"); if (d.text.length < 10) m.push("a sentence or two about the walk");
+    if (!d.name) m.push("a first name to show"); if (!d.consent) m.push("your OK to show the review");
+    if (m.length) { showProblems(err, m); return; }
+    const btn = $("rt-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "submitReview", code: rateCode }, d));
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      $("rt-card").hidden = true; $("rt-msg").hidden = true;
+      $("rt-done").innerHTML = "<h3>Thank you, " + esc(d.name) + ".</h3><p>Our team will read your review and publish it soon. It helps other healthcare workers decide to come.</p>";
+      $("rt-done").hidden = false; $("rt-done").focus();
+    } catch (ex) { err.textContent = ex.message === "already_reviewed" ? "We've already received your review for this walk." : "Your review didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send my review"; }
+  });
+
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff"];
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate"];
   const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead", "me-messages": "my-walks" };
   function route() {
     const h = (location.hash || "").slice(1);
-    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : "find"));
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : rateCode ? "rate" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
       const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
@@ -1553,6 +1644,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   if (reviewCode) loadReview();
   if (inboxCode) loadInbox();
   if (staffCode) loadStaff();
+  if (rateCode) loadRate();
 })();
 </script>
 </body>
