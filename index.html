@@ -80,8 +80,9 @@ main .wrap { padding-block: 2rem 3rem; }
 .btn-row { display: flex; flex-wrap: wrap; gap: .75rem; }
 
 /* Find a walk */
-.search { display: flex; flex-wrap: wrap; gap: .6rem; }
-.search input { flex: 1 1 16rem; min-width: 0; }
+.search { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.search input[type="search"] { flex: 1 1 14rem; min-width: 0; width: auto; height: 44px; padding: .4rem .85rem; }
+.search .btn { min-height: 44px; padding: .4rem 1.1rem; }
 input[type="text"], input[type="email"], input[type="tel"], input[type="search"], textarea {
   font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .65rem .85rem; width: 100%;
 }
