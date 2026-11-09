@@ -31,8 +31,8 @@ TABS['Sign-ups'] = TABS['Sign-ups'].concat(['Reminder 2 days', 'Reminder day of'
 function inboxUrl_(code) { return siteUrl_() + '?inbox=' + encodeURIComponent(code) + '#inbox'; }
 function leaderMessagesUrl_(code) { return siteUrl_() + '?leader=' + encodeURIComponent(code) + '#me-messages'; }
 function staffCode_() {
-  let c = props_().getProperty('STAFF_CODE');
-  if (!c) { c = newCode_(); props_().setProperty('STAFF_CODE', c); }
+  let c = siteProp_('STAFF_CODE');
+  if (!c) { c = newCode_(); setSiteProp_('STAFF_CODE', c); }
   return c;
 }
 function staffUrl_() { return siteUrl_() + '?staff=' + encodeURIComponent(staffCode_()) + '#staff'; }
@@ -41,7 +41,7 @@ function staffUrl_() { return siteUrl_() + '?staff=' + encodeURIComponent(staffC
 function sendStaffLink() {
   const to = staffEmail_();
   if (!to) throw new Error('Set STAFF_EMAIL or ORGANIZER_EMAIL first.');
-  MailApp.sendEmail({ to: to, name: senderName_(), subject: 'Your Resilient Healers staff messages link',
+  MailApp.sendEmail({ to: to, name: senderName_(), subject: 'Your Resilient Healers ' + (isDemo_() ? 'DEMO ' : '') + 'staff messages link',
     body: ['This private link opens the staff messages page, where you can read every conversation, see reported messages and reply:', '', staffUrl_(), '', "Don't share it."].join('\n') });
   Logger.log('Sent the staff link to ' + to);
 }
@@ -260,7 +260,12 @@ function daysUntil_(ymd, now) {
   return Math.round((b - a) / 86400000);
 }
 
+// The hourly job runs for the real site, then the demo site, each against its own Sheet.
 function sendReminders() {
+  ['real', 'demo'].forEach(site => { useSite_({ site: site }); try { sendRemindersForSite_(); } catch (e) { Logger.log(site + ': ' + e); } });
+  useSite_({});
+}
+function sendRemindersForSite_() {
   ensureSetup_();
   const now = new Date();
   const hour = +Utilities.formatDate(now, 'America/Los_Angeles', 'H');
@@ -283,7 +288,7 @@ function sendReminders() {
     });
   });
   const asked = sendReviewRequests_();
-  Logger.log('Sent ' + sent + ' reminder(s) and ' + asked + ' review request(s).');
+  Logger.log(SITE_ + ': sent ' + sent + ' reminder(s) and ' + asked + ' review request(s).');
 }
 
 function reminderBody_(w, out, r, which) {

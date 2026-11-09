@@ -14,7 +14,6 @@
  *   SITE_URL         https://resilienthealers.github.io/
  *   ORGANIZER_EMAIL  where contact-form messages go
  *   STAFF_EMAIL      where approval requests go (falls back to ORGANIZER_EMAIL)
- *   SITE_LABEL       optional; "demo" on the demo backend, so its emails come from "Resilient Healers (demo)"
  *
  * Deploy as a web app: Execute as Me, access Anyone. The site sends POST bodies as
  * text/plain JSON so browsers don't need a CORS preflight.
@@ -52,14 +51,32 @@ const SEED_WALK = {
   description: 'Healthcare work can be deeply meaningful, but it can also take a toll on our physical and emotional well-being. Join us for a free monthly walking group created especially for healthcare workers to connect with colleagues, share experiences, and nurture their own resilience.'
 };
 
+/* ===================== two sites, one backend =====================
+ * The real site (resilienthealers.github.io) and the demo site (resilienthealers.github.io/demo/)
+ * share this code but never share data: each has its own Google Sheet. Requests from the demo
+ * page carry site: "demo"; everything in that request then reads and writes the demo Sheet,
+ * builds links to the demo site, and sends email as "Resilient Healers (demo)".
+ */
+const DEMO = {
+  sheetId: '1vEFLlaO86thywpGbCgtsL7_kCzjuP-5mBd2C_-PtgMA',   // "Resilient Healers DEMO data"
+  siteUrl: 'https://resilienthealers.github.io/demo/'
+};
+let SITE_ = 'real';
+function useSite_(p) { SITE_ = p && p.site === 'demo' ? 'demo' : 'real'; _ss = null; }
+function isDemo_() { return SITE_ === 'demo'; }
+
 function props_() { return PropertiesService.getScriptProperties(); }
-function ss_() { return SpreadsheetApp.openById(props_().getProperty('SHEET_ID')); }
+let _ss = null;
+function ss_() { return _ss || (_ss = SpreadsheetApp.openById(isDemo_() ? DEMO.sheetId : props_().getProperty('SHEET_ID'))); }
 function sheet_(name) { return ss_().getSheetByName(name); }
 function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
-function siteUrl_() { return props_().getProperty('SITE_URL') || ''; }
-// Sender name on every email. The demo backend sets the SITE_LABEL property to "demo".
-function senderName_() { const l = props_().getProperty('SITE_LABEL'); return l ? 'Resilient Healers (' + l + ')' : 'Resilient Healers'; }
+function siteUrl_() { return isDemo_() ? DEMO.siteUrl : (props_().getProperty('SITE_URL') || ''); }
+// Sender name on every email: the demo's emails say "(demo)" so they're easy to tell apart.
+function senderName_() { return isDemo_() ? 'Resilient Healers (demo)' : 'Resilient Healers'; }
 function staffEmail_() { return props_().getProperty('STAFF_EMAIL') || props_().getProperty('ORGANIZER_EMAIL'); }
+// Script properties that differ per site (like the staff code) get a DEMO_ prefix for the demo.
+function siteProp_(key) { return props_().getProperty(isDemo_() ? 'DEMO_' + key : key); }
+function setSiteProp_(key, v) { props_().setProperty(isDemo_() ? 'DEMO_' + key : key, v); }
 
 /** Run once from the editor (also runs automatically on first request). */
 function setup() {
@@ -85,11 +102,11 @@ function setup() {
     appendObj_('Walks', walkRow_(SEED_WALK.id, SEED_WALK.leaderId, SEED_WALK.status, SEED_WALK));
   }
   getPhotoFolder_();
-  if (!props_().getProperty('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
-  CacheService.getScriptCache().put('setup-v7', '1', 21600);
+  if (!siteProp_('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
+  CacheService.getScriptCache().put('setup-v8-' + SITE_, '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v7')) return;
+  if (CacheService.getScriptCache().get('setup-v8-' + SITE_)) return;
   setup();
 }
 
@@ -176,8 +193,9 @@ function reviewsByLeader_() {
 /* ===================== GET ===================== */
 
 function doGet(e) {
-  ensureSetup_();
   const p = (e && e.parameter) || {};
+  useSite_(p);
+  ensureSetup_();
   if (p.action === 'walks') return json_(listWalks_());
   if (p.action === 'count') return json_(countOut_(p.walk));
   if (p.action === 'leader') return json_(leaderPage_(p.code));
@@ -252,6 +270,7 @@ function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
   if (body.website) return json_({ ok: true }); // honeypot: bots fill it, people never see it
+  useSite_(body);
   ensureSetup_();
   // Reading messages changes nothing, so it doesn't wait for the write lock.
   if (body.action === 'inbox') {
@@ -278,10 +297,11 @@ function doPost(e) {
       case 'walkerLink': return json_(walkerLink_(body));
       case 'rateInfo': return json_(rateInfo_(body));
       case 'submitReview': return json_(submitReview_(body));
-      // Staff-only maintenance through the website (needs the staff code), for when the editor can't run functions.
+      // Staff-only maintenance through the website (needs that site's staff code), for when the editor can't run functions.
       case 'admin':
         if (cleanLine_(body.code, 80) !== staffCode_()) return json_({ ok: false, error: 'not_allowed' });
         if (body.op === 'loadSamples') { loadSamples(); return json_({ ok: true }); }
+        if (body.op === 'removeSamples') { removeSamples(); return json_({ ok: true }); }
         if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
         return json_({ ok: false, error: 'unknown_op' });
       default: return json_({ ok: false, error: 'unknown_action' });
@@ -749,6 +769,14 @@ function loadSamples() {
     if (w) writeCells_('Walks', w._row, { 'Photo': p.photo, 'Photo credit': safeCell_(p.photoCredit), 'Photo source': p.photoSource, 'City': p.city || '' });
   });
   Logger.log('Loaded ' + SAMPLE_DATA.walks.length + ' sample walks.');
+}
+
+/** Run from the editor: sets up the demo Sheet's tabs and loads the sample walks, leaders and reviews into it. */
+function setupDemo() {
+  useSite_({ site: 'demo' });
+  setup(); loadSamples();
+  Logger.log('Demo Sheet is set up. Its staff messages link was emailed to staff.');
+  useSite_({});
 }
 
 /** Removes every sample walk. */

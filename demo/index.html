@@ -1,0 +1,1707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resilient Healers (demo)</title>
+<meta name="description" content="Free small-group walks for healthcare workers, led by walk leaders. Find a walk near you, or lead one in your community.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,700;1,6..12,400&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+/* Style guide: Priya's Metamorphosis website (warm off-white, lavender, dark brown, copper). Light only. */
+:root {
+  --bg: #f8f4f1;
+  --surface: #ffffff;
+  --ink: #411e06;
+  --muted: #6f5441;
+  --copper: #a05222;
+  --on-copper: #ffffff;
+  --lavender: #f1e1f4;
+  --rust: #7c360c;
+  --line: #e2d6cd;
+  --taupe: #9d897c;
+  --ok: #4f6b3a;
+  --ok-bg: #edf2e4;
+  --warn: #7a4a12;
+  --warn-bg: #f6efdc;
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Nunito Sans", "Avenir Next", Avenir, "Segoe UI", system-ui, sans-serif;
+  --step-0: 1.0625rem;
+  --step-1: 1.35rem;
+  --step-2: 1.85rem;
+  --step-3: clamp(2.2rem, 6vw, 3rem);
+  --radius: 14px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: var(--step-0); line-height: 1.6; }
+.wrap { max-width: 60rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.narrow { max-width: 44rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; color: var(--ink); }
+h1 { font-size: var(--step-3); }
+h2 { font-size: var(--step-2); }
+h3 { font-size: var(--step-1); }
+p { margin: 0; }
+a { color: var(--copper); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--copper); outline-offset: 3px; border-radius: 4px; }
+.muted { color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.stack-lg { display: flex; flex-direction: column; gap: 2.25rem; }
+[hidden] { display: none !important; }
+
+.site-header { border-bottom: 1px solid var(--line); }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding-block: .9rem; }
+.brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--ink); }
+.brand svg { width: 36px; height: 36px; flex: none; }
+.brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; }
+nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem; }
+nav a { display: block; padding: .45rem .9rem; border-radius: 999px; text-decoration: none; color: var(--ink); font-weight: 700; }
+nav a[aria-current="page"] { background: var(--lavender); color: var(--rust); }
+.demo-note { background: var(--lavender); font-size: .95rem; }
+.demo-note .wrap { padding-block: .55rem; }
+main .wrap { padding-block: 2rem 3rem; }
+
+.eyebrow { font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rust); }
+.chip { display: inline-flex; align-items: center; gap: .35rem; font-size: .85rem; font-weight: 700; padding: .2rem .65rem; border-radius: 999px; white-space: nowrap; }
+.chip-open { background: var(--ok-bg); color: var(--ok); }
+.chip-full { background: var(--warn-bg); color: var(--warn); }
+.chip-draft { color: var(--rust); border: 1px solid var(--rust); font-size: .78rem; padding: .05rem .5rem; }
+.title-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .7rem 1.3rem; border-radius: 999px; border: 2px solid var(--copper); background: var(--copper); color: var(--on-copper); font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+.btn:hover { filter: brightness(1.07); }
+.btn-ghost { background: transparent; color: var(--copper); }
+.btn-small { min-height: 40px; padding: .4rem 1rem; font-size: .95rem; }
+.btn-danger { background: transparent; color: var(--rust); border-color: var(--rust); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+/* Find a walk */
+.search { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.search input[type="search"] { flex: 1 1 14rem; min-width: 0; width: auto; height: 44px; padding: .4rem .85rem; }
+.search .btn { min-height: 44px; padding: .4rem 1.1rem; }
+input[type="text"], input[type="email"], input[type="tel"], input[type="search"], textarea {
+  font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .65rem .85rem; width: 100%;
+}
+input:focus-visible, textarea:focus-visible { border-color: var(--copper); outline-offset: 1px; }
+textarea { min-height: 6rem; resize: vertical; }
+.results { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.results button { font: inherit; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: .4rem .9rem; cursor: pointer; }
+.results button:hover { border-color: var(--copper); }
+#big-map { height: min(62vh, 540px); width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+#small-map { height: 280px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+#pin-map { height: 320px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+.steps { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+.ticks { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
+.tabular { font-variant-numeric: tabular-nums; }
+.leaflet-container { font-family: var(--font-body); font-size: 1rem; }
+.leaflet-popup-content { margin: .9rem 1rem; line-height: 1.5; }
+.leaflet-popup-content a.btn { color: var(--on-copper); margin-top: .4rem; }
+.pin { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; background: var(--copper); border: 3px solid #fff; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(65,30,6,.35); }
+
+.walk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.walk-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem; }
+.walk-card .info { min-width: 0; flex: 1 1 18rem; display: flex; flex-direction: column; gap: .2rem; }
+.walk-card .name { font-family: var(--font-display); font-weight: 700; font-size: var(--step-1); }
+.empty { color: var(--muted); font-style: italic; }
+
+/* Walk page */
+.when { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; font-size: var(--step-1); }
+.spots { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; display: flex; flex-direction: column; gap: .85rem; }
+.spots-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.spots-count { font-size: var(--step-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+.spots-count span { font-size: var(--step-0); font-weight: 400; color: var(--muted); }
+.bar { height: 12px; background: var(--lavender); border-radius: 999px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--copper); border-radius: 999px; transition: width .4s ease; }
+@media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+section.block { display: flex; flex-direction: column; gap: .8rem; }
+.place { border-left: 4px solid var(--copper); padding: .25rem 0 .25rem 1rem; display: flex; flex-direction: column; gap: .35rem; }
+.place-name { font-weight: 700; font-size: var(--step-1); }
+.photo-slot { border: 2px dashed var(--line); border-radius: var(--radius); padding: 1.25rem; color: var(--muted); text-align: center; font-size: .95rem; }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.facts li { display: grid; grid-template-columns: 7.5rem 1fr; gap: .75rem; }
+.facts li > span:first-child { font-weight: 700; color: var(--muted); }
+.facts li > span { min-width: 0; }
+@media (max-width: 30rem) { .facts li { grid-template-columns: 1fr; gap: 0; } }
+.coach-mini { display: flex; gap: 1rem; align-items: flex-start; }
+.avatar { flex: none; width: 64px; height: 64px; border-radius: 50%; background: var(--lavender); color: var(--rust); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; }
+.coach-mini > div { min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
+.row-name { font-weight: 700; }
+.sponsor { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+.sponsor-label { font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+hr.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+form { display: flex; flex-direction: column; gap: 1.1rem; }
+.field { display: flex; flex-direction: column; gap: .35rem; }
+.field label { font-weight: 700; }
+.hint { font-size: .92rem; color: var(--muted); }
+.check { display: flex; gap: .65rem; align-items: flex-start; }
+.check input { width: 22px; height: 22px; margin-top: .2rem; accent-color: var(--copper); flex: none; }
+.form-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; }
+.error { color: var(--rust); font-weight: 700; }
+.notice { border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .5rem; }
+.notice-ok { background: var(--ok-bg); }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.row { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; }
+.row-main { min-width: 0; flex: 1 1 16rem; display: flex; flex-direction: column; gap: .15rem; }
+
+.site-footer { border-top: 1px solid var(--line); }
+.site-footer .wrap { padding-block: 1.5rem 2rem; font-size: .95rem; color: var(--muted); display: flex; flex-direction: column; gap: .5rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.walk-thumb { width: 112px; height: 80px; object-fit: cover; border-radius: 10px; flex: none; background: var(--lavender); }
+.walk-card .info { flex: 1 1 14rem; }
+.hero-photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius); background: var(--lavender); display: block; }
+.credit { font-size: .8rem; color: var(--muted); }
+.credit a { color: var(--muted); }
+.pin-soon { background: var(--taupe); }
+.popup-photo { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 8px; margin-bottom: .4rem; }
+.pin-map { height: 300px; width: 100%; border-radius: var(--radius); border: 1px solid var(--line); background: var(--lavender); }
+.steps { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: .7rem; }
+.ticks { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
+.tabular { font-variant-numeric: tabular-nums; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+legend { font-family: var(--font-display); font-weight: 700; font-size: var(--step-2); padding: 0; margin-bottom: .4rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1rem; }
+select { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .6rem .8rem; width: 100%; }
+input[type="date"], input[type="time"], input[type="number"] { font: inherit; color: var(--ink); background: var(--surface); border: 2px solid var(--line); border-radius: 10px; padding: .6rem .8rem; width: 100%; box-sizing: border-box; }
+.photo-preview { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.leader-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; flex: none; }
+.status { border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .4rem; }
+.status-pending { background: var(--lavender); }
+.status-changes { background: var(--warn-bg); }
+.status-live { background: var(--ok-bg); }
+.note { border-left: 4px solid var(--rust); padding: .2rem 0 .2rem .9rem; white-space: pre-wrap; }
+.walk-admin { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; }
+.roster { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .45rem; }
+.roster li { border-top: 1px solid var(--line); padding-top: .45rem; display: flex; flex-direction: column; gap: .1rem; }
+details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
+.accom { color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: .15rem .5rem; font-size: .95rem; align-self: flex-start; }
+/* messages */
+.msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.msg { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem .95rem; display: flex; flex-direction: column; gap: .3rem; max-width: 36rem; }
+.msg-mine { background: var(--lavender); border-color: var(--lavender); align-self: flex-end; }
+.msg-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+.msg-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg-form { display: flex; flex-direction: column; gap: .5rem; margin-top: .4rem; }
+.msg-form textarea, .report-form textarea { min-height: 5.5rem; }
+.link-btn { background: none; border: 0; padding: .3rem 0; min-height: 44px; color: var(--copper); font: inherit; font-size: .95rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; align-self: flex-start; }
+.report-form { display: flex; flex-direction: column; gap: .5rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+.chip-reported { background: var(--warn-bg); color: var(--warn); }
+.walk-photo-preview { width: 100%; max-width: 28rem; height: auto; aspect-ratio: 16 / 9; border: 0; object-fit: cover; border-radius: var(--radius); }
+.review-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .5rem; }
+.chip-sample { background: var(--lavender); color: var(--rust); font-size: .8rem; vertical-align: middle; }
+.reviews { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .8rem; }
+.review { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .45rem; }
+.review-head { display: flex; flex-wrap: wrap; gap: .3rem .7rem; align-items: center; }
+.stars { color: var(--copper); letter-spacing: .1em; font-size: 1.05rem; }
+.review-text { font-size: 1.05rem; }
+.stars-field { border: 0; padding: 0; margin: 0; }
+.stars-field legend { font-weight: 700; margin-bottom: .4rem; }
+.star-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
+.star-choices label { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding: .3rem .8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; }
+.star-choices input:checked + span { color: var(--rust); font-weight: 800; }
+.star-choices label:has(input:checked) { border-color: var(--copper); background: var(--lavender); }
+.thread-box { display: flex; flex-direction: column; gap: .8rem; padding-top: .6rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#find" aria-label="Resilient Healers, home">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" fill="#f1e1f4"/>
+        <path d="M20 31 C20 23 20 17 20 10" stroke="#a05222" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M20 17 C14 16 11 12 11 8 C16 9 19 12 20 17 Z" fill="#a05222"/>
+        <path d="M20 22 C26 21 29 17 29 13 C24 14 21 17 20 22 Z" fill="#9d897c"/>
+      </svg>
+      <span class="brand-name">Resilient Healers</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="#find" data-nav="find">Find a walk</a></li>
+        <li><a href="#lead" data-nav="lead">Lead a walk</a></li>
+        <li><a href="#contact" data-nav="contact">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<div class="demo-note" role="note" id="demo-note" hidden><div class="wrap">Demo site. Sample walks, walk leaders and reviews here are made up to show how Resilient Healers works. <a href="https://resilienthealers.github.io/">See the real site</a>.</div></div>
+
+<main>
+  <p id="sr-announce" class="sr-only" role="status" aria-live="polite"></p>
+  <div class="wrap">
+
+    <!-- FIND A WALK -->
+    <div id="view-find" class="stack-lg">
+      <div class="stack">
+        <p class="eyebrow">Free small-group walks for healthcare workers</p>
+        <h1>Find a walk near you</h1>
+        <p class="muted">Walk, connect with colleagues, and recharge, with a walk leader showing the way.</p>
+      </div>
+      <div class="stack">
+        <form class="search" id="city-form" role="search">
+          <label for="city" class="sr-only">City or ZIP code</label>
+          <input type="search" id="city" placeholder="Search a city or ZIP code, for example San Diego" autocomplete="off">
+          <button class="btn" type="submit">Search</button>
+          <button class="btn btn-ghost" type="button" id="near-me">Use my location</button>
+          <button class="btn btn-ghost" type="button" id="show-us">Show all of the US</button>
+        </form>
+        <p class="hint" id="search-status" aria-live="polite"></p>
+        <ul class="results" id="search-results"></ul>
+        <div id="big-map" role="region" aria-label="Map of walks. Use the list below the map for the same information."></div>
+      </div>
+      <aside class="review-card" aria-label="What walkers say" id="find-review" hidden></aside>
+      <section class="block" aria-labelledby="list-h">
+        <h2 id="list-h">Upcoming walks</h2>
+        <ul class="walk-list" id="walk-list"><li class="empty">Loading walks…</li></ul>
+        <div class="btn-row"><button class="btn btn-ghost" type="button" id="show-all-walks" hidden></button></div>
+      </section>
+      <aside class="sponsor" aria-label="Sponsored" id="find-sponsor" hidden></aside>
+    </div>
+
+    <!-- WALK PAGE (filled from the Sheet) -->
+    <div id="view-walk" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <a href="#find">Back to the map</a>
+        <p class="eyebrow">Free walking group for healthcare workers</p>
+        <h1 id="w-title">Loading walk…</h1>
+        <div class="when"><strong id="w-date"></strong><span id="w-time"></span></div>
+        <p class="muted" id="w-led"></p>
+      </div>
+      <figure class="stack" id="w-photo-wrap" style="margin:0;gap:.3rem" hidden>
+        <img class="hero-photo" id="w-photo" alt="">
+        <figcaption class="credit" id="w-photo-credit"></figcaption>
+      </figure>
+
+      <div class="status status-pending" id="w-soon" hidden>
+        <strong>Coming soon</strong>
+        <span>We're looking for a walk leader here. Date, time and sign-ups will open once the walk is set.</span>
+        <span id="w-interest-count"></span>
+        <div class="btn-row">
+          <button class="btn" type="button" id="interest-open" aria-expanded="false" aria-controls="interest-box">I'd join this walk</button>
+          <a class="btn btn-ghost" href="#apply" id="w-lead-this">Lead this walk</a>
+        </div>
+      </div>
+
+      <div id="interest-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <div class="form-card" id="interest-box" hidden>
+        <form id="interest-form" novalidate>
+          <h2 style="margin-top:0">Join the interest list</h2>
+          <p class="muted">We'll email you when a walk leader sets the date, so you can sign up. This doesn't reserve a spot.</p>
+          <div class="field"><label for="i-name">Full name</label><input type="text" id="i-name" autocomplete="name"></div>
+          <div class="field"><label for="i-email">Email</label><input type="email" id="i-email" autocomplete="email"></div>
+          <div class="field"><label for="i-prof">Profession</label><input type="text" id="i-prof" placeholder="For example: ICU nurse, pharmacist, medical assistant"></div>
+          <div class="sr-only" aria-hidden="true"><label for="i-website">Leave this empty</label><input type="text" id="i-website" tabindex="-1" autocomplete="off"></div>
+          <label class="check" for="i-hcw"><input type="checkbox" id="i-hcw"><span>I work in healthcare.</span></label>
+          <p class="error" id="interest-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn" type="submit" id="interest-submit">Add me to the list</button></div>
+        </form>
+      </div>
+
+      <div id="cancel-panel" class="notice notice-ok" hidden>
+        <h3 id="cancel-h">Cancel your spot?</h3>
+        <p id="cancel-p">This frees your place for someone on the waitlist.</p>
+        <div class="btn-row"><button class="btn btn-danger" type="button" id="cancel-yes">Cancel my spot</button><a class="btn btn-ghost" href="#walk" id="cancel-keep">Keep my spot</a></div>
+        <p class="error" id="cancel-msg" role="alert"></p>
+      </div>
+
+      <div class="spots" id="w-spots" aria-live="polite">
+        <div class="spots-top">
+          <p class="spots-count" id="spots-count">– <span>spots taken</span></p>
+          <span class="chip chip-open" id="spots-chip">Open</span>
+        </div>
+        <div class="bar" role="img" id="spots-bar-label" aria-label="Checking spots"><div id="spots-bar" style="width:0%"></div></div>
+        <p class="muted" id="spots-sub">Checking spots…</p>
+        <div class="btn-row">
+          <a class="btn" href="#signup" id="cta">Sign up</a>
+          <a class="btn btn-ghost" href="#where">How to find us</a>
+        </div>
+      </div>
+
+      <section class="block" aria-labelledby="about-h">
+        <h2 id="about-h">About this walk</h2>
+        <p id="w-description"></p>
+      </section>
+
+      <section class="block" id="where" aria-labelledby="where-h">
+        <h2 id="where-h">Where to meet</h2>
+        <div id="small-map" role="region" aria-label="Map of the meeting spot"></div>
+        <div class="place">
+          <span class="place-name" id="w-place"></span>
+          <span id="w-find"></span>
+          <span class="muted" id="w-address"></span>
+        </div>
+        <div class="btn-row"><a class="btn" target="_blank" rel="noopener" id="w-directions" href="#">Get directions</a></div>
+        <p class="hint">Opens directions in Google Maps.</p>
+        <ul class="facts">
+          <li id="w-repeats-row"><span>Repeats</span><span id="w-repeats"></span></li>
+          <li><span>Parking</span><span id="w-parking"></span></li>
+          <li id="w-shorter-row"><span>Shorter route</span><span id="w-shorter"></span></li>
+          <li id="w-bring-row"><span>Bring</span><span>A water bottle. Bring a healthcare-worker friend or colleague, and ask them to sign up too.</span></li>
+          <li><span>Cost</span><span>Free</span></li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="leader-mini-h">
+        <h2 id="leader-mini-h">Your walk leader</h2>
+        <div class="coach-mini">
+          <div class="avatar" id="w-leader-avatar" aria-hidden="true"></div>
+          <div>
+            <span class="row-name"><span id="w-leader-name"></span> <span class="chip chip-sample" id="w-leader-sample" hidden>Sample walk leader</span></span>
+            <span class="muted" id="w-leader-bg"></span>
+            <a href="#leader" id="w-leader-link">Read their profile</a>
+            <span><button class="btn btn-small btn-ghost" type="button" id="w-message-leader" aria-expanded="false" aria-controls="w-message-note">Message your walk leader</button></span>
+            <div class="stack" id="w-message-note" hidden>
+              <p>Messaging is for people signed up for this walk. Your private messages link is in your sign-up confirmation email. Not signed up yet? Sign up above first.</p>
+              <form id="w-link-form" class="stack" novalidate>
+                <div class="field"><label for="w-link-email">Lost the email? Enter the address you signed up with and we'll send the link again.</label><input type="email" id="w-link-email" autocomplete="email"></div>
+                <div class="btn-row"><button class="btn btn-small" type="submit">Email me my link</button></div>
+                <p id="w-link-done" role="status"></p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sponsor" aria-label="Sponsored" id="w-sponsor" hidden></aside>
+
+      <hr class="rule" id="w-signup-rule">
+
+      <section class="block" id="signup" aria-labelledby="signup-h">
+        <h2 id="signup-h">Sign up</h2>
+        <div id="signup-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div class="form-card">
+          <form id="signup-form" novalidate>
+            <p class="muted">Fill this in to save your spot. Everything except accommodations is required.</p>
+            <div class="field"><label for="f-name">Full name</label><input type="text" id="f-name" autocomplete="name"></div>
+            <div class="field"><label for="f-email">Email</label><input type="email" id="f-email" autocomplete="email"></div>
+            <div class="field"><label for="f-phone">Mobile phone</label><input type="tel" id="f-phone" autocomplete="tel"></div>
+            <div class="field"><label for="f-prof">Profession</label><input type="text" id="f-prof" placeholder="For example: ICU nurse, pharmacist, medical assistant"></div>
+            <div class="field">
+              <label for="f-accom">Mobility accommodations (optional)</label>
+              <textarea id="f-accom" aria-describedby="f-accom-hint"></textarea>
+              <span class="hint" id="f-accom-hint">For example, a shorter route or a slower pace. Only your walk leader sees this.</span>
+            </div>
+            <div class="sr-only" aria-hidden="true"><label for="f-website">Leave this empty</label><input type="text" id="f-website" tabindex="-1" autocomplete="off"></div>
+            <label class="check" for="f-hcw"><input type="checkbox" id="f-hcw"><span>I work in healthcare.</span></label>
+            <p class="error" id="signup-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="signup-submit">Reserve my spot</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="block" id="mine" aria-labelledby="mine-h" hidden>
+        <h2 id="mine-h">Your sign-ups</h2>
+        <ul class="list" id="mine-list"></ul>
+      </section>
+    </div>
+
+    <!-- WALK LEADER PROFILE (public) -->
+    <div id="view-leader" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Meet your walk leader</p>
+        <h1 id="lp-name"></h1>
+        <p><span class="chip chip-sample" id="lp-sample" hidden>Sample walk leader</span></p>
+        <p class="hint" id="lp-sample-note" hidden>This walk leader is made up for this demo. They aren't a real person.</p>
+      </div>
+      <div class="coach-mini" id="lp-photo-row"></div>
+      <section class="block"><p id="lp-bio"></p></section>
+      <ul class="facts">
+        <li><span>Background</span><span id="lp-bg"></span></li>
+        <li><span>Based in</span><span id="lp-city"></span></li>
+      </ul>
+      <section class="block" id="lp-reviews" aria-labelledby="lp-reviews-h" hidden>
+        <h2 id="lp-reviews-h">What walkers say</h2>
+        <p class="muted" id="lp-reviews-summary"></p>
+        <ul class="reviews" id="lp-reviews-list"></ul>
+      </section>
+      <section class="block" aria-labelledby="lp-walks-h">
+        <h2 id="lp-walks-h">Walks they lead</h2>
+        <ul class="walk-list" id="lp-walks"></ul>
+      </section>
+    </div>
+
+    <!-- LEAD A WALK -->
+    <div id="view-lead" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">For walk leaders</p>
+        <h1>Lead a walk</h1>
+        <p>Walk leaders host a free, small-group walk where healthcare workers can step away from work, talk with colleagues who understand, and recharge. You pick the place, lead the walk, and guide the conversation. We handle the walk page, sign-ups, confirmations and the waitlist.</p>
+        <div class="btn-row"><a class="btn" href="#apply">Apply to lead a walk</a><a class="btn btn-ghost" href="#have-link">I'm already a walk leader</a></div>
+      </div>
+
+      <section class="block" aria-labelledby="lead-what-h">
+        <h2 id="lead-what-h">What a walk looks like</h2>
+        <ul class="facts">
+          <li><span>Who comes</span><span>Healthcare workers, and the healthcare-worker friends they bring</span></li>
+          <li><span>Group size</span><span>You choose, usually up to 20. When it's full, new sign-ups join a waitlist.</span></li>
+          <li><span>How often</span><span>One time, or once a month on a set day</span></li>
+          <li><span>How long</span><span>About 90 minutes, including gathering at the start</span></li>
+          <li><span>Cost</span><span>Free for everyone who walks</span></li>
+          <li><span>Pace</span><span>Conversational. Offer a shorter turnaround for anyone who needs it.</span></li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="lead-how-h">
+        <h2 id="lead-how-h">How it works</h2>
+        <ol class="steps">
+          <li><strong>Apply once.</strong> Tell us about yourself and propose your first walk, all in one form.</li>
+          <li><strong>We review it.</strong> Resilient Healers staff approve it, or ask for changes with a note. You can fix and resubmit.</li>
+          <li><strong>Your walk goes live.</strong> It appears on the map with its own page, live spot count and sign-ups.</li>
+          <li><strong>Use your walk leader page.</strong> A private link we email you shows who's coming and their accommodation needs. From there you can propose more walks without filling in your profile again.</li>
+        </ol>
+      </section>
+
+      <section class="block" aria-labelledby="lead-spot-h">
+        <h2 id="lead-spot-h">Choosing your meeting spot</h2>
+        <p>The most common question from walkers is "where exactly do we meet?" A good meeting spot has:</p>
+        <ul class="ticks">
+          <li><strong>An exact pin,</strong> not just the park's address</li>
+          <li><strong>A landmark</strong> people can't miss, like a ranger station, a sign or a park entrance</li>
+          <li><strong>A short description</strong> of how to find you after parking</li>
+          <li><strong>Parking details,</strong> including any fee</li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="lead-before-h">
+        <h2 id="lead-before-h">Before each walk</h2>
+        <ul class="ticks">
+          <li>Check your walk leader page for sign-ups and accommodation notes</li>
+          <li>Decide where people who need a shorter route can turn back</li>
+          <li>Check the meeting spot still matches the pin and description</li>
+          <li>Arrive a little early so first-timers can find you</li>
+        </ul>
+      </section>
+
+      <section class="block" id="apply" aria-labelledby="apply-h">
+        <h2 id="apply-h">Apply to lead a walk</h2>
+        <p class="muted">Your profile and your first walk, in one form. Everything is required unless it says optional.</p>
+        <div id="apply-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div id="apply-lead-note" class="notice" hidden></div>
+        <div class="form-card">
+          <form id="apply-form" novalidate>
+            <div id="apply-profile"></div>
+            <hr class="rule">
+            <div id="apply-walk"></div>
+            <div class="sr-only" aria-hidden="true"><label for="apply-website">Leave this empty</label><input type="text" id="apply-website" tabindex="-1" autocomplete="off"></div>
+            <p class="error" id="apply-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="apply-submit">Send my application</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="block" id="have-link" aria-labelledby="have-link-h">
+        <h2 id="have-link-h">Already a walk leader?</h2>
+        <p class="muted">Use the private link in your email to open your walk leader page. Lost it? We'll email it again.</p>
+        <div id="link-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <form class="search" id="link-form">
+          <label for="link-email" class="sr-only">Your email</label>
+          <input type="search" id="link-email" placeholder="Your email" autocomplete="email" inputmode="email">
+          <button class="btn" type="submit">Email my link</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- MY WALKS (private walk leader page) -->
+    <div id="view-my-walks" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Your walk leader page</p>
+        <h1 id="me-title">Loading…</h1>
+        <p class="hint">This page is private to you. Don't share its link.</p>
+      </div>
+      <div id="me-status"></div>
+      <section class="block" aria-labelledby="me-profile-h" id="me-profile-wrap" hidden>
+        <h2 id="me-profile-h">Your profile</h2>
+        <div class="coach-mini" id="me-profile"></div>
+        <details id="me-edit-profile">
+          <summary>Edit your profile</summary>
+          <div class="form-card" style="margin-top:.8rem">
+            <form id="me-profile-form" novalidate>
+              <div id="me-profile-fields"></div>
+              <p class="error" id="me-profile-error" role="alert" hidden></p>
+              <div class="btn-row"><button class="btn" type="submit" id="me-profile-submit">Send for review</button></div>
+            </form>
+          </div>
+        </details>
+      </section>
+      <section class="block" aria-labelledby="me-walks-h" id="me-walks-wrap" hidden>
+        <div class="title-row"><h2 id="me-walks-h">Your walks</h2></div>
+        <div id="me-walks" class="stack"></div>
+      </section>
+      <section class="block" aria-labelledby="me-messages-h" id="me-messages" data-as="leader" hidden>
+        <h2 id="me-messages-h">Messages</h2>
+        <p class="muted">Walkers' email addresses and phone numbers stay private. Messages stay on this site, and Resilient Healers staff can read them if there's a problem.</p>
+        <div id="me-msgs" class="stack"></div>
+      </section>
+      <section class="block" aria-labelledby="me-new-h" id="me-new-wrap" hidden>
+        <h2 id="me-new-h">Propose a new walk</h2>
+        <p class="muted">Your profile is attached automatically. Staff review each new walk before it goes live.</p>
+        <div id="me-new-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div id="me-lead-note" class="notice" hidden></div>
+        <div class="form-card">
+          <form id="me-new-form" novalidate>
+            <div id="me-new-fields"></div>
+            <p class="error" id="me-new-error" role="alert" hidden></p>
+            <div class="btn-row"><button class="btn" type="submit" id="me-new-submit">Send for review</button></div>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- WALKER MESSAGES (private link from the sign-up email) -->
+    <div id="view-inbox" class="stack-lg narrow" data-as="walker" hidden>
+      <div class="stack">
+        <p class="eyebrow">Your messages</p>
+        <h1 id="ib-title">Loading…</h1>
+        <p id="ib-walk"></p>
+        <p class="hint">This page is private to you. Don't share its link. Your email address and phone number are never shown to your walk leader. Messages stay on this site, and Resilient Healers staff can read them if there's a problem.</p>
+      </div>
+      <div id="ib-threads" class="stack-lg"></div>
+    </div>
+
+    <!-- LEAVE A REVIEW (private link from the after-walk email) -->
+    <div id="view-rate" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">How was your walk?</p>
+        <h1 id="rt-title">Loading…</h1>
+        <p id="rt-walk"></p>
+      </div>
+      <div id="rt-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <p id="rt-msg" hidden></p>
+      <div class="form-card" id="rt-card" hidden>
+        <form id="rt-form" class="stack" novalidate>
+          <fieldset class="stars-field">
+            <legend>Your rating</legend>
+            <div class="star-choices" id="rt-stars"></div>
+          </fieldset>
+          <div class="field"><label for="rt-text">Your review</label><textarea id="rt-text" aria-describedby="rt-text-hint"></textarea>
+            <span class="hint" id="rt-text-hint">What was it like? What would you tell a colleague thinking about coming?</span></div>
+          <div class="two">
+            <div class="field"><label for="rt-name">First name to show</label><input type="text" id="rt-name" autocomplete="given-name"></div>
+            <div class="field"><label for="rt-role">Role to show (optional)</label><input type="text" id="rt-role" placeholder="For example: ICU nurse"></div>
+          </div>
+          <label class="check" for="rt-consent"><input type="checkbox" id="rt-consent"><span>OK to show my review with this first name and role. My email is never shown.</span></label>
+          <p class="hint">Our team reads every review before it's published.</p>
+          <p class="error" id="rt-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn" type="submit" id="rt-submit">Send my review</button></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- STAFF MESSAGES (private link from the staff email) -->
+    <div id="view-staff" class="stack-lg narrow" data-as="staff" hidden>
+      <div class="stack">
+        <p class="eyebrow">Resilient Healers staff</p>
+        <h1>Messages</h1>
+        <p class="hint">This page is private to staff. Don't share its link. You can read every conversation and reply in any of them.</p>
+      </div>
+      <section class="block" aria-labelledby="st-reported-h">
+        <h2 id="st-reported-h">Reported messages</h2>
+        <ul class="msgs" id="st-reported"><li class="muted">Loading…</li></ul>
+      </section>
+      <section class="block" aria-labelledby="st-threads-h">
+        <h2 id="st-threads-h">All conversations</h2>
+        <div id="st-threads" class="stack"></div>
+      </section>
+    </div>
+
+    <!-- STAFF REVIEW (private link from the staff email) -->
+    <div id="view-review" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Resilient Healers staff</p>
+        <p><span class="chip chip-draft" id="rv-type">Review</span></p>
+        <h1 id="rv-title">Loading…</h1>
+        <p class="hint">This page is private to staff. Don't share its link.</p>
+      </div>
+      <section class="block" id="rv-profile-wrap" aria-labelledby="rv-profile-h" hidden>
+        <h2 id="rv-profile-h">Walk leader profile</h2>
+        <div class="coach-mini" id="rv-photo"></div>
+        <ul class="facts" id="rv-profile"></ul>
+      </section>
+      <section class="block" id="rv-wreview-wrap" aria-labelledby="rv-wreview-h" hidden>
+        <h2 id="rv-wreview-h">The review</h2>
+        <ul class="reviews" id="rv-wreview"></ul>
+        <p class="hint">Published reviews show on the walk leader's profile and as a review card in nearby search results, with only this first name and role.</p>
+      </section>
+      <section class="block" id="rv-walk-wrap" aria-labelledby="rv-walk-h" hidden>
+        <h2 id="rv-walk-h">Walk</h2>
+        <div class="pin-map" id="rv-map" role="region" aria-label="Map of the proposed meeting spot"></div>
+        <p><a id="rv-maplink" target="_blank" rel="noopener" href="#">Check the pin in Google Maps</a></p>
+        <img class="hero-photo" id="rv-wphoto" alt="Walk photo uploaded by the walk leader" hidden>
+        <ul class="facts" id="rv-walk"></ul>
+      </section>
+      <section class="block" id="rv-decide" aria-labelledby="rv-decide-h" hidden>
+        <h2 id="rv-decide-h">Your decision</h2>
+        <div id="rv-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div class="form-card stack" id="rv-form">
+          <div class="btn-row"><button class="btn" type="button" id="rv-approve">Approve</button></div>
+          <div class="field"><label for="rv-note">Or request changes. Tell the walk leader what to fix:</label><textarea id="rv-note"></textarea></div>
+          <p class="error" id="rv-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn btn-danger" type="button" id="rv-changes">Request changes</button></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- CONTACT -->
+    <div id="view-contact" class="stack-lg narrow" hidden>
+      <div class="stack">
+        <p class="eyebrow">Questions, ideas or problems</p>
+        <h1>Contact Resilient Healers</h1>
+        <p>Your message goes to the Resilient Healers staff, not to a walk leader.</p>
+        <p>Have a question about a specific walk? Contact your walk leader directly with the "Message your walk leader" link on that walk's page.</p>
+        <p class="muted">We reply by email.</p>
+      </div>
+      <div id="contact-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <div class="form-card">
+        <form id="contact-form" novalidate>
+          <div class="field"><label for="c-name">Your name</label><input type="text" id="c-name" autocomplete="name"></div>
+          <div class="field"><label for="c-email">Your email</label><input type="email" id="c-email" autocomplete="email"></div>
+          <div class="field"><label for="c-msg">Message</label><textarea id="c-msg"></textarea></div>
+          <div class="sr-only" aria-hidden="true"><label for="c-website">Leave this empty</label><input type="text" id="c-website" tabindex="-1" autocomplete="off"></div>
+          <p class="error" id="contact-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn" type="submit" id="contact-submit">Send message</button></div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Resilient Healers · Test site.</p>
+    <p>Map data © OpenStreetMap contributors. Place search by OpenStreetMap Nominatim.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(() => {
+  // Which site this is. tools/build_demo.py rewrites this one line for the demo copy in /demo.
+  const SITE = { mode: "demo", api: "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec" };
+  const API_URL = SITE.api;
+  if (SITE.mode === "demo") document.getElementById("demo-note").hidden = false;
+  const US_VIEW = { center: [39.5, -98.35], zoom: 4 };
+  // Local sponsored ads. Each ad covers an area (center + radius). How ads are chosen when several
+  // overlap is tabled for now: this simply shows the nearest ad whose area includes the location.
+  const ADS = [
+    { id: "metamorphosis", name: "Metamorphosis Coaching with Priya", text: "One-on-one coaching for stress, burnout, career change and life transitions. Free one-hour discovery call.",
+      url: "https://www.metamorphosis-health-coaching.com/", linkText: "Visit Metamorphosis Coaching", lat: 32.7157, lng: -117.1611, radiusMiles: 60 }
+  ];
+  const KEY = "rh-signups";
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const params = new URLSearchParams(location.search);
+
+  /* ---------- backend ---------- */
+  // Requests from the demo copy say so, and the backend then uses the demo's own Sheet.
+  const withSite = (o) => SITE.mode === "demo" ? Object.assign({ site: "demo" }, o) : o;
+  async function apiGet(p) { const r = await fetch(API_URL + "?" + new URLSearchParams(withSite(p))); return r.json(); }
+  async function apiPost(body) {
+    // text/plain keeps this a "simple" request, so browsers skip the CORS preflight Apps Script can't answer
+    const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(withSite(body)) });
+    return r.json();
+  }
+
+  /* ---------- state ---------- */
+  let WALKS = [];
+  let currentWalkId = params.get("walk") || null;
+  const cancelCode = params.get("cancel");
+  let cancelDone = false;
+  const current = () => WALKS.find(w => w.id === currentWalkId) || WALKS[0] || null;
+  // "Lead this walk" on a coming-soon walk: the application (or a leader's proposal) takes over that walk.
+  let leadFor = params.get("lead") || null;
+  const leadTarget = () => { const w = leadFor && WALKS.find(x => x.id === leadFor); return w && w.comingSoon ? w : null; };
+  function loadMine() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
+  function saveMine(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+  let mine = loadMine();
+  const initials = (name) => String(name || "").split(/[\s,]+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join("");
+  function avatarHTML(leader, cls) {
+    if (leader && leader.photo) return '<img class="' + (cls || "") + '" src="' + esc(leader.photo) + '" alt="">';
+    return esc(initials(leader && leader.name));
+  }
+
+  /* ---------- maps ---------- */
+  const pinIcon = L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
+  const pinIconSoon = L.divIcon({ className: "", html: '<div class="pin pin-soon"></div>', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28] });
+  const tiles = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
+  function wheelOnFocus(map) { map.on("focus click", () => map.scrollWheelZoom.enable()); map.on("blur mouseout", () => map.scrollWheelZoom.disable()); }
+
+  const bigMap = L.map("big-map", { scrollWheelZoom: false }).setView(US_VIEW.center, US_VIEW.zoom);
+  tiles().addTo(bigMap); wheelOnFocus(bigMap);
+  const pinLayer = L.layerGroup().addTo(bigMap);
+  function drawPins() {
+    pinLayer.clearLayers();
+    WALKS.forEach(w => {
+      L.marker([w.lat, w.lng], { icon: w.comingSoon ? pinIconSoon : pinIcon, title: w.title, alt: w.title }).addTo(pinLayer)
+        .bindPopup((w.photo ? '<img class="popup-photo" src="' + esc(w.photo) + '" alt="">' : '') + '<strong>' + esc(w.title) + '</strong><br>' +
+          (w.comingSoon ? 'Coming soon' + (interestText(w) ? '<br>' + interestText(w) : '') : esc(w.dateText) + '<br>' + esc(w.timeText)) + '<br>' + esc(w.place) +
+          '<br><a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a>', { maxWidth: 240 });
+    });
+  }
+
+  let smallMap = null, smallMarker = null;
+  function showSmallMap(w) {
+    if (!w) return;
+    if (!smallMap) {
+      smallMap = L.map("small-map", { scrollWheelZoom: false }).setView([w.lat, w.lng], 16);
+      tiles().addTo(smallMap); wheelOnFocus(smallMap);
+      smallMarker = L.marker([w.lat, w.lng], { icon: pinIcon, title: "Meeting spot", alt: "Meeting spot" }).addTo(smallMap);
+    } else {
+      smallMap.invalidateSize(); smallMap.setView([w.lat, w.lng], 16); smallMarker.setLatLng([w.lat, w.lng]);
+    }
+    smallMarker.bindPopup("<strong>Meet here</strong><br>" + esc(w.place)).openPopup();
+  }
+
+  /* ---------- find a walk ---------- */
+  function miles(a, b) {
+    const R = 3958.8, rad = d => d * Math.PI / 180;
+    const dLat = rad(b[0] - a[0]), dLng = rad(b[1] - a[1]);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function adFor(origin) {
+    if (!origin) return null;
+    return ADS.map(a => ({ a, d: miles(origin, [a.lat, a.lng]) })).filter(x => x.d <= x.a.radiusMiles).sort((x, y) => x.d - y.d).map(x => x.a)[0] || null;
+  }
+  function showAd(el, origin) {
+    const ad = adFor(origin);
+    el.hidden = !ad;
+    el.innerHTML = ad ? '<span class="sponsor-label">Sponsored</span><h3>' + esc(ad.name) + '</h3><p>' + esc(ad.text) + '</p><a href="' + esc(ad.url) + '" target="_blank" rel="noopener">' + esc(ad.linkText) + '</a>' : "";
+  }
+  function interestText(w) {
+    const n = w.interested || 0;
+    return n === 0 ? "" : n === 1 ? "1 person would join" : n + " people would join";
+  }
+  function walkCard(w, d) {
+    return '<li class="walk-card">' + (w.photo ? '<img class="walk-thumb" src="' + esc(w.photo) + '" alt="" loading="lazy">' : '') +
+      '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
+      (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span>' + (interestText(w) ? ' · ' + interestText(w) : '') + '</span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
+      '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.max(1, Math.round(d)) + (Math.round(d) <= 1 ? ' mile away' : ' miles away') : '') + '</span>' +
+      '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + (w.leader && w.leader.sample ? ' (sample)' : '') + '</span></div>' +
+      '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
+  }
+  let lastOrigin = null, lastLabel = "";
+  let nearMe = null;      // the visitor's location, if they shared it
+  let showAll = false;    // the opening list shows 3 walks until "Show all walks"
+  const OPENING_LIMIT = 3;
+  function renderList(origin, label) {
+    lastOrigin = origin; lastLabel = label || "";
+    const from = origin || nearMe;
+    let items = WALKS.map(w => ({ w, d: from ? miles(from, [w.lat, w.lng]) : null }));
+    if (origin) items = items.filter(i => i.d <= 100).sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || a.d - b.d);
+    else if (nearMe) items.sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || a.d - b.d);
+    else items.sort((a, b) => (a.w.comingSoon - b.w.comingSoon) || (a.w.date + a.w.start).localeCompare(b.w.date + b.w.start) || a.w.title.localeCompare(b.w.title));
+    $("list-h").textContent = origin ? "Walks near " + label : nearMe && !showAll ? "Walks nearest you" : showAll ? "All walks" : "Upcoming walks";
+    // The opening list (no city searched) shows only a few walks, nearest first if we know where the visitor is.
+    const capped = !origin && !showAll && items.length > OPENING_LIMIT;
+    const shown = capped ? items.slice(0, OPENING_LIMIT) : items;
+    $("walk-list").innerHTML = shown.length ? shown.map(({ w, d }) => walkCard(w, d)).join("")
+      : '<li class="empty">' + (origin ? "No walks within 100 miles of " + esc(label) + " yet. Try another city, or show all of the US." : "No walks yet.") + '</li>';
+    $("show-all-walks").hidden = !capped;
+    if (capped) $("show-all-walks").textContent = "Show all " + items.length + " walks";
+  }
+  $("show-all-walks").addEventListener("click", () => {
+    showAll = true; renderList(null);
+    const first = $("walk-list").querySelectorAll(".walk-card")[OPENING_LIMIT]; if (first) first.querySelector("a").focus();
+  });
+  function useLocation(fromClick) {
+    if (!navigator.geolocation) { if (fromClick) $("search-status").textContent = "This browser can't share your location. Search a city instead."; return; }
+    if (fromClick) $("search-status").textContent = "Finding walks near you…";
+    navigator.geolocation.getCurrentPosition(pos => {
+      nearMe = [pos.coords.latitude, pos.coords.longitude]; showAll = false;
+      bigMap.setView(nearMe, 9);
+      renderList(null);
+      const near = WALKS.filter(w => miles(nearMe, [w.lat, w.lng]) <= 100).length;
+      $("search-status").textContent = near ? "Showing walks nearest you. " + near + (near === 1 ? " walk is" : " walks are") + " within 100 miles." : "No walks within 100 miles of you yet. Here are the nearest ones.";
+      showAd($("find-sponsor"), nearMe); showReviewCard($("find-review"), nearMe);
+    }, () => {
+      if (fromClick) $("search-status").textContent = "We couldn't get your location. You can search a city or ZIP code instead.";
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+  }
+  $("near-me").addEventListener("click", () => useLocation(true));
+  // If the visitor already allowed location for this site, use it without asking again.
+  try { if (navigator.permissions) navigator.permissions.query({ name: "geolocation" }).then(p => { if (p.state === "granted") useLocation(false); }).catch(() => {}); } catch (e) {}
+  async function searchPlace(q) {
+    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&limit=5&q=" + encodeURIComponent(q);
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!res.ok) throw new Error("search failed");
+    return res.json();
+  }
+  function goTo(place) {
+    const lat = parseFloat(place.lat), lng = parseFloat(place.lon);
+    const label = place.display_name.split(",").slice(0, 2).join(",").trim();
+    if (place.boundingbox) { const [s, n, w, e] = place.boundingbox.map(parseFloat); bigMap.fitBounds([[s, w], [n, e]], { maxZoom: 11 }); }
+    else bigMap.setView([lat, lng], 11);
+    renderList([lat, lng], label);
+    const near = WALKS.filter(w => miles([lat, lng], [w.lat, w.lng]) <= 100).length;
+    $("search-status").textContent = "Showing " + label + ". " + (near ? near + (near === 1 ? " walk" : " walks") + " nearby." : "No walks nearby yet.");
+    $("search-results").innerHTML = "";
+    showAd($("find-sponsor"), [lat, lng]);
+    showReviewCard($("find-review"), [lat, lng]);
+  }
+  $("city-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const q = $("city").value.trim();
+    if (!q) { $("search-status").textContent = "Type a city or ZIP code to search."; return; }
+    $("search-status").textContent = "Searching…"; $("search-results").innerHTML = "";
+    try {
+      const found = await searchPlace(q);
+      if (!found.length) { $("search-status").textContent = "No places found for " + q + ". Check the spelling or try a nearby city."; return; }
+      goTo(found[0]);
+      if (found.length > 1) {
+        $("search-status").textContent += " Not the right place? Choose another below.";
+        $("search-results").innerHTML = found.slice(1).map((p, i) => '<li><button type="button" data-i="' + (i + 1) + '">' + esc(p.display_name.split(",").slice(0, 3).join(",")) + '</button></li>').join("");
+        $("search-results").querySelectorAll("button").forEach(b => b.addEventListener("click", () => goTo(found[+b.dataset.i])));
+      }
+    } catch (ex) { $("search-status").textContent = "City search isn't responding right now. You can still zoom the map, or try again in a moment."; }
+  });
+  $("show-us").addEventListener("click", () => {
+    bigMap.setView(US_VIEW.center, US_VIEW.zoom); showAll = true; renderList(null); $("find-sponsor").hidden = true; $("find-review").hidden = true;
+    $("search-status").textContent = "Showing all of the US."; $("search-results").innerHTML = "";
+  });
+
+  // Any "See this walk" link picks which walk the walk page shows.
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-walk]");
+    if (!a) return;
+    currentWalkId = a.dataset.walk;
+    const u = new URL(location.href); u.searchParams.set("walk", currentWalkId); u.searchParams.delete("cancel");
+    history.replaceState(null, "", u.pathname + u.search + "#walk");
+    route();
+  });
+
+  /* ---------- walk page ---------- */
+  function renderWalk() {
+    const w = current();
+    if (!w) { $("w-title").textContent = WALKS.length ? "Walk not found" : "Loading walk…"; return; }
+    currentWalkId = w.id;
+    $("w-title").textContent = w.title;
+    $("w-date").textContent = w.dateText;
+    $("w-time").textContent = w.timeText;
+    $("w-led").textContent = w.leader ? "Walk. Connect. Recharge. Led by " + w.leader.name + "." : "Walk. Connect. Recharge.";
+    $("w-photo-wrap").hidden = !w.photo;
+    if (w.photo) {
+      $("w-photo").src = w.photo; $("w-photo").alt = "Photo of " + w.place;
+      $("w-photo-credit").innerHTML = 'Photo: ' + esc(w.photoCredit || "Wikimedia Commons") + (w.photoSource ? ' · <a href="' + esc(w.photoSource) + '" target="_blank" rel="noopener">source</a>' : '');
+    }
+    const soon = !!w.comingSoon;
+    $("w-soon").hidden = !soon;
+    if (!soon) { $("interest-box").hidden = true; $("interest-done").hidden = true; }
+    const n = w.interested || 0;
+    $("w-interest-count").textContent = !soon ? "" : n === 0 ? "Be the first to say you'd join." : n === 1 ? "1 person would join this walk." : n + " people would join this walk.";
+    if (soon && cancelCode && !cancelDone) {
+      $("cancel-h").textContent = "Leave the interest list?";
+      $("cancel-p").textContent = "We won't email you about this walk anymore.";
+      $("cancel-yes").textContent = "Remove me"; $("cancel-keep").textContent = "Stay on the list";
+    }
+    ["w-spots", "signup", "w-signup-rule", "w-repeats-row", "w-shorter-row", "w-bring-row"].forEach(id => { $(id).hidden = soon; });
+    $("w-date").textContent = soon ? "Date coming soon" : w.dateText;
+    $("w-description").textContent = w.description;
+    $("w-place").textContent = w.place;
+    $("w-find").textContent = w.find;
+    $("w-address").textContent = w.address || "";
+    $("w-directions").href = "https://www.google.com/maps/dir/?api=1&destination=" + w.lat + "," + w.lng;
+    $("w-repeats").textContent = w.repeats || "One time";
+    $("w-parking").textContent = w.parking || "No parking details yet.";
+    $("w-shorter").textContent = w.shorter || "Ask the walk leader when you sign up.";
+    $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
+    $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";
+    $("w-leader-sample").hidden = !(w.leader && w.leader.sample);
+    $("w-leader-bg").textContent = w.leader ? w.leader.background : "Interested in leading this walk? Apply on the Lead a walk page.";
+    $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true; $("w-message-leader").setAttribute("aria-expanded", "false"); $("w-link-done").textContent = "";
+    showAd($("w-sponsor"), [w.lat, w.lng]);
+    if (!soon) renderSpots(w);
+    renderMine();
+  }
+  function renderSpots(w) {
+    const cap = w.spots, going = w.going || 0, wait = w.waitlist || 0, full = going >= cap;
+    $("spots-count").innerHTML = going + " <span>of " + cap + " spots taken</span>";
+    $("spots-bar").style.width = Math.min(100, going / cap * 100) + "%";
+    $("spots-bar-label").setAttribute("aria-label", going + " of " + cap + " spots taken");
+    $("spots-chip").textContent = full ? "Full" : "Open";
+    $("spots-chip").className = "chip " + (full ? "chip-full" : "chip-open");
+    $("spots-sub").textContent = full ? "This walk is full. Join the waitlist" + (wait ? " (" + wait + " waiting)" : "") + " and you'll move up if someone cancels."
+      : (cap - going) + (cap - going === 1 ? " spot" : " spots") + " left.";
+    $("cta").textContent = full ? "Join the waitlist" : "Sign up";
+    $("signup-submit").textContent = full ? "Join the waitlist" : "Reserve my spot";
+  }
+  function renderMine() {
+    const w = current();
+    const list = w ? mine.filter(s => s.walk === w.id) : [];
+    $("mine").hidden = list.length === 0;
+    $("mine-list").innerHTML = list.map(s =>
+      '<li class="row"><div class="row-main"><span class="row-name">' + esc(s.name) + '</span><span class="muted">' + esc(w.dateText) + ' · ' + esc(w.place) + '</span>' +
+      '<span class="hint">To cancel, use the link in your confirmation email.</span></div>' +
+      (s.status === "going" ? '<span class="chip chip-open">Signed up</span>' : '<span class="chip chip-full">Waitlist</span>') + '</li>').join("");
+  }
+  async function refreshCount() {
+    const w = current(); if (!w || w.comingSoon) return;
+    try { const r = await apiGet({ action: "count", walk: w.id }); if (r && r.ok) { w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity; renderSpots(w); } } catch (e) {}
+  }
+  $("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const w = current(); const err = $("signup-error"); err.hidden = true;
+    if (!w) { err.textContent = "This walk is still loading. Try again in a moment."; err.hidden = false; return; }
+    const d = { name: $("f-name").value.trim(), email: $("f-email").value.trim(), phone: $("f-phone").value.trim(), profession: $("f-prof").value.trim(), accommodation: $("f-accom").value.trim() };
+    const missing = [];
+    if (!d.name) missing.push("your name");
+    if (!/^\S+@\S+\.\S+$/.test(d.email)) missing.push("a valid email");
+    if (d.phone.replace(/\D/g, "").length < 7) missing.push("a phone number");
+    if (!d.profession) missing.push("your profession");
+    if (!$("f-hcw").checked) missing.push("confirmation that you work in healthcare");
+    if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
+    const btn = $("signup-submit"); btn.disabled = true; btn.textContent = "Saving your spot…";
+    try {
+      const r = await apiPost({ action: "signup", walk: w.id, ...d, hcw: true, website: $("f-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity;
+      mine = mine.filter(s => !(s.walk === w.id && s.name === d.name));
+      mine.push({ walk: w.id, name: d.name, status: r.status, code: r.code || "", ts: Date.now() }); saveMine(mine);
+      const first = esc(d.name.split(" ")[0]); const done = $("signup-done");
+      done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We found an earlier sign-up with this email for this walk, so nothing changed.</p>"
+        : r.status === "going" ? "<h3>You're signed up, " + first + ".</h3><p>" + esc(w.dateText) + ", " + esc(w.timeText) + " at " + esc(w.place) + ". A confirmation email is on its way to " + esc(d.email) + ", with a link to cancel if your plans change.</p>"
+        : "<h3>You're on the waitlist, " + first + ".</h3><p>The walk is full right now. If a spot opens, you'll move up automatically and we'll email you at " + esc(d.email) + ".</p>";
+      done.hidden = false; $("signup-form").reset(); renderWalk(); done.focus();
+    } catch (ex) { err.textContent = "Your sign-up didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
+    finally { btn.disabled = false; renderSpots(w); }
+  });
+
+  // If this browser signed up for the walk, open their messages directly; otherwise explain and offer the link by email.
+  $("w-message-leader").addEventListener("click", () => {
+    const w = current(); const s = w && mine.filter(x => x.walk === w.id && x.code).pop();
+    if (s) { location.href = "?inbox=" + encodeURIComponent(s.code) + "#inbox"; return; }
+    const box = $("w-message-note"); box.hidden = !box.hidden;
+    $("w-message-leader").setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden) $("w-link-email").focus();
+  });
+  $("w-link-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("w-link-email").value.trim(), w = current();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { $("w-link-done").textContent = "Please enter a valid email."; return; }
+    try { await apiPost({ action: "walkerLink", walk: w.id, email }); } catch (ex) {}
+    $("w-link-done").textContent = "If " + email + " is signed up for this walk, we've emailed your messages link.";
+  });
+
+  /* ---------- interest list for coming-soon walks ---------- */
+  $("interest-open").addEventListener("click", () => {
+    const box = $("interest-box"); box.hidden = !box.hidden;
+    $("interest-open").setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden) $("i-name").focus();
+  });
+  $("interest-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const w = current(); const err = $("interest-error"); err.hidden = true;
+    if (!w) return;
+    const d = { name: $("i-name").value.trim(), email: $("i-email").value.trim(), profession: $("i-prof").value.trim() };
+    const missing = [];
+    if (!d.name) missing.push("your name");
+    if (!/^\S+@\S+\.\S+$/.test(d.email)) missing.push("a valid email");
+    if (!d.profession) missing.push("your profession");
+    if (!$("i-hcw").checked) missing.push("confirmation that you work in healthcare");
+    if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
+    const btn = $("interest-submit"); btn.disabled = true; btn.textContent = "Adding you…";
+    try {
+      const r = await apiPost({ action: "interest", walk: w.id, ...d, hcw: true, website: $("i-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      if (r.interested != null) w.interested = r.interested;
+      const first = esc(d.name.split(" ")[0]); const done = $("interest-done");
+      done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We'll email you when this walk has a date.</p>"
+        : "<h3>You're on the list, " + first + ".</h3><p>We'll email " + esc(d.email) + " when a walk leader sets the date, so you can sign up. A confirmation is on its way, with a link to leave the list.</p>";
+      $("interest-form").reset(); $("interest-box").hidden = true; $("interest-open").setAttribute("aria-expanded", "false");
+      renderWalk(); drawPins(); renderList(lastOrigin, lastLabel); done.hidden = false; done.focus();
+    } catch (ex) { err.textContent = "That didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Add me to the list"; }
+  });
+
+  /* ---------- cancel from the email link ---------- */
+  if (cancelCode) {
+    $("cancel-panel").hidden = false;
+    $("cancel-yes").addEventListener("click", async () => {
+      const b = $("cancel-yes"); b.disabled = true; b.textContent = "Cancelling…";
+      try {
+        const r = await apiPost({ action: "cancel", code: cancelCode });
+        if (r && r.ok) {
+          cancelDone = true;
+          const w = current(); if (w && r.going != null) { w.going = r.going; w.waitlist = r.waitlist; w.interested = r.interested; if (w.comingSoon) renderWalk(); else renderSpots(w); }
+          $("cancel-panel").innerHTML = w && w.comingSoon ? "<h3>You're off the list.</h3><p>We won't email you about this walk.</p>"
+            : "<h3>Your spot is cancelled.</h3><p>Thanks for letting us know. Someone on the waitlist can take your place.</p>";
+          const u = new URL(location.href); u.searchParams.delete("cancel"); history.replaceState(null, "", u.pathname + u.search + "#walk");
+        } else {
+          $("cancel-panel").innerHTML = "<h3>We couldn't find that sign-up.</h3><p>It may already be cancelled. If you still need help, use the contact form.</p>";
+        }
+      } catch (e) { b.disabled = false; b.textContent = "Cancel my spot"; $("cancel-msg").textContent = "That didn't go through. Check your connection and try again."; }
+    });
+  }
+
+  /* ---------- walker reviews ---------- */
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function starText(n) { const r = Math.round(n); return "★".repeat(r) + "☆".repeat(5 - r); }
+  function reviewHTML(r) {
+    const m = /^(\d{4})-(\d{2})/.exec(r.date || "");
+    return '<li class="review"><div class="review-head"><span class="stars" role="img" aria-label="' + r.rating + ' out of 5 stars">' + starText(r.rating) + '</span>' +
+      (r.sample ? '<span class="chip chip-sample">Sample review</span>' : '') + '</div>' +
+      '<p class="review-text">“' + esc(r.text) + '”</p>' +
+      '<span class="muted">' + esc(r.name) + (r.role ? ', ' + esc(r.role) : '') + (m ? ' · ' + MONTHS[+m[2] - 1] + ' ' + m[1] : '') + '</span>' +
+      (r.sample ? '<span class="hint">Example content for this demo. Not written by a real walker.</span>' : '') + '</li>';
+  }
+  function renderReviews(prefix, l) {
+    const rs = (l && l.reviews) || [];
+    $(prefix + "-reviews").hidden = !rs.length;
+    if (!rs.length) return;
+    $(prefix + "-reviews-summary").textContent = "Average " + l.rating + " out of 5 from " + rs.length + (rs.length === 1 ? " review" : " reviews") + " of walks with " + String(l.name).split(",")[0] + ".";
+    $(prefix + "-reviews-list").innerHTML = rs.map(reviewHTML).join("");
+  }
+
+  // One review card after a city search, like the sponsor card: the nearest walk leader with reviews (within 100 miles).
+  function showReviewCard(el, origin) {
+    const seen = {}, cands = [];
+    WALKS.forEach(w => {
+      const l = w.leader;
+      if (!l || !l.reviews || !l.reviews.length || seen[l.id]) return;
+      seen[l.id] = 1;
+      cands.push({ l, w, d: miles(origin, [w.lat, w.lng]) });
+    });
+    const pick = cands.filter(c => c.d <= 100).sort((a, b) => a.d - b.d)[0];
+    el.hidden = !pick;
+    if (!pick) { el.innerHTML = ""; return; }
+    const r = pick.l.reviews[Math.floor(Math.random() * pick.l.reviews.length)];
+    el.innerHTML = '<span class="sponsor-label">What walkers say</span>' +
+      '<div class="review-head"><span class="stars" role="img" aria-label="' + r.rating + ' out of 5 stars">' + starText(r.rating) + '</span>' + (r.sample ? '<span class="chip chip-sample">Sample review</span>' : '') + '</div>' +
+      '<p class="review-text">“' + esc(r.text) + '”</p>' +
+      '<span class="muted">' + esc(r.name) + (r.role ? ', ' + esc(r.role) : '') + ', on a walk with ' + esc(pick.l.name) + '</span>' +
+      (r.sample ? '<span class="hint">Example content for this demo. Not written by a real walker.</span>' : '') +
+      '<a href="?walk=' + encodeURIComponent(pick.w.id) + '#leader">More about ' + esc(String(pick.l.name).split(",")[0]) + ' and their walks</a>';
+  }
+
+  /* ---------- public walk leader profile ---------- */
+  function renderLeaderProfile() {
+    const w = current(); const l = w && w.leader;
+    if (!l) { $("lp-name").textContent = "Walk leader"; return; }
+    $("lp-name").textContent = l.name;
+    $("lp-photo-row").innerHTML = l.photo ? '<img class="leader-photo" src="' + esc(l.photo) + '" alt="Photo of ' + esc(l.name) + '">' : '<div class="avatar" aria-hidden="true">' + esc(initials(l.name)) + '</div>';
+    $("lp-bio").textContent = l.bio || "";
+    $("lp-bg").textContent = l.background || "";
+    $("lp-city").textContent = l.city || "";
+    $("lp-sample").hidden = !l.sample; $("lp-sample-note").hidden = !l.sample;
+    renderReviews("lp", l);
+    const theirs = WALKS.filter(x => x.leader && x.leader.id === l.id);
+    $("lp-walks").innerHTML = theirs.map(x => walkCard(x, null)).join("") || '<li class="empty">No live walks right now.</li>';
+  }
+
+  /* ---------- shared form pieces: profile + walk ---------- */
+  function profileFieldsHTML(p, opts) {
+    return '<fieldset><legend>' + esc(opts.legend) + '</legend>' +
+      '<div class="field"><label for="' + p + '-name">Name as you\'d like it shown, with credentials if you like</label><input type="text" id="' + p + '-name" autocomplete="name"></div>' +
+      (opts.email ? '<div class="field"><label for="' + p + '-email">Email</label><input type="email" id="' + p + '-email" autocomplete="email"></div>' : '') +
+      '<div class="two"><div class="field"><label for="' + p + '-phone">Phone</label><input type="tel" id="' + p + '-phone" autocomplete="tel"></div>' +
+      '<div class="field"><label for="' + p + '-city">City and state</label><input type="text" id="' + p + '-city" autocomplete="address-level2"></div></div>' +
+      '<div class="field"><label for="' + p + '-bg">Your background</label><input type="text" id="' + p + '-bg" placeholder="For example: ER nurse, physical therapist, social worker"></div>' +
+      '<div class="field"><label for="' + p + '-bio">Short bio for your walk leader profile</label><textarea id="' + p + '-bio" aria-describedby="' + p + '-bio-hint"></textarea><span class="hint" id="' + p + '-bio-hint">A few sentences walkers will read. Why you lead walks, and what you bring.</span></div>' +
+      '<div class="field"><label for="' + p + '-photo">Photo (optional)</label><input type="file" id="' + p + '-photo" accept="image/jpeg,image/png"><img class="photo-preview" id="' + p + '-photo-preview" alt="" hidden></div>' +
+      '</fieldset>';
+  }
+  function walkFieldsHTML(p, legend) {
+    return '<fieldset><legend>' + esc(legend) + '</legend>' +
+      '<div class="field"><label for="' + p + '-title">Walk name</label><input type="text" id="' + p + '-title" placeholder="For example: Morning walk at Balboa Park"></div>' +
+      '<div class="two"><div class="field"><label for="' + p + '-date">Date</label><input type="date" id="' + p + '-date"></div>' +
+      '<div class="field"><label for="' + p + '-start">Start time</label><input type="time" id="' + p + '-start"></div>' +
+      '<div class="field"><label for="' + p + '-end">End time</label><input type="time" id="' + p + '-end"></div></div>' +
+      '<div class="field"><label for="' + p + '-repeats">How often</label><select id="' + p + '-repeats"><option value="One time">One time</option><option value="Monthly, same week and day">Monthly, same week and day</option></select></div>' +
+      '<div class="field"><label for="' + p + '-place">Place name</label><input type="text" id="' + p + '-place" placeholder="For example: Lake Murray, by the ranger station"></div>' +
+      '<div class="field"><span class="row-name" id="' + p + '-pin-label">Meeting spot pin</span><span class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. You can also tap the map to move it.</span>' +
+      '<div class="search"><label for="' + p + '-q" class="sr-only">Search a park or address</label><input type="search" id="' + p + '-q" placeholder="Search a park or address" autocomplete="off"><button class="btn" type="button" id="' + p + '-find">Find</button></div>' +
+      '<p class="hint" id="' + p + '-pin-status" aria-live="polite">No pin yet. Search for your park to place it.</p>' +
+      '<div class="pin-map" id="' + p + '-map" role="region" aria-labelledby="' + p + '-pin-label"></div>' +
+      '<p class="hint tabular">Pin: <span id="' + p + '-coords">none yet</span></p></div>' +
+      '<div class="field"><label for="' + p + '-address">Address (optional)</label><input type="text" id="' + p + '-address"></div>' +
+      '<div class="field"><label for="' + p + '-find-text">How to find the group after parking</label><textarea id="' + p + '-find-text" placeholder="For example: Meet at the side of the main parking lot, in front of the ranger station."></textarea></div>' +
+      '<div class="field"><label for="' + p + '-parking">Parking (optional)</label><input type="text" id="' + p + '-parking" placeholder="For example: Free lot off Kiowa Drive"></div>' +
+      '<div class="two"><div class="field"><label for="' + p + '-spots">Number of spots</label><input type="number" id="' + p + '-spots" min="2" max="50" value="20"></div></div>' +
+      '<div class="field"><label for="' + p + '-shorter">Shorter route option (optional)</label><input type="text" id="' + p + '-shorter" placeholder="For example: Turn back at the first picnic area"></div>' +
+      '<div class="field"><label for="' + p + '-desc">Walk description</label><textarea id="' + p + '-desc" placeholder="What walkers can expect, in a few sentences."></textarea></div>' +
+      '<div class="field"><label for="' + p + '-photo">Walk photo (optional)</label><input type="file" id="' + p + '-photo" accept="image/*" aria-describedby="' + p + '-photo-hint">' +
+      '<span class="hint" id="' + p + '-photo-hint">A photo of the path or meeting spot that shows the place at its best, ideally without people\'s faces. On a phone you can take one or choose one from your photos. Our team checks it before it appears.</span>' +
+      '<span class="hint" id="' + p + '-photo-current" hidden>Current photo. Choose a new one to replace it.</span>' +
+      '<img class="photo-preview walk-photo-preview" id="' + p + '-photo-preview" alt="" hidden></div>' +
+      '</fieldset>';
+  }
+
+  const pinForms = {};
+  function initWalkForm(p, start) {
+    const st = { lat: null, lng: null, map: null, marker: null };
+    pinForms[p] = st;
+    const center = start && isFinite(start.lat) ? [start.lat, start.lng] : US_VIEW.center;
+    st.map = L.map(p + "-map", { scrollWheelZoom: false }).setView(center, start ? 16 : 4);
+    tiles().addTo(st.map); wheelOnFocus(st.map);
+    function place(lat, lng, msg) {
+      st.lat = lat; st.lng = lng;
+      if (!st.marker) {
+        st.marker = L.marker([lat, lng], { icon: pinIcon, draggable: true, title: "Meeting spot pin. Drag to move.", alt: "Meeting spot pin" }).addTo(st.map);
+        st.marker.on("dragend", () => { const q = st.marker.getLatLng(); place(q.lat, q.lng, "Pin moved."); });
+      } else st.marker.setLatLng([lat, lng]);
+      $(p + "-coords").textContent = lat.toFixed(5) + ", " + lng.toFixed(5);
+      if (msg) $(p + "-pin-status").textContent = msg;
+    }
+    st.place = place;
+    initPhoto(p, 1400);
+    if (start && isFinite(start.lat)) place(start.lat, start.lng, "Drag the pin to change the meeting spot.");
+    st.map.on("click", (e) => place(e.latlng.lat, e.latlng.lng, "Pin moved."));
+    const doFind = async () => {
+      const q = $(p + "-q").value.trim();
+      if (!q) { $(p + "-pin-status").textContent = "Type a park or address to search."; return; }
+      $(p + "-pin-status").textContent = "Searching…";
+      try {
+        const found = await searchPlace(q);
+        if (!found.length) { $(p + "-pin-status").textContent = "No places found for " + q + "."; return; }
+        const lat = parseFloat(found[0].lat), lng = parseFloat(found[0].lon);
+        st.map.setView([lat, lng], 17);
+        place(lat, lng, "Found " + found[0].display_name.split(",").slice(0, 3).join(",") + ". Now drag the pin to the exact meeting spot.");
+        if (!$(p + "-address").value) $(p + "-address").value = found[0].display_name.split(",").slice(0, 5).join(",");
+      } catch (ex) { $(p + "-pin-status").textContent = "Search isn't responding right now. You can still tap the map to place the pin."; }
+    };
+    $(p + "-find").addEventListener("click", doFind);
+    $(p + "-q").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); doFind(); } });
+    return st;
+  }
+  function fillWalk(p, w) {
+    $(p + "-title").value = w.title || ""; $(p + "-date").value = w.date || ""; $(p + "-start").value = w.start || ""; $(p + "-end").value = w.end || "";
+    $(p + "-repeats").value = w.repeats && w.repeats.startsWith("Monthly") ? "Monthly, same week and day" : "One time";
+    $(p + "-place").value = w.place || ""; $(p + "-address").value = w.address || ""; $(p + "-find-text").value = w.find || "";
+    $(p + "-parking").value = w.parking || ""; $(p + "-spots").value = w.spots || 20; $(p + "-shorter").value = w.shorter || ""; $(p + "-desc").value = w.description || "";
+    if (w.photo && !photoData[p]) { $(p + "-photo-preview").src = w.photo; $(p + "-photo-preview").alt = "Current walk photo"; $(p + "-photo-preview").hidden = false; $(p + "-photo-current").hidden = false; }
+  }
+  function readWalk(p) {
+    const st = pinForms[p] || {};
+    return {
+      title: $(p + "-title").value.trim(), date: $(p + "-date").value, start: $(p + "-start").value, end: $(p + "-end").value,
+      repeats: $(p + "-repeats").value, place: $(p + "-place").value.trim(), address: $(p + "-address").value.trim(),
+      lat: st.lat, lng: st.lng, find: $(p + "-find-text").value.trim(), parking: $(p + "-parking").value.trim(),
+      spots: Number($(p + "-spots").value), shorter: $(p + "-shorter").value.trim(), description: $(p + "-desc").value.trim(),
+      photo: photoData[p] || ""
+    };
+  }
+  function walkProblems(w) {
+    const m = [];
+    if (!w.title) m.push("a walk name"); if (!w.date) m.push("a date"); if (!w.start) m.push("a start time");
+    if (!w.place) m.push("a place name"); if (w.lat == null) m.push("a meeting spot pin on the map");
+    if (!w.find) m.push("how to find the group"); if (!(w.spots >= 2 && w.spots <= 50)) m.push("a number of spots from 2 to 50");
+    if (w.description.length < 20) m.push("a walk description (a sentence or two)");
+    return m;
+  }
+  function fillProfile(p, l) {
+    $(p + "-name").value = l.name || ""; $(p + "-phone").value = l.phone || ""; $(p + "-city").value = l.city || "";
+    $(p + "-bg").value = l.background || ""; $(p + "-bio").value = l.bio || "";
+  }
+  const photoData = {};
+  function initPhoto(p, maxSide) {
+    $(p + "-photo").addEventListener("change", () => {
+      const f = $(p + "-photo").files[0]; photoData[p] = null;
+      if ($(p + "-photo-current")) $(p + "-photo-current").hidden = true;
+      if (!f) { $(p + "-photo-preview").hidden = true; return; }
+      const img = new Image(); const url = URL.createObjectURL(f);
+      img.onload = () => {
+        const max = maxSide || 600, s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        photoData[p] = c.toDataURL("image/jpeg", 0.85);
+        $(p + "-photo-preview").src = photoData[p]; $(p + "-photo-preview").hidden = false; URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+  }
+  function readProfile(p, withEmail) {
+    const o = { name: $(p + "-name").value.trim(), phone: $(p + "-phone").value.trim(), city: $(p + "-city").value.trim(), background: $(p + "-bg").value.trim(), bio: $(p + "-bio").value.trim() };
+    if (withEmail) o.email = $(p + "-email").value.trim();
+    if (photoData[p]) o.photo = photoData[p];
+    return o;
+  }
+  function profileProblems(o, withEmail) {
+    const m = [];
+    if (!o.name) m.push("your name"); if (withEmail && !/^\S+@\S+\.\S+$/.test(o.email)) m.push("a valid email");
+    if (o.phone.replace(/\D/g, "").length < 7) m.push("a phone number"); if (!o.city) m.push("your city");
+    if (!o.background) m.push("your background"); if (o.bio.length < 20) m.push("a short bio (a sentence or two)");
+    return m;
+  }
+  function showProblems(errEl, list) { errEl.textContent = "Please add " + list.join(", ") + "."; errEl.hidden = false; }
+
+  /* ---------- leading a coming-soon walk ---------- */
+  $("w-lead-this").addEventListener("click", () => { const w = current(); leadFor = w && w.comingSoon ? w.id : null; });
+  function prefillLead(p, noteId, intro) {
+    const note = $(noteId), w = leadTarget();
+    if (!note) return;
+    note.hidden = !w;
+    if (!w) { note.innerHTML = ""; return; }
+    note.innerHTML = '<p><strong>' + esc(intro) + ' ' + esc(w.title) + (w.city ? ' in ' + esc(w.city) : '') + '.</strong> ' +
+      "We've filled in the place and put the pin near it. Set the date, time and exact meeting spot. Once our team approves it, your walk replaces the coming-soon one, and we'll email everyone who said they'd join.</p>" +
+      '<button type="button" class="btn btn-small btn-ghost" data-clear-lead="' + esc(p) + '">Choose a different place instead</button>';
+    if (!$(p + "-title") ) return;
+    if (!$(p + "-title").value) $(p + "-title").value = w.title;
+    if (!$(p + "-place").value) $(p + "-place").value = w.place;
+    const st = pinForms[p];
+    if (st && st.place && st.lat == null) { st.map.setView([w.lat, w.lng], 15); st.place(w.lat, w.lng, "Pin placed near " + w.place + ". Drag it to the exact meeting spot."); }
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-clear-lead]"); if (!b) return;
+    const p = b.dataset.clearLead, w = leadTarget(); leadFor = null;
+    if (w && $(p + "-title").value === w.title) $(p + "-title").value = "";
+    if (w && $(p + "-place").value === w.place) $(p + "-place").value = "";
+    b.closest(".notice").hidden = true;
+  });
+
+  /* ---------- apply: profile + first walk ---------- */
+  $("apply-profile").innerHTML = profileFieldsHTML("ap", { legend: "About you", email: true });
+  $("apply-walk").innerHTML = walkFieldsHTML("aw", "Your first walk");
+  initPhoto("ap");
+  let applyReady = false;
+  $("apply-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("apply-error"); err.hidden = true;
+    const profile = readProfile("ap", true), walk = readWalk("aw");
+    const problems = profileProblems(profile, true).concat(walkProblems(walk));
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("apply-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "apply", profile, walk, forWalk: leadTarget() ? leadFor : "", website: $("apply-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      const done = $("apply-done");
+      done.innerHTML = r.existing
+        ? "<h3>You already have a walk leader page.</h3><p>We emailed your private link to " + esc(profile.email) + ". Use it to propose this walk" + (leadTarget() ? "; the link opens with this place filled in" : "") + ".</p>"
+        : "<h3>Application sent. Thank you, " + esc(profile.name.split(" ")[0]) + ".</h3><p>Our team will review your profile and your first walk. We emailed " + esc(profile.email) + " a private link to your walk leader page, where you can check its status.</p>";
+      done.hidden = false; $("apply-form").hidden = true; done.focus();
+    } catch (ex) { err.textContent = "Your application didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send my application"; }
+  });
+  $("link-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("link-email").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { $("link-done").innerHTML = "<p>Please enter a valid email.</p>"; $("link-done").hidden = false; return; }
+    try { await apiPost({ action: "sendLink", email }); } catch (ex) {}
+    $("link-done").innerHTML = "<p>If " + esc(email) + " belongs to a walk leader, we've emailed the link.</p>"; $("link-done").hidden = false; $("link-done").focus();
+  });
+
+  /* ---------- my walks (private walk leader page) ---------- */
+  const leaderCode = params.get("leader");
+  let me = null;
+  const STATUS_TEXT = {
+    "Pending review": ["status-pending", "Waiting for review", "Our team is reviewing this. We'll email you."],
+    "Changes requested": ["status-changes", "Changes requested", "Please make the changes below and resubmit."],
+    "Approved": ["status-live", "Approved walk leader", "You can propose new walks below."],
+    "Live": ["status-live", "Live", "It's on the map and people can sign up."]
+  };
+  function statusBox(status, note, extra) {
+    const s = STATUS_TEXT[status] || ["status-pending", status, ""];
+    return '<div class="status ' + s[0] + '"><strong>' + esc(s[1]) + '</strong><span>' + esc(s[2]) + '</span>' +
+      (note ? '<p class="note"><strong>Note from Resilient Healers:</strong> ' + esc(note) + '</p>' : '') + (extra || "") + '</div>';
+  }
+  async function loadMe() {
+    if (!leaderCode) { $("me-title").textContent = "Open your walk leader page from the link in your email."; return; }
+    try {
+      const r = await apiGet({ action: "leader", code: leaderCode });
+      if (!r || !r.ok) { $("me-title").textContent = "We couldn't find this walk leader page."; $("me-status").innerHTML = '<p>Check the link in your email, or <a href="#have-link">ask for it again</a>.</p>'; return; }
+      me = r; renderMe();
+    } catch (e) { $("me-title").textContent = "Your walk leader page couldn't load. Try again in a moment."; }
+  }
+  function renderMe() {
+    const l = me.leader;
+    $("me-title").textContent = "Hi, " + String(l.name).split(" ")[0];
+    const pendingProfile = l.pendingEdit ? "<span>Your profile changes are waiting for review. Your current profile stays up until they're approved.</span>" : "";
+    $("me-status").innerHTML = statusBox(l.status, l.staffNote, pendingProfile);
+    $("me-profile-wrap").hidden = false;
+    $("me-profile").innerHTML = '<div class="avatar" aria-hidden="true">' + avatarHTML(l) + '</div><div><span class="row-name">' + esc(l.name) + '</span><span class="muted">' + esc(l.background) + ' · ' + esc(l.city) + '</span><span>' + esc(l.bio) + '</span></div>';
+    if (!$("mp-name")) {
+      $("me-profile-fields").innerHTML = profileFieldsHTML("mp", { legend: "Profile", email: false });
+      initPhoto("mp");
+    }
+    fillProfile("mp", l);
+    $("me-profile-submit").textContent = l.status === "Changes requested" ? "Resubmit for review" : "Send for review";
+    if (l.status === "Changes requested") $("me-edit-profile").open = true;
+
+    $("me-walks-wrap").hidden = false;
+    $("me-walks").innerHTML = me.walks.map(w => {
+      const going = w.roster.filter(x => x.status === "Going"), waiting = w.roster.filter(x => x.status === "Waitlist");
+      const person = (x) => '<li><span class="row-name">' + esc(x.name) + '</span><span class="muted">' + esc(x.profession) + '</span>' +
+        (x.accommodation ? '<span class="accom">Accommodation: ' + esc(x.accommodation) + '</span>' : '') + '</li>';
+      const pend = w.pendingEdit ? "<span>Your changes are waiting for review. The live page keeps its current details until they're approved.</span>" : "";
+      return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.title) + '</span>' +
+        '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + ' · ' + esc(w.place) + '</span>' +
+        statusBox(w.status, w.staffNote, pend) +
+        (w.status === "Live" ? '<p><a href="?walk=' + encodeURIComponent(w.id) + '#walk">See the public walk page</a> · ' + going.length + ' of ' + w.spots + ' spots taken' + (waiting.length ? ', ' + waiting.length + ' on the waitlist' : '') + '</p>' : '') +
+        (w.status === "Live" ? '<details><summary>Who\'s coming (' + going.length + ')</summary><ul class="roster">' + (going.map(person).join("") || '<li class="muted">No sign-ups yet.</li>') + '</ul>' +
+          (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') +
+          '<p class="muted">Walkers\' email addresses and phone numbers stay private. Messaging your group through this page is coming soon.</p></details>' : '') +
+        '<details data-edit="' + esc(w.id) + '"' + (w.status === "Changes requested" ? " open" : "") + '><summary>' + (w.status === "Changes requested" ? "Fix and resubmit this walk" : "Edit this walk") + '</summary>' +
+        '<div class="form-card" style="margin-top:.8rem"><form data-walkform="' + esc(w.id) + '" novalidate><div id="ew-' + esc(w.id) + '-wrap"></div>' +
+        '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn" type="submit">' + (w.status === "Changes requested" ? "Resubmit for review" : "Send changes for review") + '</button></div></form></div></details></div>';
+    }).join("") || '<p class="muted">No walks yet.</p>';
+    // Build each edit form when it's opened, so its map sizes correctly.
+    document.querySelectorAll("#me-walks details[data-edit]").forEach(d => {
+      const build = () => {
+        const id = d.dataset.edit, p = "ew" + id.replace(/[^A-Za-z0-9]/g, "");
+        const wrap = $("ew-" + id + "-wrap");
+        if (!wrap || wrap.dataset.built) { if (pinForms[p]) pinForms[p].map.invalidateSize(); return; }
+        const w = me.walks.find(x => x.id === id);
+        wrap.innerHTML = walkFieldsHTML(p, "Walk details"); wrap.dataset.built = "1"; wrap.dataset.prefix = p;
+        initWalkForm(p, w); fillWalk(p, w);
+      };
+      if (d.open) setTimeout(build, 0);
+      d.addEventListener("toggle", () => { if (d.open) setTimeout(build, 0); });
+    });
+    $("me-new-wrap").hidden = l.status !== "Approved";
+    if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => { initWalkForm("nw", null); prefillLead("nw", "me-lead-note", "You're proposing to lead the"); }, 0); }
+  }
+  $("me-walks").addEventListener("submit", async (e) => {
+    const form = e.target.closest("form[data-walkform]"); if (!form) return;
+    e.preventDefault();
+    const id = form.dataset.walkform, wrap = $("ew-" + id + "-wrap"), p = wrap && wrap.dataset.prefix, err = form.querySelector(".error");
+    err.hidden = true; if (!p) return;
+    const walk = readWalk(p), problems = walkProblems(walk);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "editWalk", code: leaderCode, walkId: id, walk });
+      if (!r || !r.ok) throw new Error("failed");
+      await loadMe();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Try again"; }
+  });
+  $("me-profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("me-profile-error"); err.hidden = true;
+    const profile = readProfile("mp", false), problems = profileProblems(profile, false);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("me-profile-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "editProfile", code: leaderCode, profile });
+      if (!r || !r.ok) throw new Error("failed");
+      $("me-edit-profile").open = false; await loadMe();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; }
+  });
+  $("me-new-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("me-new-error"); err.hidden = true;
+    const walk = readWalk("nw"), problems = walkProblems(walk);
+    if (problems.length) { showProblems(err, problems); return; }
+    const btn = $("me-new-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "propose", code: leaderCode, walk, forWalk: leadTarget() ? leadFor : "" });
+      leadFor = null; $("me-lead-note").hidden = true;
+      if (!r || !r.ok) throw new Error("failed");
+      $("me-new-done").innerHTML = "<h3>Walk sent for review.</h3><p>We'll email you when it's approved, or if we need changes.</p>";
+      $("me-new-done").hidden = false; $("me-new-form").reset(); photoData.nw = null; $("nw-photo-preview").hidden = true; await loadMe(); $("me-new-done").focus();
+    } catch (ex) { err.textContent = "That didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send for review"; }
+  });
+
+
+  /* ---------- staff review (?review=<code>#review) ---------- */
+  const reviewCode = params.get("review");
+  const REVIEW_LABELS = { application: "New walk leader application", walk: "New walk proposal", "walk-edit": "Changes to a live walk", "profile-edit": "Walk leader profile changes", "walker-review": "New review from a walker" };
+  let reviewType = "";
+  let rvMap = null;
+  function factsHTML(pairs) { return pairs.filter(p => p[1] !== undefined && p[1] !== null && p[1] !== "").map(p => '<li><span>' + esc(p[0]) + '</span><span>' + esc(p[1]) + '</span></li>').join(""); }
+  async function loadReview() {
+    if (!reviewCode) { $("rv-title").textContent = "Open this page from the link in a staff email."; return; }
+    try {
+      const r = await apiGet({ action: "reviewData", code: reviewCode });
+      if (!r || !r.ok) { $("rv-title").textContent = "Review not found."; return; }
+      $("rv-type").textContent = REVIEW_LABELS[r.type] || "Review";
+      reviewType = r.type;
+      const isWR = r.type === "walker-review";
+      $("rv-wreview-wrap").hidden = !isWR;
+      if (isWR && r.walkerReview) $("rv-wreview").innerHTML = reviewHTML(Object.assign({ date: "" }, r.walkerReview));
+      if (isWR) {
+        $("rv-approve").textContent = "Publish review"; $("rv-changes").textContent = "Don't publish";
+        document.querySelector('label[for="rv-note"]').textContent = "Why not publish it? (optional, for our records; nobody is emailed)";
+      }
+      $("rv-title").textContent = r.profile ? r.profile.name : "Review";
+      const showProfile = r.type === "application" || r.type === "profile-edit";
+      $("rv-profile-wrap").hidden = !showProfile;
+      if (showProfile && r.profile) {
+        $("rv-photo").innerHTML = r.profile.photo ? '<img class="leader-photo" src="' + esc(r.profile.photo) + '" alt="Photo of ' + esc(r.profile.name) + '">' : '<span class="muted">No photo</span>';
+        $("rv-profile").innerHTML = factsHTML([["Name", r.profile.name], ["Email", r.profile.email], ["Phone", r.profile.phone], ["City", r.profile.city], ["Background", r.profile.background], ["Bio", r.profile.bio]]);
+      }
+      const w = r.walk, showWalk = !!w && r.type !== "profile-edit";
+      $("rv-walk-wrap").hidden = !showWalk;
+      if (showWalk) {
+        $("rv-walk").innerHTML = factsHTML([["Name", w.title], ["Date", w.dateText], ["Time", w.timeText], ["Repeats", w.repeats], ["Place", w.place], ["Address", w.address],
+          ["Pin", Number(w.lat).toFixed(5) + ", " + Number(w.lng).toFixed(5)], ["How to find it", w.find], ["Parking", w.parking], ["Spots", w.spots], ["Shorter route", w.shorter], ["Description", w.description],
+          ["Takes over", r.takesOver ? r.takesOver.title + (r.takesOver.city ? ", " + r.takesOver.city : "") + " (coming soon). Approving replaces it and emails its " + r.takesOver.interested + " interested " + (r.takesOver.interested === 1 ? "person" : "people") + "." : ""]]);
+        $("rv-maplink").href = "https://www.google.com/maps/search/?api=1&query=" + w.lat + "," + w.lng;
+        $("rv-wphoto").hidden = !w.photo; if (w.photo) $("rv-wphoto").src = w.photo;
+        setTimeout(() => {
+          if (!rvMap) { rvMap = L.map("rv-map", { scrollWheelZoom: false }); tiles().addTo(rvMap); wheelOnFocus(rvMap); }
+          rvMap.invalidateSize(); rvMap.setView([w.lat, w.lng], 16);
+          L.marker([w.lat, w.lng], { icon: pinIcon, title: "Proposed meeting spot", alt: "Proposed meeting spot" }).addTo(rvMap);
+        }, 0);
+      }
+      $("rv-decide").hidden = false;
+      if (r.status !== "Open") {
+        $("rv-form").hidden = true;
+        $("rv-done").innerHTML = "<h3>Already decided</h3><p>" + esc(r.status === "Replaced" ? "The walk leader resubmitted, so a newer review replaced this one." : r.status) + (r.note ? ": " + esc(r.note) : "") + "</p>";
+        $("rv-done").hidden = false;
+      }
+    } catch (e) { $("rv-title").textContent = "This review couldn't load. Try again in a moment."; }
+  }
+  async function decide(decision) {
+    const err = $("rv-error"); err.hidden = true;
+    const note = $("rv-note").value.trim();
+    if (decision === "changes" && !note && reviewType !== "walker-review") { err.textContent = "Add a note so the walk leader knows what to change."; err.hidden = false; return; }
+    $("rv-approve").disabled = $("rv-changes").disabled = true;
+    try {
+      const r = await apiPost({ action: "decide", code: reviewCode, decision, note: note || (reviewType === "walker-review" ? "Not published." : note) });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      $("rv-form").hidden = true;
+      $("rv-done").innerHTML = "<h3>" + (reviewType === "walker-review" ? (decision === "approve" ? "Published" : "Not published") : decision === "approve" ? "Approved" : "Changes requested") + "</h3><p>" + esc(r.message) + "</p>";
+      $("rv-done").hidden = false; $("rv-done").focus();
+    } catch (e) { err.textContent = "That didn't save. Check your connection and try again."; err.hidden = false; $("rv-approve").disabled = $("rv-changes").disabled = false; }
+  }
+  $("rv-approve").addEventListener("click", () => decide("approve"));
+  $("rv-changes").addEventListener("click", () => decide("changes"));
+
+  /* ---------- contact ---------- */
+  $("contact-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("contact-error"); err.hidden = true;
+    const name = $("c-name").value.trim(), email = $("c-email").value.trim(), msg = $("c-msg").value.trim();
+    if (!name || !/^\S+@\S+\.\S+$/.test(email) || !msg) { err.textContent = "Please add your name, a valid email and a message."; err.hidden = false; return; }
+    const btn = $("contact-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost({ action: "message", name, email, message: msg, website: $("c-website").value });
+      if (!r || !r.ok) throw new Error("failed");
+      const done = $("contact-done");
+      done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + ".</p>";
+      done.hidden = false; $("contact-form").reset(); done.focus();
+    } catch (ex) { err.textContent = "Your message didn't send. Check your connection and try again."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Send message"; }
+  });
+
+  /* ---------- messages (walkers, walk leaders, staff) ---------- */
+  const inboxCode = params.get("inbox"), staffCode = params.get("staff");
+  const IDENT = { walker: () => ({ as: "walker", code: inboxCode }), leader: () => ({ as: "leader", code: leaderCode }), staff: () => ({ as: "staff", code: staffCode }) };
+  function fmtWhen(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  const safeId = (s) => String(s).replace(/[^A-Za-z0-9_-]/g, "_");
+  function msgHTML(m, myRole, staffView) {
+    const mineMsg = m.from === myRole;
+    return '<li class="msg' + (mineMsg ? " msg-mine" : "") + '" data-msg="' + esc(m.id) + '"><div class="msg-head"><span class="row-name">' + esc(mineMsg ? "You" : m.fromName) + '</span>' +
+      '<span class="muted">' + esc(fmtWhen(m.sent)) + '</span>' + (m.reported ? '<span class="chip chip-reported">Reported</span>' : "") + '</div>' +
+      '<p class="msg-text">' + esc(m.text) + '</p>' +
+      (staffView && m.reported ? '<p class="note"><strong>Reported by ' + esc(m.reportedBy) + '.</strong>' + (m.reportNote ? " " + esc(m.reportNote) : "") + '</p>' : "") +
+      (!mineMsg && !m.reported && !staffView ? '<button type="button" class="link-btn" data-report="' + esc(m.id) + '">Report this message</button>' : "") + '</li>';
+  }
+  function threadHTML(t, myRole, opts) {
+    opts = opts || {};
+    const id = "mf-" + safeId(t.thread);
+    return '<div class="thread-box"><ul class="msgs">' + (t.messages.map(m => msgHTML(m, myRole, opts.staff)).join("") || '<li class="muted">No messages yet.</li>') + '</ul>' +
+      (opts.note ? '<p class="hint">' + esc(opts.note) + '</p>' : "") +
+      (t.canSend ? '<form class="msg-form" data-thread="' + esc(t.thread) + '" novalidate><label for="' + id + '">' + esc(opts.label || "Your message") + '</label><textarea id="' + id + '"></textarea>' +
+        '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn btn-small" type="submit">Send</button></div></form>' : "") + '</div>';
+  }
+  function countText(n) { return n === 0 ? "no messages" : n === 1 ? "1 message" : n + " messages"; }
+  function keepOpen(root) { return new Set([...root.querySelectorAll("details[open][data-key]")].map(d => d.dataset.key)); }
+  function reopen(root, keys) { root.querySelectorAll("details[data-key]").forEach(d => { if (keys.has(d.dataset.key)) d.open = true; }); }
+
+  // Walker page
+  async function loadInbox() {
+    if (!inboxCode) { $("ib-title").textContent = "Open your messages from the link in your sign-up email."; return; }
+    try {
+      const r = await apiPost({ action: "inbox", as: "walker", code: inboxCode });
+      if (!r || !r.ok) { $("ib-title").textContent = "We couldn't find these messages."; $("ib-walk").textContent = "Check the link in your sign-up email."; return; }
+      $("ib-title").textContent = r.walk ? r.walk.title : "Your messages";
+      $("ib-walk").textContent = r.walk ? r.walk.dateText + (r.walk.timeText ? ", " + r.walk.timeText : "") + " · " + r.walk.place + (r.leaderName ? " · Walk leader: " + r.leaderName : "") + (r.status === "Cancelled" ? " · You cancelled this sign-up" : "") : "";
+      const notes = { group: "Only your walk leader posts here. To reply, use the conversation with your walk leader below.", walker: "Only you, your walk leader and Resilient Healers staff can see this.", "walker-staff": "For anything you'd rather raise with us than with your walk leader." };
+      const labels = { walker: "Message your walk leader", "walker-staff": "Message Resilient Healers staff" };
+      $("ib-threads").innerHTML = r.threads.map(t => '<section class="block" aria-labelledby="h-' + safeId(t.thread) + '"><h2 id="h-' + safeId(t.thread) + '">' + esc(t.title) + '</h2>' +
+        threadHTML(t, "walker", { note: notes[t.kind], label: labels[t.kind] }) + '</section>').join("");
+    } catch (e) { $("ib-title").textContent = "Your messages couldn't load. Try again in a moment."; }
+  }
+
+  // Walk leader page
+  async function loadLeaderMessages() {
+    if (!leaderCode) return;
+    try {
+      const r = await apiPost({ action: "inbox", as: "leader", code: leaderCode });
+      if (!r || !r.ok) return;
+      const root = $("me-msgs"), open = keepOpen(root);
+      const walksHTML = r.walks.map(w => {
+        const people = w.people.map(p => '<details data-key="' + esc(p.thread) + '"><summary>' + esc(p.title) + (p.status === "Waitlist" ? " (waitlist)" : p.status === "Cancelled" ? " (cancelled)" : "") + ' · ' + countText(p.messages.length) + '</summary>' +
+          threadHTML(p, "leader", { label: "Message " + p.title.split(" ")[0] }) + '</details>').join("");
+        return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.walk.title) + '</span>' +
+          '<span>' + esc(w.walk.dateText) + (w.walk.timeText ? ", " + esc(w.walk.timeText) : "") + '</span>' +
+          '<details data-key="' + esc(w.group.thread) + '"><summary>Message everyone signed up · ' + countText(w.group.messages.length) + '</summary>' +
+          threadHTML(w.group, "leader", { note: "Everyone signed up or on the waitlist gets an email saying there's an update, with a link to read it here.", label: "Update for everyone" }) + '</details>' +
+          (people ? '<p class="row-name">One-to-one with walkers</p>' + people : '<p class="muted">No walkers signed up yet.</p>') + '</div>';
+      }).join("");
+      root.innerHTML = (walksHTML || '<p class="muted">Messages for your walks appear here once a walk is live.</p>') +
+        '<details data-key="' + esc(r.staff.thread) + '"><summary>Message Resilient Healers staff · ' + countText(r.staff.messages.length) + '</summary>' + threadHTML(r.staff, "leader", { label: "Message staff" }) + '</details>';
+      reopen(root, open);
+      $("me-messages").hidden = false;
+      if (location.hash === "#me-messages") setTimeout(() => $("me-messages").scrollIntoView(), 40);
+    } catch (e) {}
+  }
+
+  // Staff page
+  async function loadStaff() {
+    if (!staffCode) { $("st-reported").innerHTML = '<li class="muted">Open this page from the staff link in your email.</li>'; return; }
+    try {
+      const r = await apiPost({ action: "inbox", as: "staff", code: staffCode });
+      if (!r || !r.ok) { $("st-reported").innerHTML = '<li class="muted">This staff link isn\'t valid.</li>'; return; }
+      const titles = {}; r.threads.forEach(t => { titles[t.thread] = t.title + (t.walkTitle ? " · " + t.walkTitle : ""); });
+      $("st-reported").innerHTML = r.reported.map(m => '<li class="stack"><span class="hint">In: ' + esc(titles[m.thread] || m.thread) + '</span><ul class="msgs">' + msgHTML(m, "staff", true) + '</ul></li>').join("") || '<li class="muted">Nothing reported.</li>';
+      const root = $("st-threads"), open = keepOpen(root);
+      root.innerHTML = r.threads.map(t => '<details data-key="' + esc(t.thread) + '"><summary>' + esc(t.title) + (t.walkTitle ? ' · ' + esc(t.walkTitle) : '') + ' · ' + countText(t.messages.length) +
+        (t.messages.some(m => m.reported) ? ' · reported' : '') + '</summary>' + threadHTML(t, "staff", { staff: true, label: "Reply as Resilient Healers staff" }) + '</details>').join("") || '<p class="muted">No conversations yet.</p>';
+      reopen(root, open);
+    } catch (e) { $("st-reported").innerHTML = '<li class="muted">Messages couldn\'t load. Try again in a moment.</li>'; }
+  }
+  const RELOAD = { walker: loadInbox, leader: loadLeaderMessages, staff: loadStaff };
+
+  // Sending
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest(".msg-form"); if (!f) return;
+    e.preventDefault();
+    const role = f.closest("[data-as]").dataset.as, ta = f.querySelector("textarea"), err = f.querySelector(".error"), btn = f.querySelector("button");
+    err.hidden = true;
+    const text = ta.value.trim();
+    if (!text) { err.textContent = "Write a message first."; err.hidden = false; ta.focus(); return; }
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "send", thread: f.dataset.thread, text }, IDENT[role]()));
+      if (!r || !r.ok) throw new Error(r && r.error);
+      const thread = f.dataset.thread;
+      await RELOAD[role]();
+      const again = document.querySelector('.msg-form[data-thread="' + CSS.escape(thread) + '"] textarea');
+      if (again) again.focus();
+      announce("Message sent.");
+    } catch (ex) { err.textContent = "Your message didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send"; }
+  });
+
+  // Reporting
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-report]"); if (!b) return;
+    const li = b.closest(".msg");
+    if (li.querySelector(".report-form")) { li.querySelector(".report-form textarea").focus(); return; }
+    const id = "rp-" + safeId(b.dataset.report);
+    const form = document.createElement("form");
+    form.className = "report-form"; form.noValidate = true; form.dataset.reportId = b.dataset.report;
+    form.innerHTML = '<label for="' + id + '">What\'s wrong? (optional) Staff will read the whole conversation.</label><textarea id="' + id + '"></textarea>' +
+      '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn btn-small btn-danger" type="submit">Send report</button><button class="btn btn-small btn-ghost" type="button" data-report-cancel>Cancel</button></div>';
+    li.appendChild(form); form.querySelector("textarea").focus();
+  });
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-report-cancel]"); if (!c) return;
+    const li = c.closest(".msg"); c.closest(".report-form").remove(); const b = li.querySelector("[data-report]"); if (b) b.focus();
+  });
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest(".report-form"); if (!f) return;
+    e.preventDefault();
+    const role = f.closest("[data-as]").dataset.as, btn = f.querySelector("button[type=submit]"), err = f.querySelector(".error");
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "report", id: f.dataset.reportId, note: f.querySelector("textarea").value.trim() }, IDENT[role]()));
+      if (!r || !r.ok) throw new Error("failed");
+      await RELOAD[role]();
+      announce("Report sent. Resilient Healers staff will look at it.");
+    } catch (ex) { err.textContent = "The report didn't send. Try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send report"; }
+  });
+  function announce(text) { const el = $("sr-announce"); el.textContent = ""; setTimeout(() => { el.textContent = text; }, 50); }
+
+  /* ---------- leave a review (?rate=<sign-up code>#rate) ---------- */
+  const rateCode = params.get("rate");
+  async function loadRate() {
+    if (!rateCode) { $("rt-title").textContent = "Open this page from the link in your email."; return; }
+    try {
+      const r = await apiPost({ action: "rateInfo", code: rateCode });
+      if (!r || !r.ok) { $("rt-title").textContent = "We couldn't find this walk."; $("rt-walk").textContent = "Check the link in your email."; return; }
+      $("rt-title").textContent = r.walk.title;
+      $("rt-walk").textContent = r.walk.dateText + " · " + r.walk.place + (r.leaderName ? " · Walk leader: " + r.leaderName : "");
+      const msg = $("rt-msg");
+      if (r.existing && r.existing.status !== "Pending") { msg.textContent = r.existing.status === "Published" ? "Thank you. Your review is published." : "Thank you. We've already received your review."; msg.hidden = false; return; }
+      if (!r.canReview) { msg.textContent = r.notYet ? "You can leave a review after the walk." : "Reviews are for people who were signed up for this walk."; msg.hidden = false; return; }
+      const labels = ["", "1 star, poor", "2 stars, fair", "3 stars, good", "4 stars, very good", "5 stars, excellent"];
+      $("rt-stars").innerHTML = [5, 4, 3, 2, 1].map(n => '<label><input type="radio" name="rt-rating" value="' + n + '"><span><span aria-hidden="true">' + "★".repeat(n) + '</span> <span class="sr-only">' + labels[n] + '</span><span aria-hidden="true">' + labels[n].split(", ")[1] + '</span></span></label>').join("");
+      $("rt-name").value = r.firstName || ""; $("rt-role").value = r.role || "";
+      if (r.existing) {
+        $("rt-text").value = r.existing.text;
+        const radio = document.querySelector('input[name="rt-rating"][value="' + r.existing.rating + '"]'); if (radio) radio.checked = true;
+        msg.textContent = "Your review is waiting for our team. You can still change it."; msg.hidden = false;
+      }
+      $("rt-card").hidden = false;
+    } catch (e) { $("rt-title").textContent = "This page couldn't load. Try again in a moment."; }
+  }
+  $("rt-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("rt-error"); err.hidden = true;
+    const picked = document.querySelector('input[name="rt-rating"]:checked');
+    const d = { rating: picked ? Number(picked.value) : 0, text: $("rt-text").value.trim(), name: $("rt-name").value.trim(), role: $("rt-role").value.trim(), consent: $("rt-consent").checked };
+    const m = [];
+    if (!d.rating) m.push("a star rating"); if (d.text.length < 10) m.push("a sentence or two about the walk");
+    if (!d.name) m.push("a first name to show"); if (!d.consent) m.push("your OK to show the review");
+    if (m.length) { showProblems(err, m); return; }
+    const btn = $("rt-submit"); btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "submitReview", code: rateCode }, d));
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      $("rt-card").hidden = true; $("rt-msg").hidden = true;
+      $("rt-done").innerHTML = "<h3>Thank you, " + esc(d.name) + ".</h3><p>Our team will read your review and publish it soon. It helps other healthcare workers decide to come.</p>";
+      $("rt-done").hidden = false; $("rt-done").focus();
+    } catch (ex) { err.textContent = ex.message === "already_reviewed" ? "We've already received your review for this walk." : "Your review didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send my review"; }
+  });
+
+  /* ---------- routing ---------- */
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff", "rate"];
+  const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead", "me-messages": "my-walks" };
+  function route() {
+    const h = (location.hash || "").slice(1);
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : rateCode ? "rate" : "find"));
+    VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
+    document.querySelectorAll("[data-nav]").forEach(a => {
+      const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
+      if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    });
+    if (v === "find") setTimeout(() => bigMap.invalidateSize(), 0);
+    if (v === "walk") { renderWalk(); setTimeout(() => showSmallMap(current()), 0); refreshCount(); }
+    if (v === "leader") renderLeaderProfile();
+    if (v === "lead" && !applyReady) { applyReady = true; setTimeout(() => { initWalkForm("aw", null); prefillLead("aw", "apply-lead-note", "You're applying to lead the"); }, 0); }
+    else if (v === "lead") setTimeout(() => prefillLead("aw", "apply-lead-note", "You're applying to lead the"), 0);
+    const target = !VIEWS.includes(h) && h ? document.getElementById(h) : null;
+    if (target) setTimeout(() => target.scrollIntoView(), 40); else window.scrollTo(0, 0);
+  }
+  window.addEventListener("hashchange", route);
+
+  async function loadWalks() {
+    try {
+      const r = await apiGet({ action: "walks" });
+      if (!r || !r.ok) throw new Error("bad");
+      WALKS = r.walks || [];
+      drawPins();
+      if (lastOrigin) renderList(lastOrigin, lastLabel); else renderList(null);
+      if (!lastOrigin && nearMe) { showReviewCard($("find-review"), nearMe); showAd($("find-sponsor"), nearMe); }
+      const v = VIEWS.find(n => !$("view-" + n).hidden);
+      if (v === "walk") { renderWalk(); showSmallMap(current()); }
+      if (v === "leader") renderLeaderProfile();
+      if (v === "lead" && applyReady) prefillLead("aw", "apply-lead-note", "You're applying to lead the");
+      if (v === "my-walks" && $("nw-title")) prefillLead("nw", "me-lead-note", "You're proposing to lead the");
+    } catch (e) {
+      $("walk-list").innerHTML = '<li class="empty">Walks couldn\'t load right now. Try again in a moment.</li>';
+    }
+  }
+
+  route();
+  loadWalks();
+  if (leaderCode) { loadMe(); loadLeaderMessages(); }
+  if (reviewCode) loadReview();
+  if (inboxCode) loadInbox();
+  if (staffCode) loadStaff();
+  if (rateCode) loadRate();
+})();
+</script>
+</body>
+</html>
