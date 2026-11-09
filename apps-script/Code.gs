@@ -7,6 +7,7 @@
  *   Leaders   - walk leader profiles
  *   Walks     - walks (Pending review / Live / Changes requested)
  *   Reviews   - each thing staff need to approve, with its private review link
+ *   Chat      - on-site messages (see Messaging.gs)
  *
  * Script properties:
  *   SHEET_ID         id of the Sheet (between /d/ and /edit in its address)
@@ -79,10 +80,11 @@ function setup() {
     appendObj_('Walks', walkRow_(SEED_WALK.id, SEED_WALK.leaderId, SEED_WALK.status, SEED_WALK));
   }
   getPhotoFolder_();
-  CacheService.getScriptCache().put('setup-v4', '1', 21600);
+  if (!props_().getProperty('STAFF_CODE')) { staffCode_(); try { sendStaffLink(); } catch (e) {} }
+  CacheService.getScriptCache().put('setup-v5', '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v4')) return;
+  if (CacheService.getScriptCache().get('setup-v5')) return;
   setup();
 }
 
@@ -242,6 +244,10 @@ function doPost(e) {
       case 'editProfile': return json_(editProfile_(body));
       case 'sendLink': return json_(sendLink_(body));
       case 'decide': return json_(decideApi_(body));
+      case 'inbox': return json_(inbox_(body));
+      case 'send': return json_(send_(body));
+      case 'report': return json_(report_(body));
+      case 'walkerLink': return json_(walkerLink_(body));
       default: return json_({ ok: false, error: 'unknown_action' });
     }
   } finally {
@@ -724,11 +730,14 @@ function signup_(b) {
   const first = d.name.split(' ')[0];
   const subject = status === 'Going' ? "You're signed up: " + walk['Title'] : "You're on the waitlist: " + walk['Title'];
   const lines = status === 'Going'
-    ? ['Hi ' + first + ',', '', "You're signed up for the Resilient Healers walk.", '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'Bring a water bottle.', '', "Can't make it? Cancel here so someone on the waitlist can take your spot:", cancelUrl, '', 'See you there,', 'Resilient Healers']
-    : ['Hi ' + first + ',', '', 'The walk is full right now, so you are on the waitlist. If a spot opens, you will move up automatically and we will email you.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'To leave the waitlist:', cancelUrl, '', 'Resilient Healers'];
+    ? ['Hi ' + first + ',', '', "You're signed up for the Resilient Healers walk.", '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'Bring a water bottle. We will email you a reminder two days before and on the morning of the walk.', '',
+       'Message your walk leader, and read their updates, here:', inboxUrl_(code), '', "Can't make it? Cancel here so someone on the waitlist can take your spot:", cancelUrl, '', 'Keep this email: its links are private to you.', '', 'See you there,', 'Resilient Healers']
+    : ['Hi ' + first + ',', '', 'The walk is full right now, so you are on the waitlist. If a spot opens, you will move up automatically and we will email you.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '',
+       'Message your walk leader, and read their updates, here:', inboxUrl_(code), '', 'To leave the waitlist:', cancelUrl, '', 'Resilient Healers'];
   MailApp.sendEmail({ to: d.email, subject: subject, body: lines.join('\n'), name: 'Resilient Healers' });
 
-  return Object.assign({ ok: true, status: status === 'Going' ? 'going' : 'waitlist', capacity: capacity }, counts_(b.walk));
+  // The code goes back only to the browser that just signed up, so its walk page can open their messages.
+  return Object.assign({ ok: true, status: status === 'Going' ? 'going' : 'waitlist', capacity: capacity, code: code }, counts_(b.walk));
 }
 
 /* Interest list for "coming soon" walks (no leader or date yet).
@@ -824,7 +833,7 @@ function cancel_(b) {
       MailApp.sendEmail({
         to: String(next['Email']), name: 'Resilient Healers',
         subject: "A spot opened up: you're in for " + walk['Title'],
-        body: ['Hi ' + String(next['Name']).split(' ')[0] + ',', '', 'Good news: a spot opened up and you are now signed up.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', "Can't make it? Cancel here:", cancelUrl, '', 'Resilient Healers'].join('\n')
+        body: ['Hi ' + String(next['Name']).split(' ')[0] + ',', '', 'Good news: a spot opened up and you are now signed up.', '', 'When: ' + walkWhen_(walk), 'Where: ' + walkWhere_(walk), '', 'Messages from your walk leader:', inboxUrl_(next['Cancel code']), '', "Can't make it? Cancel here:", cancelUrl, '', 'Resilient Healers'].join('\n')
       });
     }
   }

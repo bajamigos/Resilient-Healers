@@ -179,6 +179,18 @@ input[type="date"], input[type="time"], input[type="number"] { font: inherit; co
 .roster li { border-top: 1px solid var(--line); padding-top: .45rem; display: flex; flex-direction: column; gap: .1rem; }
 details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 .accom { color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: .15rem .5rem; font-size: .95rem; align-self: flex-start; }
+/* messages */
+.msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+.msg { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem .95rem; display: flex; flex-direction: column; gap: .3rem; max-width: 36rem; }
+.msg-mine { background: var(--lavender); border-color: var(--lavender); align-self: flex-end; }
+.msg-head { display: flex; flex-wrap: wrap; gap: .2rem .6rem; align-items: baseline; }
+.msg-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg-form { display: flex; flex-direction: column; gap: .5rem; margin-top: .4rem; }
+.msg-form textarea, .report-form textarea { min-height: 5.5rem; }
+.link-btn { background: none; border: 0; padding: .3rem 0; min-height: 44px; color: var(--copper); font: inherit; font-size: .95rem; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; align-self: flex-start; }
+.report-form { display: flex; flex-direction: column; gap: .5rem; border-top: 1px solid var(--line); padding-top: .5rem; }
+.chip-reported { background: var(--warn-bg); color: var(--warn); }
+.thread-box { display: flex; flex-direction: column; gap: .8rem; padding-top: .6rem; }
 </style>
 </head>
 <body>
@@ -206,6 +218,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 <div class="demo-note" role="note"><div class="wrap">Test site. Walks, walk leaders and sign-ups here are for testing.</div></div>
 
 <main>
+  <p id="sr-announce" class="sr-only" role="status" aria-live="polite"></p>
   <div class="wrap">
 
     <!-- FIND A WALK -->
@@ -324,8 +337,15 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             <span class="row-name" id="w-leader-name"></span>
             <span class="muted" id="w-leader-bg"></span>
             <a href="#leader" id="w-leader-link">Read their profile</a>
-            <span><button class="btn btn-small btn-ghost" type="button" id="w-message-leader" aria-describedby="w-message-note">Message your walk leader</button></span>
-            <span class="hint" id="w-message-note" hidden>Messaging walk leaders is coming soon. For now, use the Contact page and we'll pass it on.</span>
+            <span><button class="btn btn-small btn-ghost" type="button" id="w-message-leader" aria-expanded="false" aria-controls="w-message-note">Message your walk leader</button></span>
+            <div class="stack" id="w-message-note" hidden>
+              <p>Messaging is for people signed up for this walk. Your private messages link is in your sign-up confirmation email. Not signed up yet? Sign up above first.</p>
+              <form id="w-link-form" class="stack" novalidate>
+                <div class="field"><label for="w-link-email">Lost the email? Enter the address you signed up with and we'll send the link again.</label><input type="email" id="w-link-email" autocomplete="email"></div>
+                <div class="btn-row"><button class="btn btn-small" type="submit">Email me my link</button></div>
+                <p id="w-link-done" role="status"></p>
+              </form>
+            </div>
           </div>
         </div>
       </section>
@@ -488,6 +508,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <div class="title-row"><h2 id="me-walks-h">Your walks</h2></div>
         <div id="me-walks" class="stack"></div>
       </section>
+      <section class="block" aria-labelledby="me-messages-h" id="me-messages" data-as="leader" hidden>
+        <h2 id="me-messages-h">Messages</h2>
+        <p class="muted">Walkers' email addresses and phone numbers stay private. Messages stay on this site, and Resilient Healers staff can read them if there's a problem.</p>
+        <div id="me-msgs" class="stack"></div>
+      </section>
       <section class="block" aria-labelledby="me-new-h" id="me-new-wrap" hidden>
         <h2 id="me-new-h">Propose a new walk</h2>
         <p class="muted">Your profile is attached automatically. Staff review each new walk before it goes live.</p>
@@ -500,6 +525,34 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
             <div class="btn-row"><button class="btn" type="submit" id="me-new-submit">Send for review</button></div>
           </form>
         </div>
+      </section>
+    </div>
+
+    <!-- WALKER MESSAGES (private link from the sign-up email) -->
+    <div id="view-inbox" class="stack-lg narrow" data-as="walker" hidden>
+      <div class="stack">
+        <p class="eyebrow">Your messages</p>
+        <h1 id="ib-title">Loading…</h1>
+        <p id="ib-walk"></p>
+        <p class="hint">This page is private to you. Don't share its link. Your email address and phone number are never shown to your walk leader. Messages stay on this site, and Resilient Healers staff can read them if there's a problem.</p>
+      </div>
+      <div id="ib-threads" class="stack-lg"></div>
+    </div>
+
+    <!-- STAFF MESSAGES (private link from the staff email) -->
+    <div id="view-staff" class="stack-lg narrow" data-as="staff" hidden>
+      <div class="stack">
+        <p class="eyebrow">Resilient Healers staff</p>
+        <h1>Messages</h1>
+        <p class="hint">This page is private to staff. Don't share its link. You can read every conversation and reply in any of them.</p>
+      </div>
+      <section class="block" aria-labelledby="st-reported-h">
+        <h2 id="st-reported-h">Reported messages</h2>
+        <ul class="msgs" id="st-reported"><li class="muted">Loading…</li></ul>
+      </section>
+      <section class="block" aria-labelledby="st-threads-h">
+        <h2 id="st-threads-h">All conversations</h2>
+        <div id="st-threads" class="stack"></div>
       </section>
     </div>
 
@@ -763,7 +816,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("w-leader-avatar").innerHTML = w.leader ? avatarHTML(w.leader) : "?";
     $("w-leader-name").textContent = w.leader ? w.leader.name : "Walk leader coming soon";
     $("w-leader-bg").textContent = w.leader ? w.leader.background : "Interested in leading this walk? Apply on the Lead a walk page.";
-    $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true;
+    $("w-leader-link").hidden = !w.leader; $("w-message-leader").hidden = !w.leader; $("w-message-note").hidden = true; $("w-message-leader").setAttribute("aria-expanded", "false"); $("w-link-done").textContent = "";
     showAd($("w-sponsor"), [w.lat, w.lng]);
     if (!soon) renderSpots(w);
     renderMine();
@@ -811,7 +864,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       if (!r || !r.ok) throw new Error((r && r.error) || "failed");
       w.going = r.going; w.waitlist = r.waitlist; w.spots = r.capacity;
       mine = mine.filter(s => !(s.walk === w.id && s.name === d.name));
-      mine.push({ walk: w.id, name: d.name, status: r.status, ts: Date.now() }); saveMine(mine);
+      mine.push({ walk: w.id, name: d.name, status: r.status, code: r.code || "", ts: Date.now() }); saveMine(mine);
       const first = esc(d.name.split(" ")[0]); const done = $("signup-done");
       done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We found an earlier sign-up with this email for this walk, so nothing changed.</p>"
         : r.status === "going" ? "<h3>You're signed up, " + first + ".</h3><p>" + esc(w.dateText) + ", " + esc(w.timeText) + " at " + esc(w.place) + ". A confirmation email is on its way to " + esc(d.email) + ", with a link to cancel if your plans change.</p>"
@@ -821,7 +874,21 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     finally { btn.disabled = false; renderSpots(w); }
   });
 
-  $("w-message-leader").addEventListener("click", () => { $("w-message-note").hidden = false; });
+  // If this browser signed up for the walk, open their messages directly; otherwise explain and offer the link by email.
+  $("w-message-leader").addEventListener("click", () => {
+    const w = current(); const s = w && mine.filter(x => x.walk === w.id && x.code).pop();
+    if (s) { location.href = "?inbox=" + encodeURIComponent(s.code) + "#inbox"; return; }
+    const box = $("w-message-note"); box.hidden = !box.hidden;
+    $("w-message-leader").setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden) $("w-link-email").focus();
+  });
+  $("w-link-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("w-link-email").value.trim(), w = current();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { $("w-link-done").textContent = "Please enter a valid email."; return; }
+    try { await apiPost({ action: "walkerLink", walk: w.id, email }); } catch (ex) {}
+    $("w-link-done").textContent = "If " + email + " is signed up for this walk, we've emailed your messages link.";
+  });
 
   /* ---------- interest list for coming-soon walks ---------- */
   $("interest-open").addEventListener("click", () => {
@@ -1256,12 +1323,145 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     finally { btn.disabled = false; btn.textContent = "Send message"; }
   });
 
+  /* ---------- messages (walkers, walk leaders, staff) ---------- */
+  const inboxCode = params.get("inbox"), staffCode = params.get("staff");
+  const IDENT = { walker: () => ({ as: "walker", code: inboxCode }), leader: () => ({ as: "leader", code: leaderCode }), staff: () => ({ as: "staff", code: staffCode }) };
+  function fmtWhen(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? "" : d.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+  const safeId = (s) => String(s).replace(/[^A-Za-z0-9_-]/g, "_");
+  function msgHTML(m, myRole, staffView) {
+    const mineMsg = m.from === myRole;
+    return '<li class="msg' + (mineMsg ? " msg-mine" : "") + '" data-msg="' + esc(m.id) + '"><div class="msg-head"><span class="row-name">' + esc(mineMsg ? "You" : m.fromName) + '</span>' +
+      '<span class="muted">' + esc(fmtWhen(m.sent)) + '</span>' + (m.reported ? '<span class="chip chip-reported">Reported</span>' : "") + '</div>' +
+      '<p class="msg-text">' + esc(m.text) + '</p>' +
+      (staffView && m.reported ? '<p class="note"><strong>Reported by ' + esc(m.reportedBy) + '.</strong>' + (m.reportNote ? " " + esc(m.reportNote) : "") + '</p>' : "") +
+      (!mineMsg && !m.reported && !staffView ? '<button type="button" class="link-btn" data-report="' + esc(m.id) + '">Report this message</button>' : "") + '</li>';
+  }
+  function threadHTML(t, myRole, opts) {
+    opts = opts || {};
+    const id = "mf-" + safeId(t.thread);
+    return '<div class="thread-box"><ul class="msgs">' + (t.messages.map(m => msgHTML(m, myRole, opts.staff)).join("") || '<li class="muted">No messages yet.</li>') + '</ul>' +
+      (opts.note ? '<p class="hint">' + esc(opts.note) + '</p>' : "") +
+      (t.canSend ? '<form class="msg-form" data-thread="' + esc(t.thread) + '" novalidate><label for="' + id + '">' + esc(opts.label || "Your message") + '</label><textarea id="' + id + '"></textarea>' +
+        '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn btn-small" type="submit">Send</button></div></form>' : "") + '</div>';
+  }
+  function countText(n) { return n === 0 ? "no messages" : n === 1 ? "1 message" : n + " messages"; }
+  function keepOpen(root) { return new Set([...root.querySelectorAll("details[open][data-key]")].map(d => d.dataset.key)); }
+  function reopen(root, keys) { root.querySelectorAll("details[data-key]").forEach(d => { if (keys.has(d.dataset.key)) d.open = true; }); }
+
+  // Walker page
+  async function loadInbox() {
+    if (!inboxCode) { $("ib-title").textContent = "Open your messages from the link in your sign-up email."; return; }
+    try {
+      const r = await apiPost({ action: "inbox", as: "walker", code: inboxCode });
+      if (!r || !r.ok) { $("ib-title").textContent = "We couldn't find these messages."; $("ib-walk").textContent = "Check the link in your sign-up email."; return; }
+      $("ib-title").textContent = r.walk ? r.walk.title : "Your messages";
+      $("ib-walk").textContent = r.walk ? r.walk.dateText + (r.walk.timeText ? ", " + r.walk.timeText : "") + " · " + r.walk.place + (r.leaderName ? " · Walk leader: " + r.leaderName : "") + (r.status === "Cancelled" ? " · You cancelled this sign-up" : "") : "";
+      const notes = { group: "Only your walk leader posts here. To reply, use the conversation with your walk leader below.", walker: "Only you, your walk leader and Resilient Healers staff can see this.", "walker-staff": "For anything you'd rather raise with us than with your walk leader." };
+      const labels = { walker: "Message your walk leader", "walker-staff": "Message Resilient Healers staff" };
+      $("ib-threads").innerHTML = r.threads.map(t => '<section class="block" aria-labelledby="h-' + safeId(t.thread) + '"><h2 id="h-' + safeId(t.thread) + '">' + esc(t.title) + '</h2>' +
+        threadHTML(t, "walker", { note: notes[t.kind], label: labels[t.kind] }) + '</section>').join("");
+    } catch (e) { $("ib-title").textContent = "Your messages couldn't load. Try again in a moment."; }
+  }
+
+  // Walk leader page
+  async function loadLeaderMessages() {
+    if (!leaderCode) return;
+    try {
+      const r = await apiPost({ action: "inbox", as: "leader", code: leaderCode });
+      if (!r || !r.ok) return;
+      const root = $("me-msgs"), open = keepOpen(root);
+      const walksHTML = r.walks.map(w => {
+        const people = w.people.map(p => '<details data-key="' + esc(p.thread) + '"><summary>' + esc(p.title) + (p.status === "Waitlist" ? " (waitlist)" : p.status === "Cancelled" ? " (cancelled)" : "") + ' · ' + countText(p.messages.length) + '</summary>' +
+          threadHTML(p, "leader", { label: "Message " + p.title.split(" ")[0] }) + '</details>').join("");
+        return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.walk.title) + '</span>' +
+          '<span>' + esc(w.walk.dateText) + (w.walk.timeText ? ", " + esc(w.walk.timeText) : "") + '</span>' +
+          '<details data-key="' + esc(w.group.thread) + '"><summary>Message everyone signed up · ' + countText(w.group.messages.length) + '</summary>' +
+          threadHTML(w.group, "leader", { note: "Everyone signed up or on the waitlist gets an email saying there's an update, with a link to read it here.", label: "Update for everyone" }) + '</details>' +
+          (people ? '<p class="row-name">One-to-one with walkers</p>' + people : '<p class="muted">No walkers signed up yet.</p>') + '</div>';
+      }).join("");
+      root.innerHTML = (walksHTML || '<p class="muted">Messages for your walks appear here once a walk is live.</p>') +
+        '<details data-key="' + esc(r.staff.thread) + '"><summary>Message Resilient Healers staff · ' + countText(r.staff.messages.length) + '</summary>' + threadHTML(r.staff, "leader", { label: "Message staff" }) + '</details>';
+      reopen(root, open);
+      $("me-messages").hidden = false;
+      if (location.hash === "#me-messages") setTimeout(() => $("me-messages").scrollIntoView(), 40);
+    } catch (e) {}
+  }
+
+  // Staff page
+  async function loadStaff() {
+    if (!staffCode) { $("st-reported").innerHTML = '<li class="muted">Open this page from the staff link in your email.</li>'; return; }
+    try {
+      const r = await apiPost({ action: "inbox", as: "staff", code: staffCode });
+      if (!r || !r.ok) { $("st-reported").innerHTML = '<li class="muted">This staff link isn\'t valid.</li>'; return; }
+      const titles = {}; r.threads.forEach(t => { titles[t.thread] = t.title + (t.walkTitle ? " · " + t.walkTitle : ""); });
+      $("st-reported").innerHTML = r.reported.map(m => '<li class="stack"><span class="hint">In: ' + esc(titles[m.thread] || m.thread) + '</span><ul class="msgs">' + msgHTML(m, "staff", true) + '</ul></li>').join("") || '<li class="muted">Nothing reported.</li>';
+      const root = $("st-threads"), open = keepOpen(root);
+      root.innerHTML = r.threads.map(t => '<details data-key="' + esc(t.thread) + '"><summary>' + esc(t.title) + (t.walkTitle ? ' · ' + esc(t.walkTitle) : '') + ' · ' + countText(t.messages.length) +
+        (t.messages.some(m => m.reported) ? ' · reported' : '') + '</summary>' + threadHTML(t, "staff", { staff: true, label: "Reply as Resilient Healers staff" }) + '</details>').join("") || '<p class="muted">No conversations yet.</p>';
+      reopen(root, open);
+    } catch (e) { $("st-reported").innerHTML = '<li class="muted">Messages couldn\'t load. Try again in a moment.</li>'; }
+  }
+  const RELOAD = { walker: loadInbox, leader: loadLeaderMessages, staff: loadStaff };
+
+  // Sending
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest(".msg-form"); if (!f) return;
+    e.preventDefault();
+    const role = f.closest("[data-as]").dataset.as, ta = f.querySelector("textarea"), err = f.querySelector(".error"), btn = f.querySelector("button");
+    err.hidden = true;
+    const text = ta.value.trim();
+    if (!text) { err.textContent = "Write a message first."; err.hidden = false; ta.focus(); return; }
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "send", thread: f.dataset.thread, text }, IDENT[role]()));
+      if (!r || !r.ok) throw new Error(r && r.error);
+      const thread = f.dataset.thread;
+      await RELOAD[role]();
+      const again = document.querySelector('.msg-form[data-thread="' + CSS.escape(thread) + '"] textarea');
+      if (again) again.focus();
+      announce("Message sent.");
+    } catch (ex) { err.textContent = "Your message didn't send. Check your connection and try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send"; }
+  });
+
+  // Reporting
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-report]"); if (!b) return;
+    const li = b.closest(".msg");
+    if (li.querySelector(".report-form")) { li.querySelector(".report-form textarea").focus(); return; }
+    const id = "rp-" + safeId(b.dataset.report);
+    const form = document.createElement("form");
+    form.className = "report-form"; form.noValidate = true; form.dataset.reportId = b.dataset.report;
+    form.innerHTML = '<label for="' + id + '">What\'s wrong? (optional) Staff will read the whole conversation.</label><textarea id="' + id + '"></textarea>' +
+      '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn btn-small btn-danger" type="submit">Send report</button><button class="btn btn-small btn-ghost" type="button" data-report-cancel>Cancel</button></div>';
+    li.appendChild(form); form.querySelector("textarea").focus();
+  });
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-report-cancel]"); if (!c) return;
+    const li = c.closest(".msg"); c.closest(".report-form").remove(); const b = li.querySelector("[data-report]"); if (b) b.focus();
+  });
+  document.addEventListener("submit", async (e) => {
+    const f = e.target.closest(".report-form"); if (!f) return;
+    e.preventDefault();
+    const role = f.closest("[data-as]").dataset.as, btn = f.querySelector("button[type=submit]"), err = f.querySelector(".error");
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const r = await apiPost(Object.assign({ action: "report", id: f.dataset.reportId, note: f.querySelector("textarea").value.trim() }, IDENT[role]()));
+      if (!r || !r.ok) throw new Error("failed");
+      await RELOAD[role]();
+      announce("Report sent. Resilient Healers staff will look at it.");
+    } catch (ex) { err.textContent = "The report didn't send. Try again."; err.hidden = false; btn.disabled = false; btn.textContent = "Send report"; }
+  });
+  function announce(text) { const el = $("sr-announce"); el.textContent = ""; setTimeout(() => { el.textContent = text; }, 50); }
+
   /* ---------- routing ---------- */
-  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact"];
-  const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead" };
+  const VIEWS = ["find", "walk", "leader", "lead", "my-walks", "review", "contact", "inbox", "staff"];
+  const ANCHORS = { signup: "walk", where: "walk", mine: "walk", apply: "lead", "have-link": "lead", "me-messages": "my-walks" };
   function route() {
     const h = (location.hash || "").slice(1);
-    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : "find"));
+    const v = VIEWS.includes(h) ? h : (ANCHORS[h] || (reviewCode ? "review" : leaderCode ? "my-walks" : inboxCode ? "inbox" : staffCode ? "staff" : "find"));
     VIEWS.forEach(n => { $("view-" + n).hidden = n !== v; });
     document.querySelectorAll("[data-nav]").forEach(a => {
       const on = a.dataset.nav === v || (["walk", "leader"].includes(v) && a.dataset.nav === "find") || (v === "my-walks" && a.dataset.nav === "lead");
@@ -1296,8 +1496,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
   route();
   loadWalks();
-  if (leaderCode) loadMe();
+  if (leaderCode) { loadMe(); loadLeaderMessages(); }
   if (reviewCode) loadReview();
+  if (inboxCode) loadInbox();
+  if (staffCode) loadStaff();
 })();
 </script>
 </body>
