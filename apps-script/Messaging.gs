@@ -245,10 +245,10 @@ function walkerLink_(b) {
 
 /* ===================== reminders ===================== */
 
-/* The hourly schedule: in Apps Script, open Triggers (the alarm-clock icon on the left), click
-   "Add Trigger", choose the function sendReminders, "Time-driven", "Hour timer", "Every hour", and Save.
-   (Setting it up from code would need an extra Google permission, which Google's pop-up can't grant
-   while several Google accounts are signed in to the browser.) */
+/* The hourly schedule: a GitHub Actions workflow in the website's repository (.github/workflows/hourly.yml)
+   calls the web app with ?action=tick once an hour, which runs sendReminders. (A Google "trigger" would
+   need an extra Google permission, which Google's pop-up can't grant while several Google accounts are
+   signed in to the browser.) If that permission is ever granted, an hourly trigger on sendReminders works too. */
 
 // Days from today (Pacific time) to a yyyy-mm-dd date.
 function daysUntil_(ymd, now) {

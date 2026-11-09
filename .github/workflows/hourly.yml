@@ -1,0 +1,13 @@
+# Once an hour, ask the Resilient Healers backend to send any reminder and
+# "How was your walk?" emails that are due (for both the real and demo sites).
+name: Hourly reminders
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch: {}
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tick the backend
+        run: curl -sS -L --max-time 120 "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec?action=tick"

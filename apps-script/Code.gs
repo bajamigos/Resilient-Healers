@@ -196,6 +196,16 @@ function doGet(e) {
   const p = (e && e.parameter) || {};
   useSite_(p);
   ensureSetup_();
+  // Hourly "tick" from the GitHub Actions schedule (.github/workflows/hourly.yml): sends any reminders and
+  // review requests that are due, for both sites. Safe to call anytime; it runs at most every 20 minutes,
+  // and each email is only ever sent once.
+  if (p.action === 'tick') {
+    const cache = CacheService.getScriptCache();
+    if (cache.get('tick')) return json_({ ok: true, skipped: true });
+    cache.put('tick', '1', 1200);
+    sendReminders();
+    return json_({ ok: true });
+  }
   if (p.action === 'walks') return json_(listWalks_());
   if (p.action === 'count') return json_(countOut_(p.walk));
   if (p.action === 'leader') return json_(leaderPage_(p.code));
