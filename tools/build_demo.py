@@ -16,6 +16,9 @@ line = re.search(r'^  const SITE = \{ mode: "real", api: "[^"]+" \};$', src, re.
 assert line, "SITE line not found in index.html"
 out = src.replace(line.group(0), line.group(0).replace('mode: "real"', 'mode: "demo"'))
 out = out.replace("<title>Resilient Healers</title>", "<title>Resilient Healers (demo)</title>", 1)
+# Link preview for the demo: its own title and address (same picture).
+out = out.replace('<meta property="og:title" content="Resilient Healers">', '<meta property="og:title" content="Resilient Healers (demo)">', 1)
+out = out.replace('<meta property="og:url" content="https://resilienthealers.github.io/">', '<meta property="og:url" content="https://resilienthealers.github.io/demo/">', 1)
 (root / "demo").mkdir(exist_ok=True)
 (root / "demo" / "index.html").write_text(out)
 print("Wrote demo/index.html")

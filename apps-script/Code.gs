@@ -43,9 +43,9 @@ const SEED_LEADER = {
 const SEED_WALK = {
   id: 'lake-murray-2026-12-13', leaderId: 'L-priya', status: 'Live', title: 'December walk at Lake Murray',
   date: '2026-12-13', start: '09:00', end: '10:30', repeats: 'Monthly, second Sunday',
-  place: 'Lake Murray, by the ranger station', address: 'Lake Murray Recreation Area, 5650 Kiowa Dr, La Mesa, CA 91942',
+  place: 'Lake Murray', address: 'Lake Murray Recreation Area, 5650 Kiowa Dr, La Mesa, CA 91942',
   lat: 32.78509, lng: -117.04161,
-  find: 'Meet at the side of the main parking lot at the park entrance, in front of the ranger station. Enter from Kiowa Drive.',
+  find: 'Meet at the side of the main parking lot at the park entrance. The map pin shows the exact spot. Enter from Kiowa Drive.',
   parking: '', spots: 20,
   shorter: 'Available. Tell us when you sign up.',
   description: 'Healthcare work can be deeply meaningful, but it can also take a toll on our physical and emotional well-being. Join us for a free monthly walking group created especially for healthcare workers to connect with colleagues, share experiences, and nurture their own resilience.'
@@ -322,6 +322,14 @@ function doPost(e) {
         if (body.op === 'loadSamples') { loadSamples(); return json_({ ok: true }); }
         if (body.op === 'removeSamples') { removeSamples(); return json_({ ok: true }); }
         if (body.op === 'leaderCode') { const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(body.leaderId)); return json_(l ? { ok: true, code: String(l['Private link code']) } : { ok: false, error: 'not_found' }); }
+        if (body.op === 'updateWalk') {   // staff fix to a live walk's text fields, without the review step
+          const allowed = ['Title', 'Place', 'How to find the spot', 'Parking', 'Shorter route', 'Description'];
+          const w = readTab_('Walks').find(x => String(x['Walk ID']) === String(body.walkId));
+          if (!w) return json_({ ok: false, error: 'not_found' });
+          const cells = {}; Object.keys(body.fields || {}).filter(k => allowed.indexOf(k) >= 0).forEach(k => { cells[k] = safeCell_(cleanLine_(body.fields[k], 2000)); });
+          cells['Updated'] = new Date(); writeCells_('Walks', w._row, cells);
+          return json_({ ok: true, changed: Object.keys(cells).length - 1 });
+        }
         if (body.op === 'rollRecurring') return json_({ ok: true, added: rollRecurringWalks_() });
         if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
         return json_({ ok: false, error: 'unknown_op' });

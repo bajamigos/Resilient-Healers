@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Resilient Healers</title>
 <meta name="description" content="Free small-group walks for healthcare workers, led by walk leaders. Find a walk near you, or lead one in your community.">
+<!-- Link preview when the site is shared by text, email or social media -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Resilient Healers">
+<meta property="og:title" content="Resilient Healers">
+<meta property="og:description" content="Free small-group walks for healthcare workers. Walk, connect with colleagues and recharge, with a walk leader showing the way.">
+<meta property="og:url" content="https://resilienthealers.github.io/">
+<meta property="og:image" content="https://resilienthealers.github.io/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Resilient Healers: free small-group walks for healthcare workers">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='19' fill='%23f1e1f4'/%3E%3Cpath d='M20 31 C20 23 20 17 20 10' stroke='%23a05222' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M20 17 C14 16 11 12 11 8 C16 9 19 12 20 17 Z' fill='%23a05222'/%3E%3Cpath d='M20 22 C26 21 29 17 29 13 C24 14 21 17 20 22 Z' fill='%239d897c'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,700;1,6..12,400&display=swap">
@@ -471,7 +483,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <p>The most common question from walkers is "where exactly do we meet?" A good meeting spot has:</p>
         <ul class="ticks">
           <li><strong>An exact pin,</strong> not just the park's address</li>
-          <li><strong>A landmark</strong> people can't miss, like a ranger station, a sign or a park entrance</li>
+          <li><strong>A landmark</strong> people can't miss, like a sign, a trailhead or a park entrance</li>
           <li><strong>A short description</strong> of how to find you after parking</li>
           <li><strong>Parking details,</strong> including any fee</li>
         </ul>
@@ -761,7 +773,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Resilient Healers · Test site. <a href="#privacy">Privacy policy</a></p>
+    <p>Resilient Healers · <a href="#privacy">Privacy policy</a></p>
     <p>Map data © OpenStreetMap contributors. Place search by OpenStreetMap Nominatim.</p>
   </div>
 </footer>
@@ -1206,14 +1218,14 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       '<div class="field"><label for="' + p + '-end">End time</label><input type="time" id="' + p + '-end"></div></div>' +
       '<div class="field"><label for="' + p + '-repeats">How often</label><select id="' + p + '-repeats" aria-describedby="' + p + '-repeats-hint"><option value="One time">One time</option><option value="Weekly">Every week, same day</option><option value="Every 2 weeks">Every 2 weeks, same day</option><option value="Monthly">Every month, same week and day (for example, the second Sunday)</option></select>' +
       '<span class="hint" id="' + p + '-repeats-hint">Repeating walks add their next date automatically once a walk has passed, with a fresh sign-up list.</span></div>' +
-      '<div class="field"><label for="' + p + '-place">Place name</label><input type="text" id="' + p + '-place" placeholder="For example: Lake Murray, by the ranger station"></div>' +
+      '<div class="field"><label for="' + p + '-place">Place name</label><input type="text" id="' + p + '-place" placeholder="For example: Lake Murray, main parking lot"></div>' +
       '<div class="field"><span class="row-name" id="' + p + '-pin-label">Meeting spot pin</span><span class="hint">Search for your park, then drag the copper pin to the exact spot where the group should gather. You can also tap the map to move it.</span>' +
       '<div class="search"><label for="' + p + '-q" class="sr-only">Search a park or address</label><input type="search" id="' + p + '-q" placeholder="Search a park or address" autocomplete="off"><button class="btn" type="button" id="' + p + '-find">Find</button></div>' +
       '<p class="hint" id="' + p + '-pin-status" aria-live="polite">No pin yet. Search for your park to place it.</p>' +
       '<div class="pin-map" id="' + p + '-map" role="region" aria-labelledby="' + p + '-pin-label"></div>' +
       '<p class="hint tabular">Pin: <span id="' + p + '-coords">none yet</span></p></div>' +
       '<div class="field"><label for="' + p + '-address">Address (optional)</label><input type="text" id="' + p + '-address"></div>' +
-      '<div class="field"><label for="' + p + '-find-text">How to find the group after parking</label><textarea id="' + p + '-find-text" placeholder="For example: Meet at the side of the main parking lot, in front of the ranger station."></textarea></div>' +
+      '<div class="field"><label for="' + p + '-find-text">How to find the group after parking</label><textarea id="' + p + '-find-text" placeholder="For example: Meet at the side of the main parking lot, by the trail entrance."></textarea></div>' +
       '<div class="field"><label for="' + p + '-parking">Parking (optional)</label><input type="text" id="' + p + '-parking" placeholder="For example: Free lot off Kiowa Drive"></div>' +
       '<div class="two"><div class="field"><label for="' + p + '-spots">Number of spots</label><input type="number" id="' + p + '-spots" min="2" max="50" value="20"></div></div>' +
       '<div class="field"><label for="' + p + '-shorter">Shorter route option (optional)</label><input type="text" id="' + p + '-shorter" placeholder="For example: Turn back at the first picnic area"></div>' +
