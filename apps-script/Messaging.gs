@@ -19,7 +19,7 @@
  * private walk leader link, staff the STAFF_CODE script property. Anyone with one of those
  * links can act as that person, which is fine for testing; real sign-in comes later.
  *
- * Reminders: an hourly trigger (installReminders) emails people who are "Going"
+ * Reminders: an hourly trigger (see "The hourly schedule" below) emails people who are "Going"
  * two days before the walk and on the morning of the walk.
  */
 
@@ -245,12 +245,10 @@ function walkerLink_(b) {
 
 /* ===================== reminders ===================== */
 
-/** Run once from the editor. Checks every hour whether any reminders are due. */
-function installReminders() {
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendReminders').forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('sendReminders').timeBased().everyHours(1).create();
-  Logger.log('Reminders will be checked every hour.');
-}
+/* The hourly schedule: in Apps Script, open Triggers (the alarm-clock icon on the left), click
+   "Add Trigger", choose the function sendReminders, "Time-driven", "Hour timer", "Every hour", and Save.
+   (Setting it up from code would need an extra Google permission, which Google's pop-up can't grant
+   while several Google accounts are signed in to the browser.) */
 
 // Days from today (Pacific time) to a yyyy-mm-dd date.
 function daysUntil_(ymd, now) {
