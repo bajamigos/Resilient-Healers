@@ -68,7 +68,7 @@ A coming-soon walk has a place but no leader or date. Its page has two buttons:
 - **"Lead this walk"**: opens the walk leader application with that place and pin already filled in.
 
 ### Becoming a walk leader
-1. Someone applies on the "Lead a walk" page with their profile and first walk in one form, including dragging a pin to the exact meeting spot.
+1. Someone applies on the "Lead a walk" page with their profile and first walk in one form, including dragging a pin to the exact meeting spot and, optionally, a **walk photo** (on a phone they can take one or pick one from their photos).
 2. Staff get an email with a **review link**. The review page shows the profile, the walk, a map of the pin and, if it applies, which coming-soon walk it takes over.
 3. Staff click **Approve** or **Request changes** (with a note). The leader gets an email either way.
 4. On approval, the walk goes live. If it takes over a coming-soon walk, that walk comes off the map, the new walk keeps its photo, and everyone on its interest list gets **one email** with the date and sign-up link. Spots are first come, first served.
@@ -84,6 +84,10 @@ Once someone has signed up or been approved, conversations happen on the site, n
 Emails only say "You have a new message," with a link. They never contain the message, so the full record stays in the Sheet's **Chat** tab. Walkers' email and phone are never shown to walk leaders. At most one notice per person per conversation every 15 minutes.
 
 Every message has **"Report this message."** Staff get an email, and the staff messages page lists reported messages at the top with who reported it and their note. Only staff and the person who reported can see that a message was reported.
+
+### Walk photos
+- **Sample walks** use photos from Wikimedia Commons, credited under each photo with a link to the source. They were checked on November 9, 2026 to make sure each one shows the actual walking area at its best; 14 were replaced. The list lives in `data/photos.json`; after changing it, run `python3 data/make_samples.py` and reload the samples.
+- **Walk leaders** can upload their own walk photo on the application, the new-walk form and the "Edit this walk" form. It's saved in the Drive photo folder and credited "Photo: the walk leader." Staff see it on the review page, and it only appears publicly once approved (for a live walk, the old photo stays until the change is approved).
 
 ### Contact form
 The Contact page sends a message to `ORGANIZER_EMAIL` and saves it in the **Messages** tab. It says clearly that it goes to Resilient Healers staff, and points walk questions to "Message your walk leader."
@@ -126,7 +130,9 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 - `installReminders`: switches on the hourly reminder check. Run once.
 - `sendStaffLink`: emails the staff messages link to staff.
 - `loadSamples` / `removeSamples`: add or remove the demo walks. Real walks aren't touched.
-- `removeTestData`: deletes anyone named "Test Leader," sign-ups named "Test …," and puts back any coming-soon walk a test took over.
+- `removeTestData`: deletes anyone named "Test Leader," sign-ups and chat messages from "Test …" names, and puts back any coming-soon walk a test took over.
+
+`loadSamples` and `removeTestData` can also be run through the website by staff (an "admin" request that needs the staff code), for times when the editor can't run functions.
 
 ## One-time setup still needed
 
