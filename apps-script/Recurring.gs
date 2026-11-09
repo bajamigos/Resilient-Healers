@@ -88,7 +88,7 @@ function rollRecurringWalks_() {
     const row = {};
     TABS['Walks'].forEach(h => { row[h] = w[h]; });
     Object.assign(row, { 'Walk ID': id, 'Date': "'" + next, 'Start': "'" + timeText_(w['Start']), 'End': w['End'] ? "'" + timeText_(w['End']) : '',
-      'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Skip dates': skips.filter(d => d > next).join(','), 'Created': new Date(), 'Updated': new Date() });
+      'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Skip dates': skipCell_(skips.filter(d => d > next)), 'Created': new Date(), 'Updated': new Date() });
     appendObj_('Walks', row);
     writeCells_('Walks', w._row, { 'Next walk': id });
     ids[id] = true; added++;
@@ -99,7 +99,12 @@ function rollRecurringWalks_() {
 /* ---------- upcoming dates, skipping and ending a series ---------- */
 
 function isRepeating_(w) { return /^(weekly|every 2 weeks|monthly)/i.test(String(w['Repeats'] || '')); }
-function skipList_(w) { return String(w['Skip dates'] || '').split(',').map(s => s.trim()).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s)); }
+// Written with a leading apostrophe so Sheets keeps it as text (a single date would otherwise turn into a date cell).
+function skipCell_(list) { return list.length ? "'" + list.join(',') : ''; }
+function skipList_(w) {
+  const v = w['Skip dates'];
+  if (v instanceof Date) return [Utilities.formatDate(v, 'America/Los_Angeles', 'yyyy-MM-dd')];
+  return String(v || '').split(',').map(s => s.trim()).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s)); }
 
 // The next n dates after this walk's own date, with skipped ones marked.
 function seriesDates_(w, n) {
@@ -133,7 +138,7 @@ function skipDate_(b) {
   let skips = skipList_(w).filter(d => d !== date);
   if (b.skip !== false) skips.push(date);
   skips.sort();
-  writeCells_('Walks', w._row, { 'Skip dates': skips.join(','), 'Updated': new Date() });
+  writeCells_('Walks', w._row, { 'Skip dates': skipCell_(skips), 'Updated': new Date() });
   return { ok: true };
 }
 // Walk leader ends the series: the current date still happens; no new dates are added after it.
