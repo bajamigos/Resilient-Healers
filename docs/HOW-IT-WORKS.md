@@ -8,6 +8,21 @@ Resilient Healers is a website where healthcare workers find free small-group wa
 
 It's a test site for now. The lavender banner at the top says so, and sample walks fill the map.
 
+## Two sites: real and demo
+
+| | Real site | Demo site |
+|---|---|---|
+| Address | https://resilienthealers.github.io/ | https://resilienthealers.github.io/demo/ |
+| For | Prospective walkers and walk leaders | Showing ideas, testing new features, sharing with collaborators |
+| Content | Real, current walks only (today: Priya's Lake Murray walk) | Everything: Priya's walk copy, sample San Diego walks, 10 sample walk leaders with sample reviews, coming-soon cities |
+| Data | Google Sheet "Resilient Healers sign-ups" | Google Sheet "Resilient Healers DEMO data" |
+| Emails come from | Resilient Healers | Resilient Healers (demo) |
+| Staff messages link | emailed as "Your Resilient Healers staff messages link" | emailed as "Your Resilient Healers DEMO staff messages link" |
+
+- **Same code, separate data.** Both pages are the same `index.html`. The demo copy (`demo/index.html`) is built from it by `python3 tools/build_demo.py`, which changes one settings line so the page shows the demo banner and tells the backend `site: "demo"`. The backend then uses the demo Sheet for everything in that request. Demo sign-ups, messages and reviews never touch the real Sheet.
+- **Trying a new idea:** build it into `index.html`, but only publish `demo/index.html` (or hide the feature on the real site) until it's ready. When it's ready, publish both.
+- **One backend:** a single Apps Script deployment serves both sites. The demo Sheet's ID and address are at the top of `Code.gs` (the `DEMO` settings). In the editor, `setupDemo` sets up the demo Sheet's tabs and loads the samples into it.
+
 ## Where everything lives
 
 | What | Where | Notes |
@@ -60,7 +75,7 @@ The opening page shows a map of the US. Copper pins are scheduled walks; taupe p
 ### Reminder emails
 People who are Going get two reminders: **two days before** (from 9 AM) and **the morning of the walk** (from 6 AM, until it starts). Times are Pacific. The email has the time, place, how to find the group, a Google Maps directions link, the messages link and the cancel link. The Sheet records when each reminder went, so nobody gets one twice.
 
-This runs on an hourly schedule that has to be switched on once. See "One-time setup still needed."
+This runs once an hour, for both sites, from a scheduled job in the GitHub repository (`.github/workflows/hourly.yml`) that pings the backend. You can see it run under the repository's Actions tab, and run it by hand there with "Run workflow".
 
 ### Coming-soon walks and the interest list
 A coming-soon walk has a place but no leader or date. Its page has two buttons:
@@ -134,18 +149,13 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 3. **Deploy → Manage deployments → pencil (Edit) → Version: New version → Deploy.** This keeps the same web address, so the site keeps working. (Never choose "New deployment"; that makes a new address.)
 4. If a "You're currently signed in as" box pops up and closes the dialog, click OK and start step 3 again.
 
-**Functions you can run from the Apps Script editor** (choose one in the drop-down next to Run):
+**Functions you can run from the Apps Script editor** (choose one in the drop-down next to Run). These act on the real Sheet, except `setupDemo`:
 - `setup`: creates any missing tabs or columns. Also runs automatically.
-- `installReminders`: switches on the hourly reminder check. Run once.
 - `sendStaffLink`: emails the staff messages link to staff.
 - `loadSamples` / `removeSamples`: add or remove the demo walks. Real walks aren't touched.
 - `removeTestData`: deletes anyone named "Test Leader," sign-ups and chat messages from "Test …" names, and puts back any coming-soon walk a test took over.
 
 `loadSamples` and `removeTestData` can also be run through the website by staff (an "admin" request that needs the staff code), for times when the editor can't run functions.
-
-## One-time setup still needed
-
-- **Reminders:** in Apps Script, run `installReminders` and approve the permission prompt (Review permissions, choose resilienthealers@gmail.com, Allow; if Google says the app isn't verified, Advanced, then Go to Resilient Healers sign-up backend). Until then, reminder emails don't go out.
 
 ## Limits to know about
 
