@@ -3,10 +3,11 @@
  *
  * Setup (once):
  *  1. In the project Gmail account, create a Google Sheet named "Resilient Healers sign-ups".
- *  2. Extensions > Apps Script. Paste this file in as Code.gs and save.
+ *  2. Create a standalone Apps Script project (script.google.com). Paste this file in as Code.gs and save.
  *  3. Project Settings > Script properties: add
+ *       SHEET_ID         (the long id in the Sheet's address, between /d/ and /edit)
  *       SITE_URL         https://resilienthealers.github.io/
- *       ORGANIZER_EMAIL  (where contact-form messages and sign-up alerts go)
+ *       ORGANIZER_EMAIL  (where contact-form messages go)
  *  4. Run setup() once from the editor and approve the permissions.
  *  5. Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
  *     Copy the web app URL into the site's API_URL.
@@ -27,7 +28,7 @@ const SIGNUP_HEADERS = ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone',
 const MESSAGE_HEADERS = ['Received', 'Name', 'Email', 'Message'];
 
 function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = ss_();
   ensureSheet_(ss, 'Sign-ups', SIGNUP_HEADERS);
   ensureSheet_(ss, 'Messages', MESSAGE_HEADERS);
 }
@@ -43,9 +44,10 @@ function ensureSheet_(ss, name, headers) {
   return sh;
 }
 
+function ss_() { return SpreadsheetApp.openById(props_().getProperty('SHEET_ID')); }
 function props_() { return PropertiesService.getScriptProperties(); }
 function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
-function signupsSheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sign-ups'); }
+function signupsSheet_() { return ss_().getSheetByName('Sign-ups'); }
 
 function rows_() {
   const sh = signupsSheet_();
@@ -154,7 +156,7 @@ function cancel_(b) {
 function message_(b) {
   const m = { name: clean_(b.name, 120), email: clean_(b.email, 200), message: String(b.message || '').trim().slice(0, 4000) };
   if (!m.name || !/^\S+@\S+\.\S+$/.test(m.email) || !m.message) return { ok: false, error: 'missing_fields' };
-  SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Messages').appendRow([new Date(), safeCell_(m.name), safeCell_(m.email), safeCell_(m.message)]);
+  ss_().getSheetByName('Messages').appendRow([new Date(), safeCell_(m.name), safeCell_(m.email), safeCell_(m.message)]);
   const to = props_().getProperty('ORGANIZER_EMAIL');
   if (to) {
     MailApp.sendEmail({ to: to, replyTo: m.email, name: 'Resilient Healers website', subject: 'New message from ' + m.name, body: m.name + ' (' + m.email + ') wrote:\n\n' + m.message });
