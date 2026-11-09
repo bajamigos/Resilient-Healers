@@ -703,6 +703,7 @@ function removeTestData() {
     .forEach(w => writeCells_('Walks', w._row, { 'Status': 'Live', 'Staff note': '', 'Updated': new Date() }));
   deleteRows_('Reviews', r => ids.indexOf(String(r['Leader ID'])) >= 0);
   deleteRows_('Chat', r => walkIds.indexOf(String(r['Walk'])) >= 0 || /^Test /.test(String(r['From name'])));
+  deleteRows_('Walker reviews', r => ids.indexOf(String(r['Leader ID'])) >= 0);
   deleteRows_('Walks', r => walkIds.indexOf(String(r['Walk ID'])) >= 0);
   deleteRows_('Leaders', r => ids.indexOf(String(r['Leader ID'])) >= 0);
   Logger.log('Removed ' + ids.length + ' test leader(s) and ' + walkIds.length + ' walk(s).');
