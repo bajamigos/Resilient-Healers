@@ -253,7 +253,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <span id="w-interest-count"></span>
         <div class="btn-row">
           <button class="btn" type="button" id="interest-open" aria-expanded="false" aria-controls="interest-box">I'd join this walk</button>
-          <a class="btn btn-ghost" href="#apply">Lead this walk</a>
+          <a class="btn btn-ghost" href="#apply" id="w-lead-this">Lead this walk</a>
         </div>
       </div>
 
@@ -437,6 +437,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <h2 id="apply-h">Apply to lead a walk</h2>
         <p class="muted">Your profile and your first walk, in one form. Everything is required unless it says optional.</p>
         <div id="apply-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div id="apply-lead-note" class="notice" hidden></div>
         <div class="form-card">
           <form id="apply-form" novalidate>
             <div id="apply-profile"></div>
@@ -491,6 +492,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <h2 id="me-new-h">Propose a new walk</h2>
         <p class="muted">Your profile is attached automatically. Staff review each new walk before it goes live.</p>
         <div id="me-new-done" class="notice notice-ok" tabindex="-1" hidden></div>
+        <div id="me-lead-note" class="notice" hidden></div>
         <div class="form-card">
           <form id="me-new-form" novalidate>
             <div id="me-new-fields"></div>
@@ -594,6 +596,9 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   const cancelCode = params.get("cancel");
   let cancelDone = false;
   const current = () => WALKS.find(w => w.id === currentWalkId) || WALKS[0] || null;
+  // "Lead this walk" on a coming-soon walk: the application (or a leader's proposal) takes over that walk.
+  let leadFor = params.get("lead") || null;
+  const leadTarget = () => { const w = leadFor && WALKS.find(x => x.id === leadFor); return w && w.comingSoon ? w : null; };
   function loadMine() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
   function saveMine(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
   let mine = loadMine();
@@ -1010,6 +1015,30 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   }
   function showProblems(errEl, list) { errEl.textContent = "Please add " + list.join(", ") + "."; errEl.hidden = false; }
 
+  /* ---------- leading a coming-soon walk ---------- */
+  $("w-lead-this").addEventListener("click", () => { const w = current(); leadFor = w && w.comingSoon ? w.id : null; });
+  function prefillLead(p, noteId, intro) {
+    const note = $(noteId), w = leadTarget();
+    if (!note) return;
+    note.hidden = !w;
+    if (!w) { note.innerHTML = ""; return; }
+    note.innerHTML = '<p><strong>' + esc(intro) + ' ' + esc(w.title) + (w.city ? ' in ' + esc(w.city) : '') + '.</strong> ' +
+      "We've filled in the place and put the pin near it. Set the date, time and exact meeting spot. Once our team approves it, your walk replaces the coming-soon one, and we'll email everyone who said they'd join.</p>" +
+      '<button type="button" class="btn btn-small btn-ghost" data-clear-lead="' + esc(p) + '">Choose a different place instead</button>';
+    if (!$(p + "-title") ) return;
+    if (!$(p + "-title").value) $(p + "-title").value = w.title;
+    if (!$(p + "-place").value) $(p + "-place").value = w.place;
+    const st = pinForms[p];
+    if (st && st.place && st.lat == null) { st.map.setView([w.lat, w.lng], 15); st.place(w.lat, w.lng, "Pin placed near " + w.place + ". Drag it to the exact meeting spot."); }
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-clear-lead]"); if (!b) return;
+    const p = b.dataset.clearLead, w = leadTarget(); leadFor = null;
+    if (w && $(p + "-title").value === w.title) $(p + "-title").value = "";
+    if (w && $(p + "-place").value === w.place) $(p + "-place").value = "";
+    b.closest(".notice").hidden = true;
+  });
+
   /* ---------- apply: profile + first walk ---------- */
   $("apply-profile").innerHTML = profileFieldsHTML("ap", { legend: "About you", email: true });
   $("apply-walk").innerHTML = walkFieldsHTML("aw", "Your first walk");
@@ -1023,11 +1052,11 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (problems.length) { showProblems(err, problems); return; }
     const btn = $("apply-submit"); btn.disabled = true; btn.textContent = "Sending…";
     try {
-      const r = await apiPost({ action: "apply", profile, walk, website: $("apply-website").value });
+      const r = await apiPost({ action: "apply", profile, walk, forWalk: leadTarget() ? leadFor : "", website: $("apply-website").value });
       if (!r || !r.ok) throw new Error((r && r.error) || "failed");
       const done = $("apply-done");
       done.innerHTML = r.existing
-        ? "<h3>You already have a walk leader page.</h3><p>We emailed your private link to " + esc(profile.email) + ". Use it to propose this walk.</p>"
+        ? "<h3>You already have a walk leader page.</h3><p>We emailed your private link to " + esc(profile.email) + ". Use it to propose this walk" + (leadTarget() ? "; the link opens with this place filled in" : "") + ".</p>"
         : "<h3>Application sent. Thank you, " + esc(profile.name.split(" ")[0]) + ".</h3><p>Our team will review your profile and your first walk. We emailed " + esc(profile.email) + " a private link to your walk leader page, where you can check its status.</p>";
       done.hidden = false; $("apply-form").hidden = true; done.focus();
     } catch (ex) { err.textContent = "Your application didn't send. Check your connection and try again."; err.hidden = false; }
@@ -1081,7 +1110,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("me-walks-wrap").hidden = false;
     $("me-walks").innerHTML = me.walks.map(w => {
       const going = w.roster.filter(x => x.status === "Going"), waiting = w.roster.filter(x => x.status === "Waitlist");
-      const person = (x) => '<li><span class="row-name">' + esc(x.name) + '</span><span class="muted">' + esc(x.profession) + ' · ' + esc(x.email) + ' · ' + esc(x.phone) + '</span>' +
+      const person = (x) => '<li><span class="row-name">' + esc(x.name) + '</span><span class="muted">' + esc(x.profession) + '</span>' +
         (x.accommodation ? '<span class="accom">Accommodation: ' + esc(x.accommodation) + '</span>' : '') + '</li>';
       const pend = w.pendingEdit ? "<span>Your changes are waiting for review. The live page keeps its current details until they're approved.</span>" : "";
       return '<div class="walk-admin"><span class="name" style="font-family:var(--font-display);font-weight:700;font-size:var(--step-1)">' + esc(w.title) + '</span>' +
@@ -1089,7 +1118,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         statusBox(w.status, w.staffNote, pend) +
         (w.status === "Live" ? '<p><a href="?walk=' + encodeURIComponent(w.id) + '#walk">See the public walk page</a> · ' + going.length + ' of ' + w.spots + ' spots taken' + (waiting.length ? ', ' + waiting.length + ' on the waitlist' : '') + '</p>' : '') +
         (w.status === "Live" ? '<details><summary>Who\'s coming (' + going.length + ')</summary><ul class="roster">' + (going.map(person).join("") || '<li class="muted">No sign-ups yet.</li>') + '</ul>' +
-          (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') + '</details>' : '') +
+          (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') +
+          '<p class="muted">Walkers\' email addresses and phone numbers stay private. Messaging your group through this page is coming soon.</p></details>' : '') +
         '<details data-edit="' + esc(w.id) + '"' + (w.status === "Changes requested" ? " open" : "") + '><summary>' + (w.status === "Changes requested" ? "Fix and resubmit this walk" : "Edit this walk") + '</summary>' +
         '<div class="form-card" style="margin-top:.8rem"><form data-walkform="' + esc(w.id) + '" novalidate><div id="ew-' + esc(w.id) + '-wrap"></div>' +
         '<p class="error" role="alert" hidden></p><div class="btn-row"><button class="btn" type="submit">' + (w.status === "Changes requested" ? "Resubmit for review" : "Send changes for review") + '</button></div></form></div></details></div>';
@@ -1108,7 +1138,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       d.addEventListener("toggle", () => { if (d.open) setTimeout(build, 0); });
     });
     $("me-new-wrap").hidden = l.status !== "Approved";
-    if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => initWalkForm("nw", null), 0); }
+    if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => { initWalkForm("nw", null); prefillLead("nw", "me-lead-note", "You're proposing to lead the"); }, 0); }
   }
   $("me-walks").addEventListener("submit", async (e) => {
     const form = e.target.closest("form[data-walkform]"); if (!form) return;
@@ -1144,7 +1174,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (problems.length) { showProblems(err, problems); return; }
     const btn = $("me-new-submit"); btn.disabled = true; btn.textContent = "Sending…";
     try {
-      const r = await apiPost({ action: "propose", code: leaderCode, walk });
+      const r = await apiPost({ action: "propose", code: leaderCode, walk, forWalk: leadTarget() ? leadFor : "" });
+      leadFor = null; $("me-lead-note").hidden = true;
       if (!r || !r.ok) throw new Error("failed");
       $("me-new-done").innerHTML = "<h3>Walk sent for review.</h3><p>We'll email you when it's approved, or if we need changes.</p>";
       $("me-new-done").hidden = false; $("me-new-form").reset(); await loadMe(); $("me-new-done").focus();
@@ -1175,7 +1206,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       $("rv-walk-wrap").hidden = !showWalk;
       if (showWalk) {
         $("rv-walk").innerHTML = factsHTML([["Name", w.title], ["Date", w.dateText], ["Time", w.timeText], ["Repeats", w.repeats], ["Place", w.place], ["Address", w.address],
-          ["Pin", Number(w.lat).toFixed(5) + ", " + Number(w.lng).toFixed(5)], ["How to find it", w.find], ["Parking", w.parking], ["Spots", w.spots], ["Shorter route", w.shorter], ["Description", w.description]]);
+          ["Pin", Number(w.lat).toFixed(5) + ", " + Number(w.lng).toFixed(5)], ["How to find it", w.find], ["Parking", w.parking], ["Spots", w.spots], ["Shorter route", w.shorter], ["Description", w.description],
+          ["Takes over", r.takesOver ? r.takesOver.title + (r.takesOver.city ? ", " + r.takesOver.city : "") + " (coming soon). Approving replaces it and emails its " + r.takesOver.interested + " interested " + (r.takesOver.interested === 1 ? "person" : "people") + "." : ""]]);
         $("rv-maplink").href = "https://www.google.com/maps/search/?api=1&query=" + w.lat + "," + w.lng;
         setTimeout(() => {
           if (!rvMap) { rvMap = L.map("rv-map", { scrollWheelZoom: false }); tiles().addTo(rvMap); wheelOnFocus(rvMap); }
@@ -1238,7 +1270,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (v === "find") setTimeout(() => bigMap.invalidateSize(), 0);
     if (v === "walk") { renderWalk(); setTimeout(() => showSmallMap(current()), 0); refreshCount(); }
     if (v === "leader") renderLeaderProfile();
-    if (v === "lead" && !applyReady) { applyReady = true; setTimeout(() => initWalkForm("aw", null), 0); }
+    if (v === "lead" && !applyReady) { applyReady = true; setTimeout(() => { initWalkForm("aw", null); prefillLead("aw", "apply-lead-note", "You're applying to lead the"); }, 0); }
+    else if (v === "lead") setTimeout(() => prefillLead("aw", "apply-lead-note", "You're applying to lead the"), 0);
     const target = !VIEWS.includes(h) && h ? document.getElementById(h) : null;
     if (target) setTimeout(() => target.scrollIntoView(), 40); else window.scrollTo(0, 0);
   }
@@ -1254,6 +1287,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       const v = VIEWS.find(n => !$("view-" + n).hidden);
       if (v === "walk") { renderWalk(); showSmallMap(current()); }
       if (v === "leader") renderLeaderProfile();
+      if (v === "lead" && applyReady) prefillLead("aw", "apply-lead-note", "You're applying to lead the");
+      if (v === "my-walks" && $("nw-title")) prefillLead("nw", "me-lead-note", "You're proposing to lead the");
     } catch (e) {
       $("walk-list").innerHTML = '<li class="empty">Walks couldn\'t load right now. Try again in a moment.</li>';
     }

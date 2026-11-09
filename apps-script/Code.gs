@@ -27,7 +27,7 @@ const TABS = {
   'Sign-ups': ['Signed up', 'Walk', 'Status', 'Name', 'Email', 'Phone', 'Profession', 'Accommodation', 'Cancel code', 'Updated'],
   'Messages': ['Received', 'Name', 'Email', 'Message'],
   'Leaders': ['Leader ID', 'Status', 'Name', 'Email', 'Phone', 'City', 'Background', 'Bio', 'Photo', 'Private link code', 'Staff note', 'Pending edit', 'Created', 'Updated'],
-  'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Photo', 'Photo credit', 'Photo source', 'Sample', 'City'],
+  'Walks': ['Walk ID', 'Leader ID', 'Status', 'Title', 'Date', 'Start', 'End', 'Repeats', 'Place', 'Address', 'Lat', 'Lng', 'How to find the spot', 'Parking', 'Spots', 'Shorter route', 'Description', 'Staff note', 'Pending edit', 'Created', 'Updated', 'Photo', 'Photo credit', 'Photo source', 'Sample', 'City', 'Takes over'],
   'Reviews': ['Review code', 'Type', 'Leader ID', 'Walk ID', 'Status', 'Created', 'Decided', 'Staff note']
 };
 
@@ -79,10 +79,10 @@ function setup() {
     appendObj_('Walks', walkRow_(SEED_WALK.id, SEED_WALK.leaderId, SEED_WALK.status, SEED_WALK));
   }
   getPhotoFolder_();
-  CacheService.getScriptCache().put('setup-v3', '1', 21600);
+  CacheService.getScriptCache().put('setup-v4', '1', 21600);
 }
 function ensureSetup_() {
-  if (CacheService.getScriptCache().get('setup-v3')) return;
+  if (CacheService.getScriptCache().get('setup-v4')) return;
   setup();
 }
 
@@ -210,7 +210,8 @@ function leaderPage_(code) {
     const rs = signups.filter(r => String(r['Walk']) === String(w['Walk ID']) && (r['Status'] === 'Going' || r['Status'] === 'Waitlist'));
     return walkOut_(w, {
       staffNote: w['Staff note'], pendingEdit: !!w['Pending edit'],
-      roster: rs.map(r => ({ status: r['Status'], name: r['Name'], email: r['Email'], phone: r['Phone'], profession: r['Profession'], accommodation: r['Accommodation'] }))
+      // Walkers' email and phone are never sent to walk leaders.
+      roster: rs.map(r => ({ status: r['Status'], name: r['Name'], profession: r['Profession'], accommodation: r['Accommodation'] }))
     });
   });
   return {
@@ -363,7 +364,7 @@ function apply_(b) {
   if (missing.length) return { ok: false, error: 'missing_fields', missing: missing };
   const existing = readTab_('Leaders').find(l => String(l['Email']).toLowerCase() === p.data.email);
   if (existing) {
-    sendLinkEmail_(existing);
+    sendLinkEmail_(existing, takeoverTarget_(b.forWalk) ? String(b.forWalk) : '');
     return { ok: true, existing: true };
   }
   const leaderId = newId_('L'), code = newCode_(), now = new Date();
@@ -374,7 +375,7 @@ function apply_(b) {
     'Private link code': code, 'Created': now, 'Updated': now
   });
   const walkId = newId_('W');
-  appendObj_('Walks', walkRow_(walkId, leaderId, 'Pending review', w.data));
+  appendObj_('Walks', Object.assign(walkRow_(walkId, leaderId, 'Pending review', w.data), takeoverCells_(b.forWalk)));
   openReview_('application', leaderId, walkId);
   MailApp.sendEmail({
     to: p.data.email, name: 'Resilient Healers',
@@ -396,7 +397,7 @@ function propose_(b) {
   const w = readWalk_(b.walk);
   if (w.missing.length) return { ok: false, error: 'missing_fields', missing: w.missing };
   const walkId = newId_('W');
-  appendObj_('Walks', walkRow_(walkId, String(l['Leader ID']), 'Pending review', w.data));
+  appendObj_('Walks', Object.assign(walkRow_(walkId, String(l['Leader ID']), 'Pending review', w.data), takeoverCells_(b.forWalk)));
   openReview_('walk', String(l['Leader ID']), walkId);
   return { ok: true, walkId: walkId };
 }
@@ -476,11 +477,12 @@ function sendLink_(b) {
   if (l) sendLinkEmail_(l);
   return { ok: true }; // same answer either way, so nobody can test which emails are leaders
 }
-function sendLinkEmail_(l) {
+function sendLinkEmail_(l, leadWalkId) {
   if (!l['Email']) return;
+  const link = leaderLink_(l['Private link code']).replace('#my-walks', (leadWalkId ? '&lead=' + encodeURIComponent(leadWalkId) : '') + '#my-walks');
   MailApp.sendEmail({
     to: String(l['Email']), name: 'Resilient Healers', subject: 'Your Resilient Healers walk leader link',
-    body: ['Hi ' + String(l['Name']).split(' ')[0] + ',', '', 'Here is your private link to your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'].join('\n')
+    body: ['Hi ' + String(l['Name']).split(' ')[0] + ',', '', (leadWalkId ? 'Here is your private link to your walk leader page. It opens with the walk you asked to lead filled in, ready to propose:' : 'Here is your private link to your walk leader page:'), link, '', 'Resilient Healers'].join('\n')
   });
 }
 
@@ -585,6 +587,8 @@ function decideLocked_(code, decision, note) {
       }
     }
     writeCells_('Reviews', r._row, { 'Status': approve ? 'Approved' : 'Changes requested', 'Decided': new Date(), 'Staff note': note });
+    let takeoverMsg = '';
+    if (approve && w && (t === 'application' || t === 'walk') && w['Takes over']) takeoverMsg = takeOver_(w, l);
 
     // Tell the walk leader.
     const first = String(l['Name']).split(' ')[0];
@@ -595,7 +599,7 @@ function decideLocked_(code, decision, note) {
       : ['Hi ' + first + ',', '', 'Thanks for ' + what.replace(/^your /, 'your ') + '. Before it goes live, we have a request:', '', note, '',
          'Make the changes and resubmit from your walk leader page:', leaderLink_(l['Private link code']), '', 'Resilient Healers'];
     if (l['Email']) MailApp.sendEmail({ to: String(l['Email']), name: 'Resilient Healers', subject: approve ? 'Approved: ' + what.replace(/^your /, '') : 'Changes requested: ' + what.replace(/^your /, ''), body: lines.join('\n') });
-    return approve ? 'Approved. We emailed the walk leader.' : 'Changes requested. We emailed the walk leader your note.';
+    return approve ? 'Approved. We emailed the walk leader.' + takeoverMsg : 'Changes requested. We emailed the walk leader your note.';
   }
 }
 
@@ -617,7 +621,10 @@ function reviewData_(code) {
     const src = (r['Type'] === 'walk-edit' && w['Pending edit']) ? JSON.parse(w['Pending edit']) : walkOut_(w);
     walk = Object.assign({}, src, { dateText: niceDate_(src.date), timeText: niceTime_(src.start) + (src.end ? ' to ' + niceTime_(src.end) : '') });
   }
-  return { ok: true, type: r['Type'], status: r['Status'], note: r['Staff note'], profile: profile, walk: walk };
+  let takesOver = null;
+  const target = w && w['Takes over'] ? takeoverTarget_(w['Takes over']) : null;
+  if (target) takesOver = { title: target['Title'], city: target['City'], interested: counts_(target['Walk ID']).interested };
+  return { ok: true, type: r['Type'], status: r['Status'], note: r['Staff note'], profile: profile, walk: walk, takesOver: takesOver };
 }
 
 function decideApi_(b) {
@@ -635,7 +642,10 @@ function removeTestData() {
   const leaders = readTab_('Leaders').filter(l => l['Name'] === 'Test Leader');
   const ids = leaders.map(l => String(l['Leader ID']));
   const walkIds = readTab_('Walks').filter(w => ids.indexOf(String(w['Leader ID'])) >= 0).map(w => String(w['Walk ID']));
-  deleteRows_('Sign-ups', r => walkIds.indexOf(String(r['Walk'])) >= 0);
+  deleteRows_('Sign-ups', r => walkIds.indexOf(String(r['Walk'])) >= 0 || /^Test /.test(String(r['Name'])));
+  // Put back any coming-soon walk a test walk took over.
+  readTab_('Walks').filter(w => w['Status'] === 'Replaced' && walkIds.some(id => String(w['Staff note']) === 'Replaced by ' + id))
+    .forEach(w => writeCells_('Walks', w._row, { 'Status': 'Live', 'Staff note': '', 'Updated': new Date() }));
   deleteRows_('Reviews', r => ids.indexOf(String(r['Leader ID'])) >= 0);
   deleteRows_('Walks', r => walkIds.indexOf(String(r['Walk ID'])) >= 0);
   deleteRows_('Leaders', r => ids.indexOf(String(r['Leader ID'])) >= 0);
@@ -750,6 +760,47 @@ function interest_(b) {
       'To leave the list:', leaveUrl, '', 'Resilient Healers'].join('\n')
   });
   return Object.assign({ ok: true }, counts_(b.walk));
+}
+
+/* ---------- a walk leader takes over a coming-soon walk ---------- */
+
+// The coming-soon walk being taken over: live, with no date yet.
+function takeoverTarget_(walkId) {
+  if (!walkId) return null;
+  const t = readTab_('Walks').find(x => String(x['Walk ID']) === String(walkId));
+  return t && t['Status'] === 'Live' && !dateText_(t['Date']) ? t : null;
+}
+function takeoverCells_(walkId) {
+  const t = takeoverTarget_(walkId);
+  if (!t) return {};
+  // The new walk keeps the coming-soon walk's photo and city.
+  return { 'Takes over': String(t['Walk ID']), 'Photo': t['Photo'] || '', 'Photo credit': t['Photo credit'] || '', 'Photo source': t['Photo source'] || '', 'City': t['City'] || '' };
+}
+// Runs when staff approve a walk that takes over a coming-soon walk: the coming-soon walk
+// comes off the map, and everyone on its interest list is emailed the new walk.
+function takeOver_(newWalk, leader) {
+  const t = takeoverTarget_(newWalk['Takes over']);
+  if (!t) return '';
+  writeCells_('Walks', t._row, { 'Status': 'Replaced', 'Staff note': 'Replaced by ' + newWalk['Walk ID'], 'Updated': new Date() });
+  const people = readTab_('Sign-ups').filter(r => String(r['Walk']) === String(t['Walk ID']) && r['Status'] === 'Interested');
+  const url = siteUrl_() + '?walk=' + encodeURIComponent(newWalk['Walk ID']) + '#walk';
+  const w = walkOut_(newWalk);
+  let sent = 0;
+  people.forEach(p => {
+    try {
+      MailApp.sendEmail({
+        to: String(p['Email']), name: 'Resilient Healers', subject: 'The walk you were waiting for has a date: ' + newWalk['Title'],
+        body: ['Hi ' + String(p['Name']).split(' ')[0] + ',', '', 'Good news. The Resilient Healers walk at ' + t['Place'] + ' now has a walk leader and a date:', '',
+          newWalk['Title'], w.dateText + ', ' + w.timeText, newWalk['Place'], 'Walk leader: ' + (leader ? leader['Name'] : ''), '',
+          'Spots are first come, first served. Sign up here:', url, '', "You're getting this because you joined the interest list. This was the only email about it.", '', 'Resilient Healers'].join('\n')
+      });
+      writeCells_('Sign-ups', p._row, { 'Status': 'Notified', 'Updated': new Date() });
+      sent++;
+    } catch (e) { /* daily email limit reached: they stay "Interested" so staff can follow up */ }
+  });
+  const left = people.length - sent;
+  return ' The coming-soon walk it replaces is off the map, and we emailed ' + sent + ' interested ' + (sent === 1 ? 'person' : 'people') + '.' +
+    (left ? ' ' + left + " couldn't be emailed today (daily email limit); they're still marked Interested in the Sheet." : '');
 }
 
 function cancel_(b) {
