@@ -497,15 +497,17 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     <!-- CONTACT -->
     <div id="view-contact" class="stack-lg narrow" hidden>
       <div class="stack">
-        <p class="eyebrow">Questions about a walk</p>
-        <h1>Contact us</h1>
-        <p class="muted">Your message goes to the Resilient Healers team. We'll reply by email.</p>
+        <p class="eyebrow">Questions, ideas or problems</p>
+        <h1>Contact Resilient Healers</h1>
+        <p>Your message goes to the Resilient Healers staff, not to a walk leader. If it's about a specific walk, tell us which one and we'll take it from there.</p>
+        <p class="muted">We reply by email.</p>
       </div>
       <div id="contact-done" class="notice notice-ok" tabindex="-1" hidden></div>
       <div class="form-card">
         <form id="contact-form" novalidate>
           <div class="field"><label for="c-name">Your name</label><input type="text" id="c-name" autocomplete="name"></div>
           <div class="field"><label for="c-email">Your email</label><input type="email" id="c-email" autocomplete="email"></div>
+          <div class="field"><label for="c-walk">Which walk is this about? (optional)</label><select id="c-walk"><option value="">Not about a specific walk</option></select></div>
           <div class="field"><label for="c-msg">Message</label><textarea id="c-msg"></textarea></div>
           <div class="sr-only" aria-hidden="true"><label for="c-website">Leave this empty</label><input type="text" id="c-website" tabindex="-1" autocomplete="off"></div>
           <p class="error" id="contact-error" role="alert" hidden></p>
@@ -1113,7 +1115,9 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     if (!name || !/^\S+@\S+\.\S+$/.test(email) || !msg) { err.textContent = "Please add your name, a valid email and a message."; err.hidden = false; return; }
     const btn = $("contact-submit"); btn.disabled = true; btn.textContent = "Sending…";
     try {
-      const r = await apiPost({ action: "message", name, email, message: msg, website: $("c-website").value });
+      const walkSel = $("c-walk").value, aboutWalk = WALKS.find(w => w.id === walkSel);
+      const fullMsg = (aboutWalk ? "[About: " + aboutWalk.title + ", " + aboutWalk.dateText + "]\n\n" : "") + msg;
+      const r = await apiPost({ action: "message", name, email, message: fullMsg, website: $("c-website").value });
       if (!r || !r.ok) throw new Error("failed");
       const done = $("contact-done");
       done.innerHTML = "<h3>Message sent. Thanks, " + esc(name.split(" ")[0]) + ".</h3><p>We'll reply to " + esc(email) + ".</p>";
@@ -1148,6 +1152,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       if (!r || !r.ok) throw new Error("bad");
       WALKS = r.walks || [];
       drawPins();
+      $("c-walk").innerHTML = '<option value="">Not about a specific walk</option>' + WALKS.map(w => '<option value="' + esc(w.id) + '">' + esc(w.title + " · " + w.dateText) + '</option>').join("");
       if (lastOrigin) renderList(lastOrigin, lastLabel); else renderList(null);
       const v = VIEWS.find(n => !$("view-" + n).hidden);
       if (v === "walk") { renderWalk(); showSmallMap(current()); }
