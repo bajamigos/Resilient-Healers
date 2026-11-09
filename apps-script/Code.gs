@@ -171,7 +171,7 @@ function doGet(e) {
 
 function counts_(walkId) {
   const rs = readTab_('Sign-ups').filter(r => String(r['Walk']) === String(walkId));
-  return { going: rs.filter(r => r['Status'] === 'Going').length, waitlist: rs.filter(r => r['Status'] === 'Waitlist').length };
+  return { going: rs.filter(r => r['Status'] === 'Going').length, waitlist: rs.filter(r => r['Status'] === 'Waitlist').length, interested: rs.filter(r => r['Status'] === 'Interested').length };
 }
 function countOut_(walkId) {
   const w = readTab_('Walks').find(x => String(x['Walk ID']) === String(walkId) && x['Status'] === 'Live');
@@ -189,6 +189,7 @@ function listWalks_() {
     return walkOut_(w, {
       going: rs.filter(r => r['Status'] === 'Going').length,
       waitlist: rs.filter(r => r['Status'] === 'Waitlist').length,
+      interested: rs.filter(r => r['Status'] === 'Interested').length,
       leader: leaders[String(w['Leader ID'])] || null
     });
   });
@@ -232,6 +233,7 @@ function doPost(e) {
     switch (body.action) {
       case 'signup': return json_(signup_(body));
       case 'cancel': return json_(cancel_(body));
+      case 'interest': return json_(interest_(body));
       case 'message': return json_(message_(body));
       case 'apply': return json_(apply_(body));
       case 'propose': return json_(propose_(body));
@@ -717,6 +719,37 @@ function signup_(b) {
   MailApp.sendEmail({ to: d.email, subject: subject, body: lines.join('\n'), name: 'Resilient Healers' });
 
   return Object.assign({ ok: true, status: status === 'Going' ? 'going' : 'waitlist', capacity: capacity }, counts_(b.walk));
+}
+
+/* Interest list for "coming soon" walks (no leader or date yet).
+   People join with status "Interested". Nobody is promised a spot; when a walk leader
+   sets the date, staff (later: the site) email this list so they can sign up. */
+function interest_(b) {
+  const walk = liveWalk_(b.walk);
+  if (!walk) return { ok: false, error: 'unknown_walk' };
+  if (dateText_(walk['Date'])) return { ok: false, error: 'already_scheduled' };
+  const d = { name: cleanLine_(b.name, 120), email: cleanLine_(b.email, 200).toLowerCase(), profession: cleanLine_(b.profession, 120) };
+  if (!d.name || !/^\S+@\S+\.\S+$/.test(d.email) || !d.profession || b.hcw !== true) return { ok: false, error: 'missing_fields' };
+  const rows = readTab_('Sign-ups');
+  const already = rows.find(r => String(r['Walk']) === String(b.walk) && String(r['Email']).toLowerCase() === d.email && r['Status'] === 'Interested');
+  if (already) return Object.assign({ ok: true, duplicate: true }, counts_(b.walk));
+
+  const code = Utilities.getUuid();
+  const now = new Date();
+  appendObj_('Sign-ups', {
+    'Signed up': now, 'Walk': String(b.walk), 'Status': 'Interested', 'Name': safeCell_(d.name), 'Email': safeCell_(d.email), 'Phone': '',
+    'Profession': safeCell_(d.profession), 'Accommodation': '', 'Cancel code': code, 'Updated': now
+  });
+  const leaveUrl = siteUrl_() + '?walk=' + encodeURIComponent(b.walk) + '&cancel=' + encodeURIComponent(code) + '#walk';
+  const place = walk['Place'] + (walk['City'] ? ', ' + walk['City'] : '');
+  MailApp.sendEmail({
+    to: d.email, name: 'Resilient Healers', subject: "You're on the interest list: " + walk['Title'],
+    body: ['Hi ' + d.name.split(' ')[0] + ',', '', 'Thanks for your interest in a Resilient Healers walk at ' + place + '.', '',
+      "This walk doesn't have a walk leader or a date yet. When it does, we'll email you so you can sign up. Joining this list doesn't reserve a spot.", '',
+      'Know someone who might lead it? Send them to ' + siteUrl_() + '#lead', '',
+      'To leave the list:', leaveUrl, '', 'Resilient Healers'].join('\n')
+  });
+  return Object.assign({ ok: true }, counts_(b.walk));
 }
 
 function cancel_(b) {

@@ -250,13 +250,32 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       <div class="status status-pending" id="w-soon" hidden>
         <strong>Coming soon</strong>
         <span>We're looking for a walk leader here. Date, time and sign-ups will open once the walk is set.</span>
-        <div class="btn-row"><a class="btn" href="#apply">Lead this walk</a></div>
+        <span id="w-interest-count"></span>
+        <div class="btn-row">
+          <button class="btn" type="button" id="interest-open" aria-expanded="false" aria-controls="interest-box">I'd join this walk</button>
+          <a class="btn btn-ghost" href="#apply">Lead this walk</a>
+        </div>
+      </div>
+
+      <div id="interest-done" class="notice notice-ok" tabindex="-1" hidden></div>
+      <div class="form-card" id="interest-box" hidden>
+        <form id="interest-form" novalidate>
+          <h2 style="margin-top:0">Join the interest list</h2>
+          <p class="muted">We'll email you when a walk leader sets the date, so you can sign up. This doesn't reserve a spot.</p>
+          <div class="field"><label for="i-name">Full name</label><input type="text" id="i-name" autocomplete="name"></div>
+          <div class="field"><label for="i-email">Email</label><input type="email" id="i-email" autocomplete="email"></div>
+          <div class="field"><label for="i-prof">Profession</label><input type="text" id="i-prof" placeholder="For example: ICU nurse, pharmacist, medical assistant"></div>
+          <div class="sr-only" aria-hidden="true"><label for="i-website">Leave this empty</label><input type="text" id="i-website" tabindex="-1" autocomplete="off"></div>
+          <label class="check" for="i-hcw"><input type="checkbox" id="i-hcw"><span>I work in healthcare.</span></label>
+          <p class="error" id="interest-error" role="alert" hidden></p>
+          <div class="btn-row"><button class="btn" type="submit" id="interest-submit">Add me to the list</button></div>
+        </form>
       </div>
 
       <div id="cancel-panel" class="notice notice-ok" hidden>
-        <h3>Cancel your spot?</h3>
-        <p>This frees your place for someone on the waitlist.</p>
-        <div class="btn-row"><button class="btn btn-danger" type="button" id="cancel-yes">Cancel my spot</button><a class="btn btn-ghost" href="#walk">Keep my spot</a></div>
+        <h3 id="cancel-h">Cancel your spot?</h3>
+        <p id="cancel-p">This frees your place for someone on the waitlist.</p>
+        <div class="btn-row"><button class="btn btn-danger" type="button" id="cancel-yes">Cancel my spot</button><a class="btn btn-ghost" href="#walk" id="cancel-keep">Keep my spot</a></div>
         <p class="error" id="cancel-msg" role="alert"></p>
       </div>
 
@@ -572,6 +591,8 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   /* ---------- state ---------- */
   let WALKS = [];
   let currentWalkId = params.get("walk") || null;
+  const cancelCode = params.get("cancel");
+  let cancelDone = false;
   const current = () => WALKS.find(w => w.id === currentWalkId) || WALKS[0] || null;
   function loadMine() { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } }
   function saveMine(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
@@ -712,6 +733,14 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     }
     const soon = !!w.comingSoon;
     $("w-soon").hidden = !soon;
+    if (!soon) { $("interest-box").hidden = true; $("interest-done").hidden = true; }
+    const n = w.interested || 0;
+    $("w-interest-count").textContent = !soon ? "" : n === 0 ? "Be the first to say you'd join." : n === 1 ? "1 person would join this walk." : n + " people would join this walk.";
+    if (soon && cancelCode && !cancelDone) {
+      $("cancel-h").textContent = "Leave the interest list?";
+      $("cancel-p").textContent = "We won't email you about this walk anymore.";
+      $("cancel-yes").textContent = "Remove me"; $("cancel-keep").textContent = "Stay on the list";
+    }
     ["w-spots", "signup", "w-signup-rule", "w-repeats-row", "w-shorter-row", "w-bring-row"].forEach(id => { $(id).hidden = soon; });
     $("w-date").textContent = soon ? "Date coming soon" : w.dateText;
     $("w-description").textContent = w.description;
@@ -785,8 +814,38 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
 
   $("w-message-leader").addEventListener("click", () => { $("w-message-note").hidden = false; });
 
+  /* ---------- interest list for coming-soon walks ---------- */
+  $("interest-open").addEventListener("click", () => {
+    const box = $("interest-box"); box.hidden = !box.hidden;
+    $("interest-open").setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden) $("i-name").focus();
+  });
+  $("interest-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const w = current(); const err = $("interest-error"); err.hidden = true;
+    if (!w) return;
+    const d = { name: $("i-name").value.trim(), email: $("i-email").value.trim(), profession: $("i-prof").value.trim() };
+    const missing = [];
+    if (!d.name) missing.push("your name");
+    if (!/^\S+@\S+\.\S+$/.test(d.email)) missing.push("a valid email");
+    if (!d.profession) missing.push("your profession");
+    if (!$("i-hcw").checked) missing.push("confirmation that you work in healthcare");
+    if (missing.length) { err.textContent = "Please add " + missing.join(", ") + "."; err.hidden = false; return; }
+    const btn = $("interest-submit"); btn.disabled = true; btn.textContent = "Adding you…";
+    try {
+      const r = await apiPost({ action: "interest", walk: w.id, ...d, hcw: true, website: $("i-website").value });
+      if (!r || !r.ok) throw new Error((r && r.error) || "failed");
+      if (r.interested != null) w.interested = r.interested;
+      const first = esc(d.name.split(" ")[0]); const done = $("interest-done");
+      done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We'll email you when this walk has a date.</p>"
+        : "<h3>You're on the list, " + first + ".</h3><p>We'll email " + esc(d.email) + " when a walk leader sets the date, so you can sign up. A confirmation is on its way, with a link to leave the list.</p>";
+      $("interest-form").reset(); $("interest-box").hidden = true; $("interest-open").setAttribute("aria-expanded", "false");
+      renderWalk(); done.hidden = false; done.focus();
+    } catch (ex) { err.textContent = "That didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Add me to the list"; }
+  });
+
   /* ---------- cancel from the email link ---------- */
-  const cancelCode = params.get("cancel");
   if (cancelCode) {
     $("cancel-panel").hidden = false;
     $("cancel-yes").addEventListener("click", async () => {
@@ -794,8 +853,10 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       try {
         const r = await apiPost({ action: "cancel", code: cancelCode });
         if (r && r.ok) {
-          const w = current(); if (w && r.going != null) { w.going = r.going; w.waitlist = r.waitlist; renderSpots(w); }
-          $("cancel-panel").innerHTML = "<h3>Your spot is cancelled.</h3><p>Thanks for letting us know. Someone on the waitlist can take your place.</p>";
+          cancelDone = true;
+          const w = current(); if (w && r.going != null) { w.going = r.going; w.waitlist = r.waitlist; w.interested = r.interested; if (w.comingSoon) renderWalk(); else renderSpots(w); }
+          $("cancel-panel").innerHTML = w && w.comingSoon ? "<h3>You're off the list.</h3><p>We won't email you about this walk.</p>"
+            : "<h3>Your spot is cancelled.</h3><p>Thanks for letting us know. Someone on the waitlist can take your place.</p>";
           const u = new URL(location.href); u.searchParams.delete("cancel"); history.replaceState(null, "", u.pathname + u.search + "#walk");
         } else {
           $("cancel-panel").innerHTML = "<h3>We couldn't find that sign-up.</h3><p>It may already be cancelled. If you still need help, use the contact form.</p>";
