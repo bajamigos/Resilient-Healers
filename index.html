@@ -1571,7 +1571,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       if (r.existing && r.existing.status !== "Pending") { msg.textContent = r.existing.status === "Published" ? "Thank you. Your review is published." : "Thank you. We've already received your review."; msg.hidden = false; return; }
       if (!r.canReview) { msg.textContent = r.notYet ? "You can leave a review after the walk." : "Reviews are for people who were signed up for this walk."; msg.hidden = false; return; }
       const labels = ["", "1 star, poor", "2 stars, fair", "3 stars, good", "4 stars, very good", "5 stars, excellent"];
-      $("rt-stars").innerHTML = [5, 4, 3, 2, 1].map(n => '<label><input type="radio" name="rt-rating" value="' + n + '"><span>' + "★".repeat(n) + ' <span class="sr-only">' + labels[n] + '</span><span aria-hidden="true">' + labels[n].split(", ")[1] + '</span></span></label>').join("");
+      $("rt-stars").innerHTML = [5, 4, 3, 2, 1].map(n => '<label><input type="radio" name="rt-rating" value="' + n + '"><span><span aria-hidden="true">' + "★".repeat(n) + '</span> <span class="sr-only">' + labels[n] + '</span><span aria-hidden="true">' + labels[n].split(", ")[1] + '</span></span></label>').join("");
       $("rt-name").value = r.firstName || ""; $("rt-role").value = r.role || "";
       if (r.existing) {
         $("rt-text").value = r.existing.text;
