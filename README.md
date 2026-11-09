@@ -2,7 +2,7 @@
 
 Free small-group walks for healthcare workers, led by coaches. This is the draft website.
 
-**Live draft:** https://bajamigos.github.io/Resilient-Healers/
+**Live draft:** https://resilienthealers.github.io/
 
 ## What's here
 
