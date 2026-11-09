@@ -1,23 +1,17 @@
 # Resilient Healers
 
-Free small-group walks for healthcare workers, led by coaches. This is the draft website.
+Free small-group walks for healthcare workers, with a walk leader showing the way. This is the test version of the website.
 
-**Live draft:** https://resilienthealers.github.io/
+**Live site:** https://resilienthealers.github.io/
+
+**How everything works:** [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md), a plain-language guide to where everything lives, how each part works, everyday admin tasks, and how to change and deploy the site and backend.
 
 ## What's here
 
-- `index.html`: the whole site in one file.
-  - **Find a walk:** a US map you can zoom, with city search. Walks appear as pins.
-  - **Walk page:** date, time, meeting spot with a map and directions, spots left, sign-up and waitlist.
-  - **Lead a walk:** information for walk leaders, a pin dropper for the meeting spot, and an interest form.
-  - **Walk leader profile** and **Contact** pages.
-
-## Current limits
-
-- Sign-ups and messages are saved only in the visitor's own browser. A backend is still to be chosen.
-- No confirmation or reminder emails yet.
-- Maps use OpenStreetMap (free, no key). City search uses OpenStreetMap Nominatim.
+- `index.html`: the whole website in one file (map and search, walk pages, sign-up, walk leader pages, staff review and messages pages, contact form).
+- `apps-script/`: the backend that runs in Google Apps Script (`Code.gs`, `Messaging.gs`, `SampleData.gs`). The running copy lives in Apps Script; see the guide for how to deploy changes.
+- `data/`: the sample-walk photos (Wikimedia Commons) and the script that builds the sample walks.
 
 ## Style
 
-Follows Priya's Metamorphosis website: warm off-white, lavender, dark brown text, copper buttons, Cormorant Garamond headings. Light only.
+Follows Priya's Metamorphosis website: warm off-white, lavender, dark brown text, copper buttons, Cormorant Garamond headings with Nunito Sans body. Light only.
