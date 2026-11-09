@@ -617,7 +617,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     WALKS.forEach(w => {
       L.marker([w.lat, w.lng], { icon: w.comingSoon ? pinIconSoon : pinIcon, title: w.title, alt: w.title }).addTo(pinLayer)
         .bindPopup((w.photo ? '<img class="popup-photo" src="' + esc(w.photo) + '" alt="">' : '') + '<strong>' + esc(w.title) + '</strong><br>' +
-          (w.comingSoon ? 'Coming soon' : esc(w.dateText) + '<br>' + esc(w.timeText)) + '<br>' + esc(w.place) +
+          (w.comingSoon ? 'Coming soon' + (interestText(w) ? '<br>' + interestText(w) : '') : esc(w.dateText) + '<br>' + esc(w.timeText)) + '<br>' + esc(w.place) +
           '<br><a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a>', { maxWidth: 240 });
     });
   }
@@ -651,10 +651,14 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     el.hidden = !ad;
     el.innerHTML = ad ? '<span class="sponsor-label">Sponsored</span><h3>' + esc(ad.name) + '</h3><p>' + esc(ad.text) + '</p><a href="' + esc(ad.url) + '" target="_blank" rel="noopener">' + esc(ad.linkText) + '</a>' : "";
   }
+  function interestText(w) {
+    const n = w.interested || 0;
+    return n === 0 ? "" : n === 1 ? "1 person would join" : n + " people would join";
+  }
   function walkCard(w, d) {
     return '<li class="walk-card">' + (w.photo ? '<img class="walk-thumb" src="' + esc(w.photo) + '" alt="" loading="lazy">' : '') +
       '<div class="info"><span class="name">' + esc(w.title) + '</span>' +
-      (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span></span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
+      (w.comingSoon ? '<span><span class="chip chip-draft">Coming soon</span>' + (interestText(w) ? ' · ' + interestText(w) : '') + '</span>' : '<span>' + esc(w.dateText) + ', ' + esc(w.timeText) + '</span>') +
       '<span class="muted">' + esc(w.place) + (w.city ? ', ' + esc(w.city) : '') + (d != null ? ' · about ' + Math.max(1, Math.round(d)) + (Math.round(d) <= 1 ? ' mile away' : ' miles away') : '') + '</span>' +
       '<span class="muted">Walk leader: ' + (w.leader ? esc(w.leader.name) : 'coming soon') + '</span></div>' +
       '<a class="btn btn-small" href="#walk" data-walk="' + esc(w.id) + '">See this walk</a></li>';
@@ -840,7 +844,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
       done.innerHTML = r.duplicate ? "<h3>You're already on the list, " + first + ".</h3><p>We'll email you when this walk has a date.</p>"
         : "<h3>You're on the list, " + first + ".</h3><p>We'll email " + esc(d.email) + " when a walk leader sets the date, so you can sign up. A confirmation is on its way, with a link to leave the list.</p>";
       $("interest-form").reset(); $("interest-box").hidden = true; $("interest-open").setAttribute("aria-expanded", "false");
-      renderWalk(); done.hidden = false; done.focus();
+      renderWalk(); drawPins(); renderList(lastOrigin, lastLabel); done.hidden = false; done.focus();
     } catch (ex) { err.textContent = "That didn't go through. Check your connection and try again, or use the contact form."; err.hidden = false; }
     finally { btn.disabled = false; btn.textContent = "Add me to the list"; }
   });
