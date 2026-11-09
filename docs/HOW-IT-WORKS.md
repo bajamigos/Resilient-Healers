@@ -85,6 +85,12 @@ Emails only say "You have a new message," with a link. They never contain the me
 
 Every message has **"Report this message."** Staff get an email, and the staff messages page lists reported messages at the top with who reported it and their note. Only staff and the person who reported can see that a message was reported.
 
+### Walker reviews
+- Reviews live in the Sheet's **Walker reviews** tab (one row per review: walk leader, walk, name, role, rating out of 5, text, month). Only rows with Status **Published** show on the site.
+- They appear under "What walkers say" on the walk page and the walk leader's profile, and the walk list shows the leader's average rating.
+- There's no way yet for walkers to submit a review; for now rows are added in the Sheet.
+- **Sample content:** ten "model cities" (Boston, New York, Chicago, Atlanta, Nashville, Austin, Denver, Seattle, San Francisco, Portland) have a made-up sample walk leader, a scheduled sample walk and one made-up sample review. Each is labeled "Sample" on the site, with a note that it isn't a real person or a real walker. `removeSamples` deletes them; `loadSamples` puts them back. Priya has no sample reviews.
+
 ### Walk photos
 - **Sample walks** use photos from Wikimedia Commons, credited under each photo with a link to the source. They were checked on November 9, 2026 to make sure each one shows the actual walking area at its best; 14 were replaced. The list lives in `data/photos.json`; after changing it, run `python3 data/make_samples.py` and reload the samples.
 - **Walk leaders** can upload their own walk photo on the application, the new-walk form and the "Edit this walk" form. It's saved in the Drive photo folder and credited "Photo: the walk leader." Staff see it on the review page, and it only appears publicly once approved (for a live walk, the old photo stays until the change is approved).
@@ -101,6 +107,7 @@ The Contact page sends a message to `ORGANIZER_EMAIL` and saves it in the **Mess
 | Leaders | walk leader | Status: **Pending review**, **Approved**, **Changes requested**. Private link code. |
 | Reviews | thing waiting for staff | Type (application, walk, walk-edit, profile-edit), Open or decided. |
 | Chat | message | Thread, who sent it, text, and report details. |
+| Walker reviews | review of a walk leader | Rating, text, Status (Published shows on the site), Sample. |
 | Messages | contact-form message | |
 
 You can read and fix anything directly in the Sheet. Avoid deleting columns or renaming tabs; the backend finds things by header name.
