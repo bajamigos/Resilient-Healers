@@ -86,6 +86,8 @@ main .wrap { padding-block: 2rem 3rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: .7rem 1.3rem; border-radius: 999px; border: 2px solid var(--copper); background: var(--copper); color: var(--on-copper); font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
 .btn:hover { filter: brightness(1.07); }
 .btn-ghost { background: transparent; color: var(--copper); }
+.share-walk { display: flex; flex-direction: column; gap: .8rem; align-items: flex-start; }
+.share-walk .form-card { width: 100%; box-sizing: border-box; }
 .agreement { background: var(--lavender, #f1e1f4); border-radius: 12px; padding: .9rem 1.1rem; }
 .agreement h3 { margin: 0 0 .4rem; }
 .agreement ul { margin: 0; padding-left: 1.2rem; }
@@ -335,6 +337,21 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         <div class="btn-row">
           <a class="btn" href="#signup" id="cta">Sign up</a>
           <a class="btn btn-ghost" href="#where">How to find us</a>
+        </div>
+      </div>
+
+      <div class="share-walk">
+        <button class="btn btn-ghost" type="button" id="w-share" aria-expanded="false" aria-controls="w-share-panel">Share this walk</button>
+        <div class="form-card" id="w-share-panel" hidden>
+          <p style="margin-top:0">Know a colleague who could use this? Send them the walk.</p>
+          <div class="btn-row share-links">
+            <button class="btn btn-small" type="button" id="w-share-copy">Copy link</button>
+            <a class="btn btn-small btn-ghost" id="w-share-text" href="#">Text</a>
+            <a class="btn btn-small btn-ghost" id="w-share-email" href="#">Email</a>
+            <a class="btn btn-small btn-ghost" id="w-share-wa" href="#" target="_blank" rel="noopener">WhatsApp</a>
+            <a class="btn btn-small btn-ghost" id="w-share-fb" href="#" target="_blank" rel="noopener">Facebook</a>
+          </div>
+          <p class="muted" id="w-share-note" role="status"></p>
         </div>
       </div>
 
@@ -976,10 +993,48 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
   });
 
   /* ---------- walk page ---------- */
+  /* ---------- "Share this walk" on the public walk page (decided November 10, 2026) ----------
+     Phones open their own share menu; computers get copy link, text, email, WhatsApp and Facebook. */
+  const isPhone = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  function walkShare(w) {
+    const url = location.origin + location.pathname + "?walk=" + encodeURIComponent(w.id) + "#walk";
+    const text = w.date
+      ? "A free walk for healthcare workers: " + w.title + ", " + w.dateText + ", " + w.timeText + ", " + w.place + ". Walk, connect with colleagues and recharge. Sign up here:"
+      : "A free walk for healthcare workers is coming to " + w.place + ". Add your name to hear when it starts:";
+    return { url, text, title: w.title };
+  }
+  function fillSharePanel(w) {
+    const s = walkShare(w), full = s.text + " " + s.url;
+    $("w-share-text").href = "sms:?&body=" + encodeURIComponent(full);
+    $("w-share-email").href = "mailto:?subject=" + encodeURIComponent("A free walk for healthcare workers: " + s.title) + "&body=" + encodeURIComponent(full);
+    $("w-share-wa").href = "https://wa.me/?text=" + encodeURIComponent(full);
+    $("w-share-fb").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(s.url);
+    $("w-share-note").textContent = "";
+  }
+  $("w-share").addEventListener("click", async () => {
+    const w = current(); if (!w) return;
+    const s = walkShare(w);
+    if (isPhone() && navigator.share) {
+      try { await navigator.share({ title: s.title, text: s.text, url: s.url }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }   // fall back to the panel below
+    }
+    fillSharePanel(w);
+    const panel = $("w-share-panel"), open = panel.hidden;
+    panel.hidden = !open; $("w-share").setAttribute("aria-expanded", String(open));
+    if (open) $("w-share-copy").focus();
+  });
+  $("w-share-copy").addEventListener("click", async () => {
+    const w = current(); if (!w) return;
+    const s = walkShare(w);
+    try { await navigator.clipboard.writeText(s.url); $("w-share-note").textContent = "Link copied. Paste it into a message, post or email."; }
+    catch (e) { $("w-share-note").textContent = "Couldn't copy automatically. The link is: " + s.url; }
+  });
+
   function renderWalk() {
     const w = current();
     if (!w) { $("w-title").textContent = WALKS.length ? "Walk not found" : "Loading walk…"; return; }
     currentWalkId = w.id;
+    $("w-share-panel").hidden = true; $("w-share").setAttribute("aria-expanded", "false");
     $("w-title").textContent = w.title;
     $("w-date").textContent = w.dateText;
     $("w-time").textContent = w.timeText;
