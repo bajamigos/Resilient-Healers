@@ -119,7 +119,9 @@ Every message has **"Report this message."** Staff get an email, and the staff m
 - Staff can run the repeat check on demand: POST `{action:'admin', code:<staff code>, op:'rollRecurring'}` (add `site:'demo'` for the demo). `op:'leaderCode'` with `leaderId` returns a walk leader's private page code, for testing.
 
 ### Sharing a walk (added November 10, 2026)
-- On the walk leader page, each live walk has **"Share this walk"**: buttons for a square Instagram post picture (1080 × 1080) and a story picture (1080 × 1920), a suggested caption to edit, and "Copy caption" / "Copy walk link".
+- **Anyone** can share a walk from its public page with **"Share this walk"** (under the spot count). On a phone it opens the phone's share menu with a short invite and the walk's link; on a computer it shows Copy link, Text, Email, WhatsApp and Facebook. Every share links straight back to that walk's page.
+- **Walk leaders** also get ready-made pictures on their walk leader page:
+  - Each live walk has **"Share this walk"**: buttons for a square Instagram post picture (1080 × 1080) and a story picture (1080 × 1920), a suggested caption to edit, and "Copy caption" / "Copy walk link".
 - The pictures are drawn in the browser in the site's style: walk name, date, time, place, "Led by …", and "Sign up free: resilienthealers.github.io". On a phone, the button opens the phone's share menu (Instagram, Messages and so on); on a computer, it downloads a PNG.
 - The walk photo appears when its host allows it (Wikimedia photos do, with the photo credit). Photos uploaded through the site are stored on Google Drive, which doesn't allow this, so those walks get a leaves design instead.
 
