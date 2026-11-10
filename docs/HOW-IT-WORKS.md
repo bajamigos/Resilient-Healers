@@ -118,6 +118,11 @@ Every message has **"Report this message."** Staff get an email, and the staff m
 - Other staff ops (POST `{action:'admin', code:<staff code>, op:...}`, add `site:'demo'` for the demo): `updateWalk` with `walkId` and `fields` changes a walk's Title, Place, How to find the spot, Parking, Shorter route or Description directly, without review; `setLeaderEmail` with `leaderId`, `email` and `sendLink:true` sets a walk leader's email and emails them their private walk leader link.
 - Staff can run the repeat check on demand: POST `{action:'admin', code:<staff code>, op:'rollRecurring'}` (add `site:'demo'` for the demo). `op:'leaderCode'` with `leaderId` returns a walk leader's private page code, for testing.
 
+### Sharing a walk (added November 10, 2026)
+- On the walk leader page, each live walk has **"Share this walk"**: buttons for a square Instagram post picture (1080 × 1080) and a story picture (1080 × 1920), a suggested caption to edit, and "Copy caption" / "Copy walk link".
+- The pictures are drawn in the browser in the site's style: walk name, date, time, place, "Led by …", and "Sign up free: resilienthealers.github.io". On a phone, the button opens the phone's share menu (Instagram, Messages and so on); on a computer, it downloads a PNG.
+- The walk photo appears when its host allows it (Wikimedia photos do, with the photo credit). Photos uploaded through the site are stored on Google Drive, which doesn't allow this, so those walks get a leaves design instead.
+
 ### Walker reviews
 - **Collecting them:** the day after a walk (from 10 AM Pacific), everyone who was Going gets one "How was your walk?" email with a private review link. They pick 1 to 5 stars, write a few sentences, and choose the first name and role to show. Their email is never shown. (This runs on the same hourly schedule as reminders.)
 - **Approval:** every review waits for staff. The staff email links to the review page, which has **Publish review** and **Don't publish**. Nobody is emailed either way. Walk leaders can't reply to reviews.
