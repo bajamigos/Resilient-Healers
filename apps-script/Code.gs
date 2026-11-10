@@ -330,6 +330,14 @@ function doPost(e) {
           cells['Updated'] = new Date(); writeCells_('Walks', w._row, cells);
           return json_({ ok: true, changed: Object.keys(cells).length - 1 });
         }
+        if (body.op === 'setLeaderEmail') {   // staff sets a walk leader's email and (optionally) sends them their private link
+          const l = readTab_('Leaders').find(x => String(x['Leader ID']) === String(body.leaderId));
+          const em = cleanLine_(body.email, 200).toLowerCase();
+          if (!l || !/^\S+@\S+\.\S+$/.test(em)) return json_({ ok: false, error: 'not_found' });
+          writeCells_('Leaders', l._row, { 'Email': em, 'Updated': new Date() });
+          if (body.sendLink === true) { l['Email'] = em; sendLinkEmail_(l); }
+          return json_({ ok: true });
+        }
         if (body.op === 'rollRecurring') return json_({ ok: true, added: rollRecurringWalks_() });
         if (body.op === 'removeTestData') { removeTestData(); return json_({ ok: true }); }
         return json_({ ok: false, error: 'unknown_op' });
