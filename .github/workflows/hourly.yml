@@ -1,13 +1,36 @@
-# Once an hour, ask the Resilient Healers backend to send any reminder and
-# "How was your walk?" emails that are due (for both the real and demo sites).
+# Once an hour, ask the Resilient Healers backend to do its scheduled jobs (for both the
+# real and demo sites): reminder emails, "How was your walk?" emails, and adding the next
+# date of repeating walks.
+#
+# Keep-alive: GitHub pauses scheduled jobs in public repositories after 60 days without any
+# changes to the repository. Once a day, the "keep-alive" job re-enables this workflow
+# through GitHub's API, which resets that 60-day clock, so the schedule never quietly stops.
+# If it ever does stop anyway: GitHub > the repository > Actions > "Hourly reminders" >
+# "Enable workflow".
 name: Hourly reminders
 on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch: {}
+permissions:
+  actions: write
+  contents: read
 jobs:
   tick:
     runs-on: ubuntu-latest
     steps:
       - name: Tick the backend
         run: curl -sS -L --max-time 120 "https://script.google.com/macros/s/AKfycbzLfPywXg1h_FJOV_66_wayzUbkuH742bnBC9zfaCTOaT_luCkA-iyrMCFH22L1O42z6w/exec?action=tick"
+  keep-alive:
+    # Does its work once a day (the 3 AM UTC run), or when started by hand.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-enable this workflow (resets GitHub's 60-day inactivity clock)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%H)" = "03" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/hourly.yml/enable" && echo "Keep-alive done."
+          else
+            echo "Not the daily keep-alive hour; nothing to do."
+          fi
