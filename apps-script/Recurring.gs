@@ -78,7 +78,8 @@ function rollRecurringWalks_() {
   let added = 0;
   walks.forEach(w => {
     const date = dateText_(w['Date']);
-    if (w['Status'] !== 'Live' || !date || date >= today || w['Next walk']) return;
+    // A called-off date (Status "Cancelled") still leads to the next date; removed or replaced walks don't.
+    if ((w['Status'] !== 'Live' && w['Status'] !== 'Cancelled') || !date || date >= today || w['Next walk']) return;
     const skips = skipList_(w);
     let next = nextOccurrence_(date, w['Repeats']);
     if (!next) return;
@@ -90,7 +91,7 @@ function rollRecurringWalks_() {
     const row = {};
     TABS['Walks'].forEach(h => { row[h] = w[h]; });
     row['Title'] = retitle_(String(w['Title'] || ''), date, next);   // "December walk at Lake Murray" -> "January walk at Lake Murray"
-    Object.assign(row, { 'Walk ID': id, 'Date': "'" + next, 'Start': "'" + timeText_(w['Start']), 'End': w['End'] ? "'" + timeText_(w['End']) : '',
+    Object.assign(row, { 'Status': 'Live', 'Walk ID': id, 'Date': "'" + next, 'Start': "'" + timeText_(w['Start']), 'End': w['End'] ? "'" + timeText_(w['End']) : '',
       'Staff note': '', 'Pending edit': '', 'Takes over': '', 'Next walk': '', 'Skip dates': skipCell_(skips.filter(d => d > next)), 'Created': new Date(), 'Updated': new Date() });
     appendObj_('Walks', row);
     writeCells_('Walks', w._row, { 'Next walk': id });

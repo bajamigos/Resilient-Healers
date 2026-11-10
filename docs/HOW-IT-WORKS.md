@@ -29,7 +29,7 @@ It's a test site for now. The lavender banner at the top says so, and sample wal
 |---|---|---|
 | The website | https://resilienthealers.github.io/ | One file, `index.html`. |
 | The website's code | GitHub: `resilienthealers/resilienthealers.github.io` | The "resilienthealers" organization belongs to your **bajamigos** GitHub account. Changing a file here changes the live site within a minute or two. |
-| The data (sign-ups, walks, leaders, messages) | Google Sheet **"Resilient Healers sign-ups"** | Owned by **resilienthealers@gmail.com**. |
+| The data (sign-ups, walks, leaders, messages) | Google Sheet **"Resilient Healers sign-ups"** (real site) and **"Resilient Healers DEMO data"** (demo) | Both owned by **resilienthealers@gmail.com**. |
 | The backend (the code that saves data and sends emails) | Google Apps Script project **"Resilient Healers sign-up backend"** | Also owned by resilienthealers@gmail.com. Find it at script.google.com while signed in as that account. |
 | Walk leader photos | Google Drive folder **"Resilient Healers walk leader photos"** | Same account. |
 | All emails the site sends | Sent from **resilienthealers@gmail.com** | Staff emails (approvals, reports, contact form) also arrive there. |
@@ -115,7 +115,7 @@ Every message has **"Report this message."** Staff get an email, and the staff m
 - Calling off the date that's already open for sign-ups is not a skip: that's still a staff job (see the open question about cancellations).
 - **Walk again:** the "How was your walk?" email (day after) includes "Coming again on <date>? Save your spot with one tap" when there's a next date. The link opens a page with one "Save my spot" button (or "Join the waitlist" if full); it signs them up with the same name, email, phone and notes and sends the usual confirmation. A button, not an automatic sign-up, because email scanners open links on their own.
 - To stop a repeating walk from the Sheet, change its "Repeats" to "One time" before its date passes.
-- Other staff ops (POST `{action:'admin', code:<staff code>, op:...}`, add `site:'demo'` for the demo): `updateWalk` with `walkId` and `fields` changes a walk's Title, Place, How to find the spot, Parking, Shorter route or Description directly, without review; `setLeaderEmail` with `leaderId`, `email` and `sendLink:true` sets a walk leader's email and emails them their private walk leader link. Priya's is metamorphosiswithpriya@gmail.com (set November 9, 2026).
+- Other staff ops (POST `{action:'admin', code:<staff code>, op:...}`, add `site:'demo'` for the demo): `updateWalk` with `walkId` and `fields` changes a walk's Title, Place, How to find the spot, Parking, Shorter route or Description directly, without review; `setLeaderEmail` with `leaderId`, `email` and `sendLink:true` sets a walk leader's email and emails them their private walk leader link.
 - Staff can run the repeat check on demand: POST `{action:'admin', code:<staff code>, op:'rollRecurring'}` (add `site:'demo'` for the demo). `op:'leaderCode'` with `leaderId` returns a walk leader's private page code, for testing.
 
 ### Walker reviews
@@ -153,9 +153,17 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 - **Handle a report:** open the staff messages page (link in the report email), read the whole conversation, and reply as staff in that conversation if needed.
 - **Remove a walker:** in Sign-ups, set their Status to **Cancelled**. They can still read old messages and write to staff, but not to the leader.
 - **Remove a walk leader:** in Leaders, set Status to something other than Approved (for example "Removed"); they can no longer send messages or propose walks. In Walks, change their walks' Status from Live to "Removed" to take them off the map. Tell their walkers through the group message or by email.
-- **Call off a walk:** for now, post in the group message, then set the walk's Status to "Cancelled" in the Sheet. (A proper "call off" button is on the to-do list.)
+- **Call off one walk date** (weather, illness): first post in the group message on the walk leader page (or the staff messages page) so everyone signed up hears; then, in the Sheet's Walks tab, set that walk's Status to **Cancelled**. It disappears from the site and gets no reminders. If it's a repeating walk, the next date is still added as usual once the cancelled date passes. (A proper "call off" button is on the to-do list.)
+- **Skip a future date or end a series:** the walk leader does it from their walk leader page ("Upcoming dates"). From the Sheet: add the date (yyyy-mm-dd) to the walk's "Skip dates" column, or set "Repeats" to "One time" to end the series.
+- **Change a walk's details yourself:** edit the cell in the Walks tab (Title, Place, How to find the spot, Parking, Description and so on). Changes show on the site right away. Don't change Walk ID or Status values other than as described here.
+- **Change a walk leader's email:** edit the Email cell in the Leaders tab. They can then get their link from "Lead a walk" > "Already a walk leader?".
+- **Publish a walker's review:** open the review link in the staff email and choose Publish or Don't publish.
+- **Find the staff code** (needed for the staff messages page and the admin requests below): in Apps Script, Project Settings > Script properties > `STAFF_CODE` (the demo's is `DEMO_STAFF_CODE`). Keep it private. The staff messages page is https://resilienthealers.github.io/?staff=STAFF_CODE#staff.
 - **Answer a contact-form message:** reply from resilienthealers@gmail.com.
-- **Remove all sample walks before a real launch:** run `removeSamples` in Apps Script.
+- **Next month's walk:** nothing to do. Repeating walks add their next date on their own (see "Repeating walks").
+- **Sample walks** live only on the demo site; the real site has none.
+
+Almost everything the "admin" requests do can also be done by hand in the Sheet, so a technical person isn't needed for day-to-day running.
 
 ## Changing the site or the backend
 
@@ -181,8 +189,9 @@ You can read and fix anything directly in the Sheet. Avoid deleting columns or r
 - **Private links, not sign-in.** Anyone with a forwarded link can act as that person. Before real use, add sign-in (for example an emailed one-time code).
 - **Reminder times are Pacific** for every walk, so East Coast walkers get theirs three hours "late" by their clock.
 - **Google Sheets is a stopgap.** The plan is to move to Supabase later, especially for sign-in and messaging at scale.
+- **The hourly job runs on GitHub.** GitHub pauses scheduled jobs in public repositories after 60 days without changes; a daily keep-alive step in `.github/workflows/hourly.yml` prevents that. If reminders ever stop, check GitHub > the repository > Actions > "Hourly reminders" and click "Enable workflow" if it's paused.
 - **Busy moments:** only one change is saved at a time. If many people act at once, someone may see "didn't send, try again."
 
 ## Where decisions are recorded
 
-The claude.ai Project "Resilient Healers App" holds the running list of what's decided, what's tabled and what's waiting on Priya ("unresolved and tabled"). Check it before changing how something works.
+The claude.ai Project "Resilient Healers App" (and the downloaded copies of its notes, kept privately, not in this public repository) holds the running list of what's decided, what's tabled and what's waiting on Priya ("unresolved and tabled"). Check it before changing how something works.
