@@ -19,7 +19,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='19' fill='%23f1e1f4'/%3E%3Cpath d='M20 31 C20 23 20 17 20 10' stroke='%23a05222' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3Cpath d='M20 17 C14 16 11 12 11 8 C16 9 19 12 20 17 Z' fill='%23a05222'/%3E%3Cpath d='M20 22 C26 21 29 17 29 13 C24 14 21 17 20 22 Z' fill='%239d897c'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,700;1,6..12,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,700;1,6..12,400&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
 /* Style guide: Priya's Metamorphosis website (warm off-white, lavender, dark brown, copper). Light only. */
@@ -1441,6 +1441,7 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
         (w.status === "Live" ? '<details><summary>Who\'s coming (' + going.length + ')</summary><ul class="roster">' + (going.map(person).join("") || '<li class="muted">No sign-ups yet.</li>') + '</ul>' +
           (waiting.length ? '<p class="row-name">Waitlist</p><ul class="roster">' + waiting.map(person).join("") + '</ul>' : '') +
           '<p class="muted">Walkers\' email addresses and phone numbers stay private. Messaging your group through this page is coming soon.</p></details>' : '') +
+        shareHTML(w) +
         seriesHTML(w) +
         '<details data-edit="' + esc(w.id) + '"' + (w.status === "Changes requested" ? " open" : "") + '><summary>' + (w.status === "Changes requested" ? "Fix and resubmit this walk" : "Edit this walk") + '</summary>' +
         '<div class="form-card" style="margin-top:.8rem"><form data-walkform="' + esc(w.id) + '" novalidate><div id="ew-' + esc(w.id) + '-wrap"></div>' +
@@ -1462,6 +1463,184 @@ details > summary { cursor: pointer; font-weight: 700; color: var(--copper); }
     $("me-new-wrap").hidden = l.status !== "Approved";
     if (l.status === "Approved" && !$("nw-title")) { $("me-new-fields").innerHTML = walkFieldsHTML("nw", "New walk"); setTimeout(() => { initWalkForm("nw", null); prefillLead("nw", "me-lead-note", "You're proposing to lead the"); }, 0); }
   }
+  /* ---------- shareable graphics for walk leaders (Instagram post 1080×1080 and story 1080×1920) ----------
+     Drawn in the browser on a canvas, in the style of the coach ads, then downloaded or shared from a phone.
+     The walk photo is used when its host allows it (Wikimedia does); otherwise the design uses leaves instead. */
+  const SHARE_C = { bg: "#f8f4f1", lav: "#f1e1f4", ink: "#411e06", rust: "#a05222", deep: "#7c360c", muted: "#6f5441", line: "#e2d6cd", leaf: "#7d9670", stem: "#5c7650" };
+  const SHARE_SERIF = '"Cormorant Garamond", Georgia, serif', SHARE_SANS = '"Nunito Sans", "Avenir Next", Arial, sans-serif';
+  const siteHost = () => location.host + location.pathname.replace(/index\.html$/, "").replace(/\/$/, "");
+  const walkLink = (w) => location.origin + location.pathname + "?walk=" + encodeURIComponent(w.id) + "#walk";
+  function shareCaption(w, leaderName) {
+    return "Join me for a free walk for healthcare workers: " + w.title + ", " + w.dateText + ", " + w.timeText + ", at " + w.place + ". " +
+      "Walk, connect with colleagues and recharge. Spots are limited; sign up free: " + walkLink(w);
+  }
+  function loadShareImage(src) {
+    return new Promise((resolve) => {
+      if (!src) return resolve(null);
+      const img = new Image(); img.crossOrigin = "anonymous";
+      img.onload = () => {   // make sure the photo won't block exporting the picture
+        try { const c = document.createElement("canvas"); c.width = c.height = 2; const x = c.getContext("2d"); x.drawImage(img, 0, 0, 2, 2); x.getImageData(0, 0, 1, 1); resolve(img); }
+        catch (e) { resolve(null); }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+  function wrapLines(ctx, text, maxW) {
+    const words = String(text).split(/\s+/), lines = []; let line = "";
+    words.forEach(wd => { const t = line ? line + " " + wd : wd; if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = wd; } else line = t; });
+    if (line) lines.push(line);
+    return lines;
+  }
+  // Draws text wrapped to maxW, shrinking the font until it fits in maxLines. Returns the y after the last line.
+  function fitText(ctx, text, x, y, maxW, opt) {
+    let size = opt.size, lines;
+    for (;;) { ctx.font = (opt.style || "") + " " + opt.weight + " " + size + "px " + opt.family; lines = wrapLines(ctx, text, maxW); if (lines.length <= opt.maxLines || size <= opt.min) break; size -= 4; }
+    lines = lines.slice(0, opt.maxLines);
+    ctx.fillStyle = opt.color; ctx.textAlign = opt.align || "left"; ctx.textBaseline = "alphabetic";
+    const lh = size * (opt.lh || 1.1);
+    lines.forEach((ln, i) => ctx.fillText(ln, x, y + size + i * lh));
+    return y + size + (lines.length - 1) * lh + size * 0.35;
+  }
+  function drawSprout(ctx, x, y, s) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 40, s / 40);
+    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(20, 20, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = SHARE_C.rust; ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.stroke(new Path2D("M20 31 C20 23 20 17 20 10"));
+    ctx.fillStyle = SHARE_C.rust; ctx.fill(new Path2D("M20 17 C14 16 11 12 11 8 C16 9 19 12 20 17 Z"));
+    ctx.fillStyle = "#9d897c"; ctx.fill(new Path2D("M20 22 C26 21 29 17 29 13 C24 14 21 17 20 22 Z"));
+    ctx.restore();
+  }
+  function drawLeaves(ctx, x, y, s, alpha, flip) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); if (flip) { ctx.scale(-1, 1); } ctx.scale(s / 120, s / 120);
+    ctx.strokeStyle = SHARE_C.stem; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke(new Path2D("M60 168 C58 120 62 70 60 6"));
+    ctx.fillStyle = SHARE_C.leaf;
+    ["M60 140 C40 136 26 124 22 106 C40 108 54 120 60 140 Z", "M60 116 C80 112 94 100 98 82 C80 84 66 96 60 116 Z", "M60 90 C42 86 30 74 28 58 C44 60 56 72 60 90 Z",
+     "M60 64 C76 60 88 48 90 34 C76 36 64 46 60 64 Z", "M60 40 C48 36 40 26 40 14 C52 16 58 26 60 40 Z"].forEach(d => ctx.fill(new Path2D(d)));
+    ctx.restore();
+  }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    const rr = Array.isArray(r) ? r : [r, r, r, r];
+    ctx.beginPath(); ctx.moveTo(x + rr[0], y);
+    ctx.lineTo(x + w - rr[1], y); ctx.arcTo(x + w, y, x + w, y + rr[1], rr[1]);
+    ctx.lineTo(x + w, y + h - rr[2]); ctx.arcTo(x + w, y + h, x + w - rr[2], y + h, rr[2]);
+    ctx.lineTo(x + rr[3], y + h); ctx.arcTo(x, y + h, x, y + h - rr[3], rr[3]);
+    ctx.lineTo(x, y + rr[0]); ctx.arcTo(x, y, x + rr[0], y, rr[0]); ctx.closePath();
+  }
+  function drawCover(ctx, img, x, y, w, h, r) {   // photo filling a rounded frame, like CSS object-fit: cover
+    ctx.save(); roundRectPath(ctx, x, y, w, h, r); ctx.clip();
+    const s = Math.max(w / img.naturalWidth, h / img.naturalHeight), iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+    ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) * 0.45, iw, ih); ctx.restore();
+    ctx.save(); roundRectPath(ctx, x, y, w, h, r); ctx.lineWidth = 3; ctx.strokeStyle = SHARE_C.line; ctx.stroke(); ctx.restore();
+  }
+  function drawPill(ctx, text, cx, y, opt) {
+    ctx.font = "700 " + opt.size + "px " + SHARE_SANS;
+    const w = ctx.measureText(text).width + opt.padX * 2, h = opt.size + opt.padY * 2;
+    roundRectPath(ctx, cx - w / 2, y, w, h, h / 2);
+    if (opt.fill) { ctx.fillStyle = opt.fill; ctx.fill(); } else { ctx.lineWidth = 3; ctx.strokeStyle = SHARE_C.rust; ctx.stroke(); }
+    ctx.fillStyle = opt.fill ? "#ffffff" : SHARE_C.deep; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, cx, y + h / 2 + 1);
+    return y + h;
+  }
+  async function makeShareGraphic(w, leaderName, kind) {
+    try { await Promise.all([document.fonts.load('700 80px "Cormorant Garamond"'), document.fonts.load('italic 600 48px "Cormorant Garamond"'), document.fonts.load('700 30px "Nunito Sans"'), document.fonts.load('400 30px "Nunito Sans"')]); } catch (e) {}
+    const story = kind === "story", W = 1080, H = story ? 1920 : 1080;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+    const photo = await loadShareImage(w.photo);
+    ctx.fillStyle = SHARE_C.bg; ctx.fillRect(0, 0, W, H);
+    const credit = photo && w.photoCredit ? "Photo: " + w.photoCredit : "";
+    const when = w.dateText, time = w.timeText, by = leaderName ? "Led by " + leaderName : "";
+    if (!story) {
+      ctx.fillStyle = SHARE_C.lav; ctx.beginPath(); ctx.arc(W + 100, -100, 380, 0, Math.PI * 2); ctx.fill();
+      drawSprout(ctx, 72, 60, 56);
+      ctx.font = "700 38px " + SHARE_SERIF; ctx.fillStyle = SHARE_C.ink; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("Resilient Healers", 142, 90);
+      ctx.font = "700 20px " + SHARE_SANS; ctx.fillStyle = SHARE_C.deep; ctx.textAlign = "right"; ctx.fillText("FREE WALK FOR HEALTHCARE WORKERS", W - 72, 90);
+      let y = 150;
+      if (photo) {
+        drawCover(ctx, photo, 72, y, W - 144, 390, 28);
+        if (credit) { ctx.font = "400 16px " + SHARE_SANS; ctx.fillStyle = SHARE_C.muted; ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.fillText(credit, W - 72, y + 390 + 24); }
+        y += 420;
+      } else {
+        drawLeaves(ctx, W - 300, 330, 300, 0.45, false); y += 60;
+      }
+      y = fitText(ctx, w.title, 72, y, photo ? W - 144 : W - 380, { size: photo ? 70 : 92, min: 44, maxLines: photo ? 2 : 3, weight: 700, family: SHARE_SERIF, color: SHARE_C.ink, lh: 1.02 });
+      y = fitText(ctx, when, 72, y + 10, W - 144, { size: 36, min: 26, maxLines: 1, weight: 700, family: SHARE_SANS, color: SHARE_C.ink });
+      y = fitText(ctx, time + " · " + w.place, 72, y, W - 144, { size: 30, min: 22, maxLines: 2, weight: 400, family: SHARE_SANS, color: SHARE_C.muted, lh: 1.3 });
+      if (by) y = fitText(ctx, by, 72, y, W - 144, { size: 28, min: 20, maxLines: 1, weight: 400, family: SHARE_SANS, color: SHARE_C.muted });
+      ctx.font = "700 28px " + SHARE_SANS; const pill = "Sign up free: " + siteHost();
+      const pw = ctx.measureText(pill).width + 72;
+      drawPill(ctx, pill, 72 + pw / 2, H - 132, { size: 28, padX: 36, padY: 22, fill: SHARE_C.rust });
+      ctx.font = "italic 600 34px " + SHARE_SERIF; ctx.fillStyle = SHARE_C.deep; ctx.textBaseline = "middle";
+      const tag = "Walk. Connect. Recharge.", fits = 72 + pw + 30 + ctx.measureText(tag).width <= W - 72;
+      ctx.textAlign = fits ? "right" : "left"; ctx.fillText(tag, fits ? W - 72 : 72, fits ? H - 96 : H - 170);
+    } else {
+      drawLeaves(ctx, -70, H - 640, 360, 0.5, false);
+      drawLeaves(ctx, W + 80, 1460, 280, 0.3, true);
+      drawSprout(ctx, W / 2 - 170, 120, 48);
+      ctx.font = "700 36px " + SHARE_SERIF; ctx.fillStyle = SHARE_C.ink; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("Resilient Healers", W / 2 - 108, 145);
+      let y = 220;
+      if (photo) {
+        drawCover(ctx, photo, 150, y, 780, 760, [390, 390, 36, 36]);
+        if (credit) { ctx.font = "400 18px " + SHARE_SANS; ctx.fillStyle = SHARE_C.muted; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText(credit, W / 2, y + 760 + 30); }
+        y += 820;
+      } else {
+        ctx.fillStyle = SHARE_C.lav; ctx.beginPath(); ctx.arc(W / 2, 560, 330, 0, Math.PI * 2); ctx.fill();
+        drawLeaves(ctx, W / 2 - 170, 330, 340, 0.85, false);
+        y += 760;
+      }
+      ctx.font = "700 22px " + SHARE_SANS; ctx.fillStyle = SHARE_C.deep; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText("A FREE WALK FOR HEALTHCARE WORKERS", W / 2, y + 22); y += 40;
+      y = fitText(ctx, w.title, W / 2, y, 880, { size: 80, min: 48, maxLines: 2, weight: 700, family: SHARE_SERIF, color: SHARE_C.ink, align: "center", lh: 1.02 });
+      y = fitText(ctx, when, W / 2, y + 14, 880, { size: 42, min: 30, maxLines: 1, weight: 700, family: SHARE_SANS, color: SHARE_C.ink, align: "center" });
+      y = fitText(ctx, time, W / 2, y, 880, { size: 36, min: 28, maxLines: 1, weight: 400, family: SHARE_SANS, color: SHARE_C.muted, align: "center" });
+      y = fitText(ctx, w.place, W / 2, y, 880, { size: 34, min: 26, maxLines: 2, weight: 400, family: SHARE_SANS, color: SHARE_C.muted, align: "center", lh: 1.3 });
+      if (by) y = fitText(ctx, by, W / 2, y + 4, 880, { size: 34, min: 26, maxLines: 1, style: "italic", weight: 600, family: SHARE_SERIF, color: SHARE_C.deep, align: "center" });
+      const py = Math.min(y + 70, H - 220);
+      drawPill(ctx, "Sign up free: " + siteHost(), W / 2, py, { size: 32, padX: 44, padY: 24, fill: SHARE_C.rust });
+      ctx.font = "italic 600 38px " + SHARE_SERIF; ctx.fillStyle = SHARE_C.deep; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText("Walk. Connect. Recharge.", W / 2, H - 60);
+    }
+    return new Promise(res => c.toBlob(b => res(b), "image/png"));
+  }
+  function shareHTML(w) {
+    if (w.status !== "Live") return "";
+    return '<details data-share="' + esc(w.id) + '"><summary>Share this walk</summary>' +
+      '<p class="muted">Ready-made pictures for Instagram, Facebook or a group text, with your walk\'s name, date, time and place. Download them, or on a phone, share them straight to an app. Your followers become walkers.</p>' +
+      '<div class="btn-row"><button class="btn" type="button" data-graphic="post">Square post picture</button><button class="btn" type="button" data-graphic="story">Story picture</button></div>' +
+      '<p class="muted" data-share-note hidden></p>' +
+      '<div class="field" style="margin-top:.6rem"><label for="cap-' + esc(w.id) + '">Suggested caption (edit as you like)</label><textarea id="cap-' + esc(w.id) + '" rows="4" data-caption>' + esc(shareCaption(w, me && me.leader ? me.leader.name : "")) + '</textarea></div>' +
+      '<div class="btn-row"><button class="btn btn-ghost" type="button" data-copy="caption">Copy caption</button><button class="btn btn-ghost" type="button" data-copy="link">Copy walk link</button></div>' +
+      '<p class="error" role="alert" hidden></p></details>';
+  }
+  $("me-walks").addEventListener("click", async (e) => {
+    const box = e.target.closest("details[data-share]"); if (!box) return;
+    const btn = e.target.closest("button"); if (!btn) return;
+    const w = me.walks.find(x => x.id === box.dataset.share); if (!w) return;
+    const err = box.querySelector(".error"), note = box.querySelector("[data-share-note]"); err.hidden = true;
+    if (btn.dataset.copy) {
+      const text = btn.dataset.copy === "link" ? walkLink(w) : box.querySelector("[data-caption]").value;
+      try { await navigator.clipboard.writeText(text); announce(btn.dataset.copy === "link" ? "Walk link copied." : "Caption copied."); note.textContent = btn.dataset.copy === "link" ? "Walk link copied." : "Caption copied."; note.hidden = false; }
+      catch (ex) { err.textContent = "Couldn't copy. Select the text and copy it yourself."; err.hidden = false; }
+      return;
+    }
+    const kind = btn.dataset.graphic; if (!kind) return;
+    const label = btn.textContent; btn.disabled = true; btn.textContent = "Making the picture…";
+    try {
+      const blob = await makeShareGraphic(w, me.leader ? me.leader.name : "", kind);
+      if (!blob) throw new Error("no image");
+      const name = "resilient-healers-" + String(w.id).replace(/[^a-z0-9-]/gi, "") + "-" + kind + ".png";
+      const file = new File([blob], name, { type: "image/png" });
+      let shared = false;
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        try { await navigator.share({ files: [file], text: box.querySelector("[data-caption]").value }); shared = true; } catch (ex) { shared = ex && ex.name === "AbortError"; }
+      }
+      if (!shared) {
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+        note.textContent = (kind === "story" ? "Story picture" : "Square post picture") + " downloaded (" + name + ")." + (w.photo ? "" : " Add a walk photo and it will appear in the picture.");
+        note.hidden = false; announce(note.textContent);
+      }
+    } catch (ex) { err.textContent = "The picture couldn't be made. Try again, or try another browser."; err.hidden = false; }
+    btn.disabled = false; btn.textContent = label;
+  });
+
   // Repeating walks: skip a single date, or end the series. Takes effect right away (no staff review).
   function seriesHTML(w) {
     if (w.status !== "Live" || !w.series || !w.series.length) return "";
