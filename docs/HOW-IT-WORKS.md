@@ -115,6 +115,7 @@ Every message has **"Report this message."** Staff get an email, and the staff m
 - Calling off the date that's already open for sign-ups is not a skip: that's still a staff job (see the open question about cancellations).
 - **Walk again:** the "How was your walk?" email (day after) includes "Coming again on <date>? Save your spot with one tap" when there's a next date. The link opens a page with one "Save my spot" button (or "Join the waitlist" if full); it signs them up with the same name, email, phone and notes and sends the usual confirmation. A button, not an automatic sign-up, because email scanners open links on their own.
 - To stop a repeating walk from the Sheet, change its "Repeats" to "One time" before its date passes.
+- Other staff ops (POST `{action:'admin', code:<staff code>, op:...}`, add `site:'demo'` for the demo): `updateWalk` with `walkId` and `fields` changes a walk's Title, Place, How to find the spot, Parking, Shorter route or Description directly, without review; `setLeaderEmail` with `leaderId`, `email` and `sendLink:true` sets a walk leader's email and emails them their private walk leader link. Priya's is metamorphosiswithpriya@gmail.com (set November 9, 2026).
 - Staff can run the repeat check on demand: POST `{action:'admin', code:<staff code>, op:'rollRecurring'}` (add `site:'demo'` for the demo). `op:'leaderCode'` with `leaderId` returns a walk leader's private page code, for testing.
 
 ### Walker reviews
